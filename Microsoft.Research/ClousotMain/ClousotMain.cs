@@ -274,6 +274,11 @@ namespace Microsoft.Research.CodeAnalysis
         }
         #endregion
 
+        if (this.options.IsRegression)
+        {
+          Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        }
+
         this.fieldsDB = new FieldsDB<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly>(mdDecoder);
         this.globalInfoAtMethodExitPoints = new SharedPostConditionManagerInfo<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly>(mdDecoder, this.fieldsDB);
 
