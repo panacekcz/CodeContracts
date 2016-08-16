@@ -148,7 +148,7 @@ namespace Microsoft.Research.CodeAnalysis
       //where Expression : IEquatable<Expression>
       //where Variable : IEquatable<Variable>
       {
-        return AnalysisWrapper.RunArraysAnalysis(fullMethodName, mdriver, this.options[0], this.boundsOptions, this.nonnullAnalysis, this.IsEnumAnalysisSelected, cachePCs, this.stringAnalysis, controller);
+        return AnalysisWrapper.RunArraysAnalysis(fullMethodName, mdriver, this.options[0], this.boundsOptions, this.nonnullAnalysis, this.IsEnumAnalysisSelected, this.stringAnalysis, cachePCs, controller);
       }
 
       override public bool ExecuteAbstractDomainFunctor<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable, Options, Result, Data>(

@@ -51,7 +51,7 @@ namespace Microsoft.Research.CodeAnalysis
           this.cachePCs = cachePCs;
         }
 
-        public GenericPlugInAnalysisForComposedAnalysis Create<AState>(IAbstractAnalysis<Local, Parameter, Method, Field, Property, Type, Expression, Attribute, Assembly, AState, Variable> analysis)
+        public GenericPlugInAnalysisForComposedAnalysis Create<AState>(IAbstractAnalysis<Local, Parameter, Method, Field, Property, Type, Expression, Attribute, Assembly, AState, Variable> analysis, DFAController controller)
         {
           return new StringWrapperPlugIn((StringValueAnalysis)analysis, id, methodName, mdriver, options, cachePCs);
         }
@@ -62,7 +62,8 @@ namespace Microsoft.Research.CodeAnalysis
       {
         public static GenericPlugInAnalysisForComposedAnalysis Create(IMethodAnalysis strAnalysis, int id, string methodName, IMethodDriver<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable, ILogOptions> mdriver, ILogOptions options, Predicate<APC> cachePCs)
         {
-          return strAnalysis.Instantiate(methodName, mdriver, cachePCs, new ClassStringWrapperPluginFactory(id, methodName, mdriver, options, cachePCs));
+                    //TODO: VD: using null as controller, will be ignored in Create above...
+          return strAnalysis.Instantiate(methodName, mdriver, cachePCs, new ClassStringWrapperPluginFactory(id, methodName, mdriver, options, cachePCs), null);
         }
 
         private readonly StringValueAnalysis stringAnalysis;
