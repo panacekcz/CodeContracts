@@ -12,6 +12,9 @@
 // 
 // THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// Modified by Vlastimil Dort (2015-2016)
+// Master thesis String Analysis for Code Contracts
+
 using System;
 using Microsoft.Research.CodeAnalysis;
 
@@ -19,17 +22,27 @@ namespace Microsoft.Research.CodeAnalysis
 {
   public static partial class Analyzers
   {
-#if DEBUG
     public class Strings
       : ValueAnalyzer<Strings, Strings.StringOptions>
     {
+      public enum StringDomainKind
+      {
+        Prefix, Suffix, CharacterInclusionFull, CharacterInclusionASCII, Bricks, StringGraphs
+      }
+
       public class StringOptions
         : ValueAnalysisOptions<StringOptions>
       {
         internal StringOptions(ILogOptions logoptions)
           : base(logoptions)
         {
+          this.domain = StringDomainKind.Prefix;
         }
+
+        [OptionWitness]
+        public StringDomainKind domain;
+
+        public StringDomainKind Domain { get { return this.domain; } }
       }
 
       override public string Name { get { return "String"; } }
@@ -39,7 +52,9 @@ namespace Microsoft.Research.CodeAnalysis
         return new StringOptions(options);
       }
 
-      public override IProofObligations<Variable, BoxedExpression> GetProofObligations<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable>(string fullMethodName, IMethodDriver<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable, ILogOptions> mdriver)
+      public override IProofObligations<Variable, BoxedExpression> GetProofObligations<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable>(
+        string fullMethodName,
+        IMethodDriver<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable, ILogOptions> mdriver)
       {
         return null;
       }
@@ -51,8 +66,12 @@ namespace Microsoft.Research.CodeAnalysis
         IMethodAnalysisClientFactory<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable, T> factory, DFAController controller
       )
       {
+        var abstractDomainFactory =
+          AnalysisWrapper.TypeBindings<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable>.
+          CreateFactoryForAbstraction(options[0].Domain);
+
         var analysis = new AnalysisWrapper.TypeBindings<Local,Parameter,Method,Field,Property,Event,Type,Attribute,Assembly,Expression,Variable>.
-          StringValueAnalysis(methodName, driver, options[0], cachePCs);
+          StringValueAnalysis(methodName, driver, options[0], cachePCs, abstractDomainFactory);
         return factory.Create(analysis, controller);
       }
 
@@ -85,6 +104,5 @@ namespace Microsoft.Research.CodeAnalysis
         return functor.Execute(aoi, data, out result);
       }
     }
-#endif
   }
 }

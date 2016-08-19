@@ -12,6 +12,9 @@
 // 
 // THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// Modified by Vlastimil Dort (2015-2016)
+// Master thesis String Analysis for Code Contracts
+
 #define USE_FACTQUERY_WITHMEMORY 
 // #define EXPERIMENTAL
 
@@ -1228,7 +1231,7 @@ namespace Microsoft.Research.CodeAnalysis
       /// </summary>
       private void InitAndCheckArrayAnalysisDependences(out bool isOk)
       {
-        IMethodAnalysis boundsAnalysis, arrayAnalysis, nonnullAnalysis, enumAnalysis;
+        IMethodAnalysis boundsAnalysis, arrayAnalysis, nonnullAnalysis, enumAnalysis, stringAnalysis;
         bool hasBoundsAnalysis, hasNonNullAnalysis, hasEnumAnalysis;
 
         isOk = true;
@@ -1273,6 +1276,12 @@ namespace Microsoft.Research.CodeAnalysis
               else
               {
                 isOk = false;
+              }
+
+              if (methodAnalyzers.TryGetValue("strings", out stringAnalysis) && analyses.Contains(stringAnalysis))
+              {
+                arrayAnalysis.SetDependency(stringAnalysis);
+                analyses.Remove(stringAnalysis);
               }
 
               ArrayOptions.Trace = this.options.TraceArrayAnalysis;

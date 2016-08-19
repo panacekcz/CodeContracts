@@ -12,6 +12,8 @@
 // 
 // THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// Modified by Vlastimil Dort (2015-2016)
+// Master thesis String Analysis for Code Contracts
 
 using System;
 using System.Collections.Generic;
@@ -33,6 +35,7 @@ namespace Microsoft.Research.CodeAnalysis
       private List<Bounds.BoundsOptions> boundsOptions;      
       private Analyzers.NonNull nonnullAnalysis;
       private bool IsEnumAnalysisSelected = false;
+      private IMethodAnalysis stringAnalysis = null;
       
       #endregion
 
@@ -70,6 +73,11 @@ namespace Microsoft.Research.CodeAnalysis
         if (analysis.Name == "Enum")
         {
           this.IsEnumAnalysisSelected = true;
+        }
+
+        if (analysis.Name == "String")
+        {
+          this.stringAnalysis = analysis;
         }
       }
 
@@ -125,7 +133,7 @@ namespace Microsoft.Research.CodeAnalysis
 
         var analysis =
          new AnalysisWrapper.TypeBindings<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable>.
-           ArrayAnalysis<Analyzers.Arrays.ArrayOptions, Bounds.BoundsOptions>(methodName, arrayAnalysis, numericalAnalysis, nonnullAnalysis, this.IsEnumAnalysisSelected, mdriver, this.options[0], cachePCs);
+           ArrayAnalysis<Analyzers.Arrays.ArrayOptions, Bounds.BoundsOptions>(methodName, arrayAnalysis, numericalAnalysis, nonnullAnalysis, this.IsEnumAnalysisSelected, this.stringAnalysis, mdriver, this.options[0], cachePCs);
 
         return factory.Create(analysis, controller);
       }
@@ -140,7 +148,7 @@ namespace Microsoft.Research.CodeAnalysis
       //where Expression : IEquatable<Expression>
       //where Variable : IEquatable<Variable>
       {
-        return AnalysisWrapper.RunArraysAnalysis(fullMethodName, mdriver, this.options[0], this.boundsOptions, this.nonnullAnalysis, this.IsEnumAnalysisSelected, cachePCs, controller);
+        return AnalysisWrapper.RunArraysAnalysis(fullMethodName, mdriver, this.options[0], this.boundsOptions, this.nonnullAnalysis, this.IsEnumAnalysisSelected, cachePCs, this.stringAnalysis, controller);
       }
 
       override public bool ExecuteAbstractDomainFunctor<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable, Options, Result, Data>(

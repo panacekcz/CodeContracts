@@ -12,6 +12,9 @@
 // 
 // THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// Modified by Vlastimil Dort (2015-2016)
+// Master thesis String Analysis for Code Contracts
+
 #define TRACEPERFORMANCE
 // The array analysis
 
@@ -43,6 +46,7 @@ namespace Microsoft.Research.CodeAnalysis
       List<NumericalOptions> numericaloptions,
       Analyzers.NonNull nonnull,
       bool isEnumAnalysisSelected,
+      IMethodAnalysis stringAnalysis,
       Predicate<APC> cachePCs, DFAController controller
     )
       where Variable : IEquatable<Variable>
@@ -66,7 +70,7 @@ namespace Microsoft.Research.CodeAnalysis
 
       var analysis =
        new TypeBindings<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable>.
-         ArrayAnalysis<Analyzers.Arrays.ArrayOptions, NumericalOptions>(methodName, arrayAnalysis, numericalAnalysis, nonnullAnalysis, isEnumAnalysisSelected, driver, options, cachePCs);
+         ArrayAnalysis<Analyzers.Arrays.ArrayOptions, NumericalOptions>(methodName, arrayAnalysis, numericalAnalysis, nonnullAnalysis, isEnumAnalysisSelected, stringAnalysis, driver, options, cachePCs);
 
       return TypeBindings<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable>.RunTheAnalysis(methodName, driver, analysis, controller);
     }
@@ -131,6 +135,7 @@ namespace Microsoft.Research.CodeAnalysis
           AnalysisDependencies[typeof(RuntimeTypesPlugIn)] = new System.Type[] { };
           AnalysisDependencies[typeof(ArrayExpressionRefinementPlugIn)] = new System.Type[] { };
           AnalysisDependencies[typeof(ArrayPurityAnalysisPlugIn)] = new System.Type[] { };
+          AnalysisDependencies[typeof(StringWrapperPlugIn)] = new System.Type[] { };//TODO: VD: is this now OK?
           AnalysisDependencies[typeof(ExistentialAnalysisPlugIn)] = new System.Type[] { typeof(ArrayPurityAnalysisPlugIn) };
           AnalysisDependencies[typeof(ArrayElementsCheckedAnalysisPlugin)] = new System.Type[] { typeof(ArrayPurityAnalysisPlugIn), typeof(ArrayExpressionRefinementPlugIn) };
         }
@@ -146,7 +151,7 @@ namespace Microsoft.Research.CodeAnalysis
           AnalysisOptions options,
           Predicate<APC> cachePCs
         )
-          : this(methodname, arrayAnalysis, numericalAnalysis, null, false, mdriver, options, cachePCs)
+          : this(methodname, arrayAnalysis, numericalAnalysis, null, false, null, mdriver, options, cachePCs)
         {
           Contract.Requires(options != null);
         }
@@ -157,6 +162,7 @@ namespace Microsoft.Research.CodeAnalysis
         GenericNumericalAnalysis<NumericalOptions> numericalAnalysis,
          Analyzers.NonNull.TypeBindings<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable>.AnalysisForArrays nonnullAnalysis,
           bool isEnumAnalysisSelected,
+          IMethodAnalysis stringAnalysis,
           IMethodDriver<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable, ILogOptions> mdriver,
           AnalysisOptions options,
           Predicate<APC> cachePCs
@@ -171,7 +177,7 @@ namespace Microsoft.Research.CodeAnalysis
 
 
           this.analysisMapping = new int[ArrayState.AdditionalStatesCount];
-          this.additionalAnalyses = SetUpAdditionalAnalyses(out this.pluginCount, isEnumAnalysisSelected, cachePCs).ToArray();
+          this.additionalAnalyses = SetUpAdditionalAnalyses(out this.pluginCount, isEnumAnalysisSelected, stringAnalysis, cachePCs).ToArray();
 
           // The analyses should share the cache, to avoid a memory blowup
           var cacheManager = this.cacheManager;
@@ -184,7 +190,7 @@ namespace Microsoft.Research.CodeAnalysis
         }
 
         // Made pluginCount an out parameter so that we can be sure that we assign it only in the constructor
-        private List<GenericPlugInAnalysisForComposedAnalysis> SetUpAdditionalAnalyses(out int pluginCount, bool isEnumAnalysisSelected, Predicate<APC> cachePCs)
+        private List<GenericPlugInAnalysisForComposedAnalysis> SetUpAdditionalAnalyses(out int pluginCount, bool isEnumAnalysisSelected, IMethodAnalysis stringAnalysis, Predicate<APC> cachePCs)
         {
           Contract.Ensures(Contract.Result<List<GenericPlugInAnalysisForComposedAnalysis>>() != null);
 
@@ -204,6 +210,14 @@ namespace Microsoft.Research.CodeAnalysis
             this.AddAnalysisAndDependencies(
               new EnumAnalysisWrapperPlugIn(enumAnalysis, pluginCount, this.MethodName, this.MethodDriver, this.Options.LogOptions, cachePCs),
               result, cachePCs, ref pluginCount);
+          }
+
+          if (stringAnalysis != null)
+          {
+            this.AddAnalysisAndDependencies(
+              StringWrapperPlugIn.Create(stringAnalysis, pluginCount, this.MethodName, this.MethodDriver, this.Options.LogOptions, cachePCs),
+              result, cachePCs, ref pluginCount
+              );
           }
 
           if (this.Options.RefineArrays)

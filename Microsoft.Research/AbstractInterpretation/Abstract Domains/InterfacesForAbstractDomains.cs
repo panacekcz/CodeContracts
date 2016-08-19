@@ -1853,29 +1853,6 @@ namespace Microsoft.Research.AbstractDomains
 
     #endregion
 
-    internal interface IStringAbstractDomain<Elements, Variable, Expression> :
-      IAbstractDomainForEnvironments<Variable, Expression>
-      where Elements : IStringAbstraction
-    {
-        /// <summary>
-        /// The abstract concatenation
-        /// </summary>
-        void Concat(Expression/*!*/ target, Expression/*!*/ left, Expression/*!*/ right);
-
-        /// <summary>
-        /// Insert <code>what</code> at the position <code>where</code> in <code>target</code>
-        /// </summary>
-        void Insert(Expression/*!*/ target, Expression/*!*/ which, Expression/*!*/ where, Expression/*!*/ what);
-
-        /// <summary>
-        /// Remove all the spaces from <code>who</code>
-        /// </summary>
-        void Trim(Expression/*!*/ who, Expression/*!*/ what);
-
-        FlatAbstractDomain<int> CompareTo(Expression/*!*/ left, Expression/*!*/ right);
-        FlatAbstractDomain<bool> Contains(Expression/*!*/ who, Expression/*!*/ what);
-        FlatAbstractDomain<bool> StartsWith(Expression/*!*/ who, Expression/*!*/ what);
-    }
     #endregion
 
     #region Abstract Domain-specific facts

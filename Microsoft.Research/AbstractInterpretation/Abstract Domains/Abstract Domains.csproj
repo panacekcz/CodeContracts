@@ -186,6 +186,8 @@
     <Compile Include="Array\ArrayState.cs" />
     <Compile Include="Array\NormalizedExpressions.cs" />
     <Compile Include="Array\SegmentLimit.cs" />
+    <Compile Include="String\Brick.cs" />
+    <Compile Include="String\CharInterval.cs" />
     <Compile Include="DebugUtils.cs" />
     <Compile Include="Enum\Enum.cs" />
     <Compile Include="Expressions\Extensions.cs" />
@@ -229,8 +231,66 @@
     <Compile Include="Numerical\TracePartitioning.cs" />
     <Compile Include="Numerical\Pentagons\WeakUpperBounds.cs" />
     <Compile Include="Numerical\Pentagons\WeakUpperBoundsEqual.cs" />
-    <Compile Include="StringDomain.cs" />
     <Compile Include="Numerical\Thresholds.cs" />
+    <Compile Include="String\Bricks.cs" />
+    <Compile Include="String\BricksPolicy.cs" />
+    <Compile Include="String\BricksRegex.cs" />
+    <Compile Include="String\CharacterClassification.cs" />
+    <Compile Include="String\CharacterInclusion.cs" />
+    <Compile Include="String\CharacterInclusionRegex.cs" />
+    <Compile Include="String\CompareResult.cs" />
+    <Compile Include="String\FlatPredicate.cs" />
+    <Compile Include="String\Graphs\BottomNode.cs" />
+    <Compile Include="String\Graphs\CharAtVisitor.cs" />
+    <Compile Include="String\Graphs\CharNode.cs" />
+    <Compile Include="String\Graphs\CompactVisitor.cs" />
+    <Compile Include="String\Graphs\ConcatNode.cs" />
+    <Compile Include="String\Graphs\ConstantsVisitor.cs" />
+    <Compile Include="String\Graphs\ContainsVisitor.cs" />
+    <Compile Include="String\Graphs\CopyVisitor.cs" />
+    <Compile Include="String\Graphs\ExtractAbstractionVisitor.cs" />
+    <Compile Include="String\Graphs\InnerNode.cs" />
+    <Compile Include="String\Graphs\Label.cs" />
+    <Compile Include="String\Graphs\LabelOverlapSolver.cs" />
+    <Compile Include="String\Graphs\LengthVisitor.cs" />
+    <Compile Include="String\Graphs\MaxNode.cs" />
+    <Compile Include="String\Graphs\Node.cs" />
+    <Compile Include="String\Graphs\NodeBuilder.cs" />
+    <Compile Include="String\Graphs\NodeKind.cs" />
+    <Compile Include="String\Graphs\NodeLabels.cs" />
+    <Compile Include="String\Graphs\Normalizer.cs" />
+    <Compile Include="String\Graphs\OrNode.cs" />
+    <Compile Include="String\Graphs\SliceAfterVisitor.cs" />
+    <Compile Include="String\Graphs\SliceBeforeVisitor.cs" />
+    <Compile Include="String\Graphs\SliceVisitor.cs" />
+    <Compile Include="String\Graphs\SuffixVisitor.cs" />
+    <Compile Include="String\Graphs\PrefixVisitor.cs" />
+    <Compile Include="String\Graphs\ReplaceCharVisitor.cs" />
+    <Compile Include="String\Graphs\GraphSlicer.cs" />
+    <Compile Include="String\Graphs\TemporaryNode.cs" />
+    <Compile Include="String\Graphs\ToStringVisitor.cs" />
+    <Compile Include="String\Graphs\TrimEndVisitor.cs" />
+    <Compile Include="String\Graphs\TrimStartVisitor.cs" />
+    <Compile Include="String\Graphs\TrimVisitor.cs" />
+    <Compile Include="String\Graphs\Visitor.cs" />
+    <Compile Include="String\IndexInt.cs" />
+    <Compile Include="String\IndexInterval.cs" />
+    <Compile Include="String\RegexVisitors.cs" />
+    <Compile Include="String\IStringAbstraction.cs" />
+    <Compile Include="String\IStringAbstractDomain.cs" />
+    <Compile Include="String\KMP.cs" />
+    <Compile Include="String\PrefixRegex.cs" />
+    <Compile Include="String\StringAbstractionPredicate.cs" />
+    <Compile Include="String\StringBuilderUtils.cs" />
+    <Compile Include="String\StringGraph.cs" />
+    <Compile Include="String\StringGraphRegex.cs" />
+    <Compile Include="String\StringUtils.cs" />
+    <Compile Include="String\Suffix.cs" />
+    <Compile Include="String\Prefix.cs" />
+    <Compile Include="String\SuffixRegex.cs" />
+    <Compile Include="String\TestVisitor.cs" />
+    <Compile Include="String\Utils.cs" />
+    <Compile Include="String\StringAbstractDomain.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -262,6 +322,10 @@
     <ProjectReference Include="..\..\DataStructures\DataStructures.csproj">
       <Project>{35D2EF6D-DDB0-481B-A21D-9BD2634F503A}</Project>
       <Name>DataStructures</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Regex\Regex.csproj">
+      <Project>{2fa8edcf-ee48-4b8d-b980-41f31b725956}</Project>
+      <Name>Regex</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\RevisedSimplexMethod\RevisedSimplexMethod\RevisedSimplexMethod.csproj">
       <Project>{52b1843a-04c6-48a8-a8f7-c11392c44e7f}</Project>

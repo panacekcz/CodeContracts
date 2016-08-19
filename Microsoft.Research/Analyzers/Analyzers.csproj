@@ -197,6 +197,7 @@
     <Compile Include="Additional Analyses\ArrayPurityAnalysisPlugin.cs" />
     <Compile Include="Additional Analyses\ExistentialAnalysis.cs" />
     <Compile Include="Additional Analyses\RuntimeTypes.cs" />
+    <Compile Include="Additional Analyses\StringWrapperPlugin.cs" />
     <Compile Include="Analyzers.cs" />
     <Compile Include="Arithmetic Analysis\ArithmeticAnalysis.cs" />
     <Compile Include="Arithmetic Analysis\ArithmeticAnalyzer.cs" />
@@ -263,13 +264,13 @@
     <Compile Include="MoveNextGeneric\ClosureClass.cs" />
     <Compile Include="MoveNextGeneric\IteratorAnalyzer.cs" />
     <Compile Include="ProofObligation.cs" />
+    <Compile Include="String Analysis\StringAnalysis.cs" />
     <Compile Include="String Analysis\StringAnalyzer.cs" />
     <Compile Include="EnvironmentAbstractionLayers.cs" />
     <Compile Include="Bounds Analysis\GenericBoundsAnalysis.cs" />
     <Compile Include="Generic Value Analysis\GenericValueAnalysis.cs" />
     <Compile Include="NonNullAnalyzer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="String Analysis\StringAnalysis.cs" />
     <Compile Include="Generic Value Analysis\ValueAnalysisOptions.cs" />
     <Compile Include="SyntacticComplexityAnalysis.cs" />
     <Compile Include="WarningScoresManager.cs" />

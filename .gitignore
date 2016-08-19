@@ -208,3 +208,18 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
+# VD
+/.project
+/.settings
+/Analyze2FromSourcesV35Cache.xml
+/Documentation/**/*.aux
+/Documentation/**/*.bbl
+/Documentation/**/*.blg
+/Documentation/**/*.pdf
+/Documentation/**/*.gz
+/Documentation/**/*.out
+/Documentation/Papers/FoVeOOS/adjusted.tex
+/Documentation/Papers/FoVeOOS/llncsadjusted.cls
+/Documentation/Papers/APLAS2009/llncs.cls
+/Foxtrot/Tests/QuickGraph/QuickGraphBinaries
+/Foxtrot/Tests/RewriteExistingBinaries

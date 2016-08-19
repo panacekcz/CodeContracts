@@ -76,7 +76,7 @@ namespace Microsoft.Research.CodeAnalysis
         }
 
         // Invariant: the enums value below should be >= 0 and consecutive. We use this representation for performance downstream, to avoid dictionaries
-        public enum AdditionalStates { ArrayChecked = 0, ArrayRefinement, ArrayPurity, ArrayValues, Existential, RuntimeTypes, Enum }
+        public enum AdditionalStates { ArrayChecked = 0, ArrayRefinement, ArrayPurity, ArrayValues, Existential, RuntimeTypes, Enum, String }
 
         private readonly ArraySegmentationEnvironment<NonRelationalValueAbstraction<BoxedVariable<Variable>, BoxedExpression>, BoxedVariable<Variable>, BoxedExpression>
           arrayState;
