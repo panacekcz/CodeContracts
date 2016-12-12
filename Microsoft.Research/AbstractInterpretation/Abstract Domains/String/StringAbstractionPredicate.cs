@@ -15,6 +15,7 @@
 // Created by Vlastimil Dort (2015-2016)
 // Master thesis String Analysis for Code Contracts
 
+using Microsoft.Research.DataStructures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -195,6 +196,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
       return variable.ToString() + "=" + trueAbstraction.ToString() + "/" + falseAbstraction.ToString();
     }
 
+    public IStringPredicate AssignInParallel<Variable1>(Dictionary<Variable1, FList<Variable1>> sourcesToTargets)
+    {
+      FList<Variable1> list;
+      if (sourcesToTargets.TryGetValue((Variable1)(object)variable, out list) && !list.IsEmpty())
+      {
+        return new StringAbstractionPredicate<Abstraction, Variable>((Variable)(object)list.Head, trueAbstraction, falseAbstraction);
+      }
+      else
+      {
+        return FlatPredicate.Top;
+      }
+    }
 
     public CodeAnalysis.ProofOutcome ProofOutcome
     {

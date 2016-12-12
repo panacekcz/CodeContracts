@@ -150,7 +150,7 @@ namespace Microsoft.Research.Regex
         case 'f':
           return new AST.Character('\u000C');
         case 'G':
-          return new AST.UnsupportedElement();
+          return new AST.Anchor(AST.AnchorKind.PreviousMatchEnd);
         case 'k':
           return ParseBackReference();
         case 'n':

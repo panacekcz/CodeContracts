@@ -60,6 +60,7 @@
     <Compile Include="IndexIntTest.cs" />
     <Compile Include="PrefixRegexTest.cs" />
     <Compile Include="PrefixOperationsTest.cs" />
+    <Compile Include="TokensTest.cs" />
     <Compile Include="PrefixTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StringAbstractionTestBase.cs" />

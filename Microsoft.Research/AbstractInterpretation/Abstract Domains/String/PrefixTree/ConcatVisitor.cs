@@ -12,8 +12,7 @@
 // 
 // THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// Created by Vlastimil Dort (2015-2016)
-// Master thesis String Analysis for Code Contracts
+// Created by Vlastimil Dort (2016)
 
 using System;
 using System.Collections.Generic;
@@ -21,22 +20,36 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StringDomainUnitTests
+namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-  /// <summary>
-  /// A class used as a type of variable in tests of 
-  /// predicate methods.
-  /// </summary>
-  public class TestVariable : IEquatable<TestVariable>
+  /*
+  class RepeatVisitor : PrefixTreeVisitor
   {
-    public static readonly TestVariable Var1 = new TestVariable();
-    public static readonly TestVariable Var2 = new TestVariable();
-
-    private TestVariable() { }
-
-    public bool Equals(TestVariable other)
+    protected override TrieNode VisitLeafNode(LeafNode inn)
     {
-      return object.ReferenceEquals(this, other);
+      return base.VisitLeafNode(inn);
     }
   }
+
+  class ConcatVisitor : PrefixTreeTransformer
+  {
+    private InnerNode append;
+
+    public InnerNode Concat(InnerNode left, InnerNode right)
+    {
+      append = right;
+      return Transform(left);
+    }
+
+
+    protected override TrieNode VisitRepeatNode(RepeatNode inn)
+    {
+      if (!inn.repeat)
+      {
+
+      }
+
+    }
+  }*/
+
 }

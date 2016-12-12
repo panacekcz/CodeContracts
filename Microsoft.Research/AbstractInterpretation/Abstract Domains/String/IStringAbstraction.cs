@@ -21,6 +21,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Research.CodeAnalysis;
+using Microsoft.Research.DataStructures;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
@@ -95,6 +96,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
   /// </summary>
   public interface IStringPredicate : IAbstractDomain
   {
+    IStringPredicate AssignInParallel<Variable>(Dictionary<Variable, FList<Variable>> sourcesToTargets);
     bool ContainsValue(bool value);
     ProofOutcome ProofOutcome { get; }
   }
@@ -309,6 +311,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
     IStringPredicate RegexIsMatch(StringAbstraction self, Variable selfVariable, Regex.AST.Element regex);
   }
 
+  public interface IStringIntervalOperations<StringAbstraction, Variable> : IStringOperations<StringAbstraction, Variable>
+  where StringAbstraction : IStringInterval<StringAbstraction>
+  where Variable : IEquatable<Variable>
+  {
+    IStringPredicate StartsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, IOrderQuery<Variable> orderQuery);
+    IStringPredicate Equals(WithConstants<StringAbstraction> self, Variable selfVariable,
+       WithConstants<StringAbstraction> other, Variable otherVariable, IOrderQuery<Variable> orderQuery);
+
+    IEnumerable<OrderPredicate<Variable>> ConcatOrder(Variable targetVariable, Variable selfVariable, Variable otherVariable);
+  }
+
+
   /// <summary>
   /// The interface for a factory creating abstract elements
   /// of an abstract domain for strings.
@@ -422,5 +436,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
     }
   }
 
-
+  public interface IStringInterval<Self> : IStringAbstraction<Self, string>
+    where Self:IStringAbstraction<Self, string>
+  {
+    bool CheckMustBeLessEqualThan(Self greaterEqual);
+    bool TryRefineLessEqual(ref Self lessEqual);
+    bool TryRefineGreaterEqual(ref Self greaterEqual);
+  }
 }

@@ -22,6 +22,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.Research.CodeAnalysis;
+using Microsoft.Research.DataStructures;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
@@ -248,6 +249,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
         return false;
       }
       return other.canBeFalse == canBeFalse && other.canBeTrue == canBeTrue;
+    }
+
+    public IStringPredicate AssignInParallel<Variable>(Dictionary<Variable, FList<Variable>> sourcesToTargets)
+    {
+      return this;
     }
 
     /// <summary>

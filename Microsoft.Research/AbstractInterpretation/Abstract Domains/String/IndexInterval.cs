@@ -136,6 +136,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
       }
     }
 
+    public static IndexInterval Unreached {
+      get
+      {
+        return new IndexInterval(IndexInt.Infinity, IndexInt.Negative);
+      }
+    }
+
     /// <summary>
     /// Gets an index interval representing an unknown value (top).
     /// </summary>
@@ -290,6 +297,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
       }
 
       return IndexInterval.For(lowerAfter, upperAfter);
+    }
+
+    public IndexInterval Add(int offset)
+    {
+      return new IndexInterval(lowerBound.Add(offset), upperBound.Add(offset));
+
     }
   }
 }

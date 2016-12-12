@@ -24,7 +24,12 @@ using Microsoft.Research.DataStructures;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-
+  internal enum NullHandling
+  {
+    Exception,
+    Empty,
+    Distinct,
+  }
   public class SimpleFunctionalAbstractDomain<Domain, Codomain> : FunctionalAbstractDomain<SimpleFunctionalAbstractDomain<Domain, Codomain>, Domain, Codomain>
       where Codomain : class,IAbstractDomain
   {
@@ -312,7 +317,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         // Update the values
         foreach (var exp in sourcesToTargets.Keys)
         {
-          var value = rvalues[exp];   // The new value in the pre-state
+          var value = rvalues[exp].AssignInParallel(sourcesToTargets);   // The new value in the pre-state
 
           foreach (var target in sourcesToTargets[exp].GetEnumerable())
           {
@@ -1257,12 +1262,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
       return EvalStringArgument(expression, out variable, nullHandling);
     }
 
-    private enum NullHandling
-    {
-      Exception,
-      Empty,
-      Distinct,
-    }
+  
 
     private WithConstants<StringAbstraction> EvalStringArgument(Expression expression, out Variable variable, NullHandling nullHandling)
     {

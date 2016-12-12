@@ -12,8 +12,7 @@
 // 
 // THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// Created by Vlastimil Dort (2015-2016)
-// Master thesis String Analysis for Code Contracts
+// Created by Vlastimil Dort (2016)
 
 using System;
 using System.Collections.Generic;
@@ -21,22 +20,50 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StringDomainUnitTests
+namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-  /// <summary>
-  /// A class used as a type of variable in tests of 
-  /// predicate methods.
-  /// </summary>
-  public class TestVariable : IEquatable<TestVariable>
+  class PrefixTreeBuilder
   {
-    public static readonly TestVariable Var1 = new TestVariable();
-    public static readonly TestVariable Var2 = new TestVariable();
-
-    private TestVariable() { }
-
-    public bool Equals(TestVariable other)
+    public static InnerNode Empty()
     {
-      return object.ReferenceEquals(this, other);
+      return new InnerNode(true);
+    }
+
+    public static InnerNode Unknown()
+    {
+      InnerNode top = new InnerNode(true);
+      for(int i=char.MinValue; i <= char.MaxValue; ++i)
+      {
+        top.children[(char)i] = RepeatNode.Repeat;
+      }
+
+      return top;
+    }
+
+
+    public static InnerNode Unreached()
+    {
+      return new InnerNode(false);
+    }
+
+
+    private static InnerNode PrependChar(char c, PrefixTreeNode tn)
+    {
+      InnerNode inn = new InnerNode(false);
+      inn.children[c] = tn;
+      return inn;
+    }
+
+    public static InnerNode FromString(string c)
+    {
+      InnerNode tn = Empty();
+
+      for (int i = c.Length - 1; i >= 0; --i)
+      {
+        tn = PrependChar(c[i], tn);
+      }
+
+      return tn;
     }
   }
 }

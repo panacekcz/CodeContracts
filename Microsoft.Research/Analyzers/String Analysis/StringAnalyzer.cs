@@ -27,7 +27,9 @@ namespace Microsoft.Research.CodeAnalysis
     {
       public enum StringDomainKind
       {
-        Prefix, Suffix, CharacterInclusionFull, CharacterInclusionASCII, Bricks, StringGraphs
+        Prefix, Suffix, CharacterInclusionFull, CharacterInclusionASCII, Bricks, StringGraphs,
+        PrefixIntervals, PrefixPentagons,
+        Tokens,
       }
 
       public class StringOptions

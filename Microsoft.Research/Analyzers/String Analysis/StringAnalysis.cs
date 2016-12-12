@@ -68,11 +68,31 @@ namespace Microsoft.Research.CodeAnalysis
           return new StringAbstractDomain<BoxedVariable<Variable>, BoxedExpression, StringAbstraction>(decoder, operations);
         }
       }
+      internal class StringPentagonsFactory<StringAbstraction> : IStringAbstractDomainFactory
+        where StringAbstraction : class, IStringInterval<StringAbstraction>
+      {
+        private readonly IStringIntervalOperations<StringAbstraction, BoxedVariable<Variable>> operations;
+
+        public StringPentagonsFactory(IStringIntervalOperations<StringAbstraction, BoxedVariable<Variable>> operations)
+        {
+          this.operations = operations;
+        }
+
+        public IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> CreateTopValue(BoxedExpressionDecoder<Variable> decoder)
+        {
+          return new StringPentagons<BoxedVariable<Variable>, BoxedExpression, StringAbstraction>(decoder, operations);
+        }
+      }
 
       private static IStringAbstractDomainFactory CreateFactoryForAbstraction<StringAbstraction>(IStringOperations<StringAbstraction, BoxedVariable<Variable>> operations)
         where StringAbstraction : class, IStringAbstraction<StringAbstraction, string>
       {
         return new StringAbstractDomainFactory<StringAbstraction>(operations);
+      }
+      private static IStringAbstractDomainFactory CreatePentagonFactoryForAbstraction<StringAbstraction>(IStringIntervalOperations<StringAbstraction, BoxedVariable<Variable>> operations)
+        where StringAbstraction : class, IStringInterval<StringAbstraction>
+      {
+        return new StringPentagonsFactory<StringAbstraction>(operations);
       }
 
       internal static IStringAbstractDomainFactory CreateFactoryForAbstraction(Analyzers.Strings.StringDomainKind kind)
@@ -92,6 +112,12 @@ namespace Microsoft.Research.CodeAnalysis
             return CreateFactoryForAbstraction(new AbstractDomains.Strings.Bricks.Operations<BoxedVariable<Variable>>(policy));
           case Analyzers.Strings.StringDomainKind.StringGraphs:
             return CreateFactoryForAbstraction(new AbstractDomains.Strings.StringGraph.Operations<BoxedVariable<Variable>>());
+          case Analyzers.Strings.StringDomainKind.PrefixIntervals:
+            return CreateFactoryForAbstraction(new AbstractDomains.Strings.PrefixInterval.Operations<BoxedVariable<Variable>>());
+          case Analyzers.Strings.StringDomainKind.PrefixPentagons:
+            return CreatePentagonFactoryForAbstraction(new AbstractDomains.Strings.PrefixInterval.Operations<BoxedVariable<Variable>>());
+          case Analyzers.Strings.StringDomainKind.Tokens:
+            return CreateFactoryForAbstraction(new AbstractDomains.Strings.Tokens.Operations<BoxedVariable<Variable>>());
           default:
             throw new NotImplementedException("String abstract domain is not implemented");
         }
@@ -573,7 +599,50 @@ namespace Microsoft.Research.CodeAnalysis
 
         public override bool SuggestAnalysisSpecificPostconditions(ContractInferenceManager inferenceManager, IFixpointInfo<APC, IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression>> fixpointInfo, List<BoxedExpression> postconditions)
         {
-          // does nothing
+#if false
+          var method = this.MethodDriver.CurrentMethod;
+          var retType = this.MethodDriver.MetaDataDecoder.ReturnType(method);
+
+          //TODO: extend for other string types
+          if (retType.Equals(this.MethodDriver.MetaDataDecoder.System_String)) {
+            var normalExitPC = this.Context.MethodContext.CFG.NormalExit;
+
+            IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> astate;
+            if (PreState(normalExitPC, fixpointInfo, out astate) && !astate.IsTop)
+            {
+              Variable retVar;
+              /*if (this.Context.ValueContext.TryResultValue(normalExitPC, out retVar))
+              {//)
+               //retVar.
+
+                var newExp = BoxedExpression.BinaryMethodToCall(BinaryOperator.Cle, BoxedExpression.Var(retVar), BoxedExpression.Var(retVar), "RetVar");
+                postconditions.Add(newExp);
+              }*/
+              if (this.Context.ValueContext.TryParameterValue(normalExitPC, this.MethodDriver.MetaDataDecoder.Parameters(method)[0], out retVar))
+              {
+                var newExp = BoxedExpression.BinaryMethodToCall(BinaryOperator.Cle, BoxedExpression.Var(retVar), BoxedExpression.Var(retVar), "Param");
+                var expInPostState
+              = new BoxedExpressionReader<Local, Parameter, Method, Field, Property, Event, Type, Variable, Expression, Attribute, Assembly>(this.Context, this.DecoderForMetaData, this.MethodDriver.DisjunctiveExpressionRefiner);
+
+                Details details;
+                var post =
+             expInPostState.ExpressionInPostState(newExp.MakeItPrettier(this.Decoder, this.Encoder), true, true, true, out details);
+
+                if (post != null
+                  && !IsTrivialBound(post)              // Filter all the postconditions from types
+                  && !post.IsConstantTrue()
+                  && (!details.HasOldVariable || details.HasCompoundExp)) // HasOldVariable ==> HasCompoundExp
+                {
+                  postconditions.Add(post);//BoxedExpression.Var()
+                }
+              }
+
+              //BoxedExpression.
+              var newRExp = BoxedExpression.BinaryMethodToCall(BinaryOperator.Cle, BoxedExpression.Result(retType), BoxedExpression.Result(retType), "StartsWith");
+              postconditions.Add(newRExp);
+            }
+          }
+#endif
           return false;
         }
 
@@ -587,18 +656,18 @@ namespace Microsoft.Research.CodeAnalysis
           return abstractDomainFactory.CreateTopValue(this.Decoder);
 
         }
-        #endregion
+#endregion
 
-        #region IMethodResult<Label,Expression> Members
+#region IMethodResult<Label,Expression> Members
 
         public ProofOutcome ValidateExplicitAssertion(APC pc, Expression expr)
         {
           throw new Exception("The method or operation is not implemented.");
         }
 
-        #endregion
+#endregion
 
-        #region Fact Query
+#region Fact Query
 
         public override IFactQuery<BoxedExpression, Variable> FactQuery(IFixpointInfo<APC, IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression>> fixpoint)
         {
@@ -628,7 +697,7 @@ namespace Microsoft.Research.CodeAnalysis
           }
 
 
-          #region IFactBase<Variable> Members
+#region IFactBase<Variable> Members
 
           public ProofOutcome IsNull(APC pc, Variable variable)
           {
@@ -649,10 +718,10 @@ namespace Microsoft.Research.CodeAnalysis
             return FList<BoxedExpression>.Empty;
           }
 
-          #endregion
+#endregion
         }
 
-        #endregion
+#endregion
       }
 
     }

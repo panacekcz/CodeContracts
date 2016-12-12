@@ -403,6 +403,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
     }
     #endregion
 
+    public IndexInt Add(int offset)
+    {
+      if (IsNegative || IsInfinite)
+        return this;
+      else
+        return For(value + offset); //TODO: VD: overflow
+    }
+
     public IndexInt Divide(IndexInt divisor)
     {
       if(divisor.IsNegative || IsNegative)
