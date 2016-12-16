@@ -240,8 +240,30 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
     public void Contains(Expression targetExp, Expression valueExp, Expression partExp)
     {
-      throw new NotImplementedException();
-    }
+            Variable partVar, valueVar;
+            WithConstants<StringAbstraction> partAbstraction = EvalStringArgument(partExp, out partVar, NullHandling.Exception);
+            WithConstants<StringAbstraction> valueAbstraction = EvalStringArgument(valueExp, out valueVar, NullHandling.Exception);
+
+            IStringPredicate targetPredicate;
+
+            if (partAbstraction.IsConstant && valueAbstraction.IsConstant)
+            {
+                bool result;
+                result = valueAbstraction.Constant.Contains(partAbstraction.Constant);
+
+                targetPredicate = new FlatPredicate(result);
+            }
+            else if (partAbstraction.IsBottom || valueAbstraction.IsBottom)
+            {
+                targetPredicate = FlatPredicate.Bottom;
+            }
+            else
+            {
+                targetPredicate = operations.Contains(valueAbstraction, valueVar, partAbstraction, partVar);
+            }
+
+            AssignPredicate(targetExp, targetPredicate);
+        }
 
     public void StartsWith(Expression targetExp, Expression valueExp, Expression partExp, Expression comparisonExp)
     {
@@ -281,8 +303,39 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
     public void EndsWith(Expression targetExp, Expression valueExp, Expression partExp, Expression comparisonExp)
     {
-      throw new NotImplementedException();
-    }
+            int comparison;
+
+            if (TryEvalIntConstant(comparisonExp, out comparison) && (StringComparison)comparison == StringComparison.Ordinal)
+            {
+                Variable partVar, valueVar;
+                WithConstants<StringAbstraction> partAbstraction = EvalStringArgument(partExp, out partVar, NullHandling.Exception);
+                WithConstants<StringAbstraction> valueAbstraction = EvalStringArgument(valueExp, out valueVar, NullHandling.Exception);
+
+                IStringPredicate targetPredicate;
+
+                if (partAbstraction.IsConstant && valueAbstraction.IsConstant)
+                {
+                    bool result;
+                    result = valueAbstraction.Constant.EndsWith(partAbstraction.Constant, StringComparison.Ordinal);
+
+                    targetPredicate = new FlatPredicate(result);
+                }
+                else if (partAbstraction.IsBottom || valueAbstraction.IsBottom)
+                {
+                    targetPredicate = FlatPredicate.Bottom;
+                }
+                else
+                {
+                    targetPredicate = operations.EndsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, this);
+                }
+
+                AssignPredicate(targetExp, targetPredicate);
+            }
+            else
+            {
+                UnassignPredicate(targetExp);
+            }
+        }
 
     public void Equals(Expression targetExp, Expression leftExp, Expression rightExp, INullQuery<Variable> nullQuery)
     {
