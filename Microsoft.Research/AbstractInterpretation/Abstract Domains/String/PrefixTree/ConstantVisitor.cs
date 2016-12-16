@@ -22,50 +22,44 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-  
-  class RepeatVisitor : PrefixTreeTransformer
-  {
-        PrefixTreeNode root;
 
-        public PrefixTreeNode Repeat(PrefixTreeNode root)
+    class ConcatVisitor : PrefixTreeVisitor<bool>
+    {
+        private StringBuilder sb;
+
+        public string GetConstant(PrefixTreeNode root)
         {
-            this.root = root;
-            return VisitNodeCached(root);
-        }
-
-
-        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
-        {
-            if (inn.Accepting && inn != root)
-                return Cutoff(inn);
+            sb = new StringBuilder();
+            if (VisitNode(root))
+                return sb.ToString();
             else
-                return VisitNodeCached(inn);
+                return null;
         }
-        protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
+
+
+        protected override bool VisitRepeatNode(RepeatNode inn)
         {
-            return inn;
+            return false;
+
+        }
+        protected override bool VisitInnerNode(InnerNode inn)
+        {
+            if (inn.Accepting)
+            {
+                return inn.children.Count == 0;
+            }
+            else
+            {
+                if (inn.children.Count != 1)
+                    return false;
+                foreach (var child in inn.children)
+                {
+                    sb.Append(child.Key);
+                    return VisitNode(child.Value);
+                }
+                return false;
+            }
         }
     }
-    /*
-  class ConcatVisitor : PrefixTreeTransformer
-  {
-    private InnerNode append;
-
-    public InnerNode Concat(InnerNode left, InnerNode right)
-    {
-      append = right;
-      return Transform(left);
-    }
-
-
-    protected override TrieNode VisitRepeatNode(RepeatNode inn)
-    {
-      if (!inn.repeat)
-      {
-
-      }
-
-    }
-  }*/
 
 }

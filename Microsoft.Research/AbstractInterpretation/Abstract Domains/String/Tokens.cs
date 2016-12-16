@@ -190,6 +190,28 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
       public Tokens PadRight(Tokens self, IndexInterval length, CharInterval fill)
       {
+                LengthIntervalVisitor liv = new LengthIntervalVisitor();
+                IndexInterval oldLength = liv.GetLengthInterval(self.root);
+
+                if (oldLength.LowerBound >= length.UpperBound)
+                {
+                    //The string must be longer, no action
+                    return self;
+                }
+                else if(oldLength.IsFiniteConstant && length.IsFiniteConstant)
+                {
+                    // We know exactly how many characters to add
+                    PrefixTreeNode padding = PrefixTreeBuilder.FromCharInterval(fill, length.LowerBound.AsInt - oldLength.UpperBound.AsInt);
+                    
+                    //TODO: concatenate padding
+                }
+                else
+                {
+                    //TODO: change accepting to repeat
+                    PrefixTreeNode padding = PrefixTreeBuilder.CharIntervalTokens(fill);
+                    //TODO: join padding
+                }
+                
         //TODO:
         // compare lengths
         // add repeating node, or add constant string of fill chars at accepting nodes
@@ -261,6 +283,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
       public IStringPredicate Equals(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
       {
+                //True only if both are constants
         // return self predicate
         throw new NotImplementedException();
       }
@@ -293,7 +316,21 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
       public IStringPredicate RegexIsMatch(Tokens self, Variable selfVariable, Element regex)
       {
-        throw new NotImplementedException();
+                //regex underapprox less equal self -> return true
+                //self meet regex overapprox is bottom -> return false
+                // else return overapprox predicate.
+                Tokens regexUnder = TokensRegex.FromRegex(regex, true);
+                if (self.LessThanEqual(regexUnder))
+                    return FlatPredicate.True;
+
+
+                Tokens regexOver = TokensRegex.FromRegex(regex, false);
+                if (self.Meet(regexOver).IsBottom)
+                    return FlatPredicate.False;
+
+
+                return StringAbstractionPredicate.ForTrue(selfVariable, regexOver);
+        //throw new NotImplementedException();
       }
 
       public Tokens Constant(string constant)
@@ -354,7 +391,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
     public IAbstractDomain Widening(IAbstractDomain prev)
     {
-      throw new NotImplementedException();
+            Tokens join = Join(prev as Tokens);
+            RepeatVisitor rv = new RepeatVisitor();
+            return new Tokens((InnerNode)rv.Repeat(join.root));
+      
     }
 
     public T To<T>(IFactory<T> factory)

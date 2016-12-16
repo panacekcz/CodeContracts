@@ -22,50 +22,56 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-  
-  class RepeatVisitor : PrefixTreeTransformer
-  {
-        PrefixTreeNode root;
 
-        public PrefixTreeNode Repeat(PrefixTreeNode root)
+    class ReplaceCharVisitor : PrefixTreeTransformer
+    {
+        private CharInterval from, to;
+
+        public InnerNode ReplaceChar(InnerNode root, CharInterval from, CharInterval to)
         {
-            this.root = root;
-            return VisitNodeCached(root);
+            this.from = from;
+            this.to = to;
+            return Transform(root);
         }
 
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
-        {
-            if (inn.Accepting && inn != root)
-                return Cutoff(inn);
-            else
-                return VisitNodeCached(inn);
-        }
         protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
         {
             return inn;
+
+        }
+        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
+        {
+              
+            InnerNode newInn = null;
+            PrefixTreeNode next = null;
+
+            
+            foreach(var child in inn.children)
+            {
+                if (from.Contains(child.Key))
+                {
+                    if(newInn == null)
+                        newInn = new InnerNode(inn);
+
+                    if (from.IsConstant)
+                        newInn.children.Remove(child.Key);
+
+                    next = Merge(next, child.Value);
+                }
+                if (to.Contains(child.Key))
+                {
+                    //TODO: order is completely wrong
+                    next = Merge(next, child.Value);
+                    newInn.children[child.Key] = next;
+                }
+
+            }
+
+
+            return newInn ?? inn;
+
         }
     }
-    /*
-  class ConcatVisitor : PrefixTreeTransformer
-  {
-    private InnerNode append;
-
-    public InnerNode Concat(InnerNode left, InnerNode right)
-    {
-      append = right;
-      return Transform(left);
-    }
-
-
-    protected override TrieNode VisitRepeatNode(RepeatNode inn)
-    {
-      if (!inn.repeat)
-      {
-
-      }
-
-    }
-  }*/
 
 }

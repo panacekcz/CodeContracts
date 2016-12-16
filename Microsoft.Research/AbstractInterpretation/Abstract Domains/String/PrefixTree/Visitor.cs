@@ -60,7 +60,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
   internal class TrieShare
   {
-    private Dictionary<PrefixTreeNode, PrefixTreeNode> nodes = new Dictionary<PrefixTreeNode, PrefixTreeNode>();
+    private Dictionary<PrefixTreeNode, PrefixTreeNode> nodes = new Dictionary<PrefixTreeNode, PrefixTreeNode>(new PrefixTreeNodeComparer());
 
     public PrefixTreeNode Share(PrefixTreeNode tn)
     {
@@ -120,7 +120,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
       return merged;
     }
 
-    private PrefixTreeNode Merge(PrefixTreeNode oldNode, PrefixTreeNode newNode)
+    internal PrefixTreeNode Merge(PrefixTreeNode oldNode, PrefixTreeNode newNode)
     {
       // Trie merging
       // - if any of the two nodes is accepting, cut them off and make root accepting

@@ -22,48 +22,89 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-  class PrefixTreeBuilder
-  {
-    public static InnerNode Empty()
+    class PrefixTreeBuilder
     {
-      return new InnerNode(true);
+        public static InnerNode Empty()
+        {
+            return new InnerNode(true);
+        }
+
+        public static InnerNode Unknown()
+        {
+            InnerNode top = new InnerNode(true);
+            for (int i = char.MinValue; i <= char.MaxValue; ++i)
+            {
+                top.children[(char)i] = RepeatNode.Repeat;
+            }
+
+            return top;
+        }
+
+
+        public static InnerNode Unreached()
+        {
+            return new InnerNode(false);
+        }
+
+
+        private static InnerNode PrependChar(char c, PrefixTreeNode tn)
+        {
+            InnerNode inn = new InnerNode(false);
+            inn.children[c] = tn;
+            return inn;
+        }
+
+        public static InnerNode FromString(string c)
+        {
+            InnerNode tn = Empty();
+
+            for (int i = c.Length - 1; i >= 0; --i)
+            {
+                tn = PrependChar(c[i], tn);
+            }
+
+            return tn;
+        }
+
+        public static PrefixTreeNode FromToken(string c)
+        {
+            if (c == "")
+                return Empty();
+            PrefixTreeNode tn = RepeatNode.Repeat;
+
+            for (int i = c.Length - 1; i >= 0; --i)
+            {
+                tn = PrependChar(c[i], tn);
+            }
+
+            return tn;
+        }
+
+        public static PrefixTreeNode FromCharInterval(CharInterval interval, int repeat = 1)
+        {
+            PrefixTreeNode e = Empty();
+            for(int i = 0; i < repeat; ++i)
+            {
+                e = CharIntervalNode(interval, e);
+            }
+            return e;
+        }
+        public static PrefixTreeNode CharIntervalTokens(CharInterval interval)
+        {
+            return CharIntervalNode(interval, RepeatNode.Repeat);
+        }
+
+
+        private static InnerNode CharIntervalNode(CharInterval interval, PrefixTreeNode next)
+        {
+            InnerNode node = new InnerNode(true);
+            for (int i = interval.LowerBound; i <= interval.UpperBound; ++i)
+            {
+                node.children[(char)i] = next;
+            }
+
+            return node;
+        }
+
     }
-
-    public static InnerNode Unknown()
-    {
-      InnerNode top = new InnerNode(true);
-      for(int i=char.MinValue; i <= char.MaxValue; ++i)
-      {
-        top.children[(char)i] = RepeatNode.Repeat;
-      }
-
-      return top;
-    }
-
-
-    public static InnerNode Unreached()
-    {
-      return new InnerNode(false);
-    }
-
-
-    private static InnerNode PrependChar(char c, PrefixTreeNode tn)
-    {
-      InnerNode inn = new InnerNode(false);
-      inn.children[c] = tn;
-      return inn;
-    }
-
-    public static InnerNode FromString(string c)
-    {
-      InnerNode tn = Empty();
-
-      for (int i = c.Length - 1; i >= 0; --i)
-      {
-        tn = PrependChar(c[i], tn);
-      }
-
-      return tn;
-    }
-  }
 }

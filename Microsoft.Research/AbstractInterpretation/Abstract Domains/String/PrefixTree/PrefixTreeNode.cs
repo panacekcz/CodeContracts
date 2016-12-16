@@ -27,10 +27,12 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
  
   }
 
-  public class InnerNode : PrefixTreeNode
+  
+
+    public class InnerNode : PrefixTreeNode
   {
     internal Dictionary<char, PrefixTreeNode> children;
-    private readonly bool accepting;
+    internal bool accepting;
 
     public bool Accepting { get { return accepting; } }
 
@@ -45,38 +47,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
       children = new Dictionary<char, PrefixTreeNode>(inn.children);
     }
 
-    public override bool Equals(object obj)
-    {
-      if ((object)obj == this)
-        return true;
-
-      InnerNode inn = obj as InnerNode;
-      if ((object)inn == null)
-        return false;
-
-
-      if (children.Count != inn.children.Count)
-        return false;
-
-      foreach(var x in children)
-      {
-        if (!x.Value.Equals(inn.children[x.Key]))
-          return false;
-      }
-
-      return true;
-    }
-
-    public override int GetHashCode()
-    {
-      int hc = Accepting ? 111 : 222;
-      foreach(var x in children)
-      {
-        hc += x.Key * x.Value.GetHashCode();
-      }
-
-      return hc;
-    }
+  
   }
 
   public class RepeatNode : PrefixTreeNode

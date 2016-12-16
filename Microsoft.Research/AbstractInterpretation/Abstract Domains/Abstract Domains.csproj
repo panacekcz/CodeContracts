@@ -278,7 +278,12 @@
     <Compile Include="String\CompareInterval.cs" />
     <Compile Include="String\OrderPredicate.cs" />
     <Compile Include="String\PrefixInterval.cs" />
+    <Compile Include="String\PrefixTree\ConstantVisitor.cs" />
+    <Compile Include="String\PrefixTree\PrefixTreeNodeComparer.cs" />
+    <Compile Include="String\PrefixTree\ReplaceCharVisitor.cs" />
     <Compile Include="String\PrefixTree\PrefixTreeUtils.cs" />
+    <Compile Include="String\PrefixTree\SubstringVisitor.cs" />
+    <Compile Include="String\PrefixTree\ToStringVisitor.cs" />
     <Compile Include="String\RegexVisitors.cs" />
     <Compile Include="String\IStringAbstraction.cs" />
     <Compile Include="String\IStringAbstractDomain.cs" />

@@ -37,6 +37,8 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
   public static class PrefixTreeUtils
   {
+
+
     public static bool LessEqual(InnerNode le, InnerNode ge)
     {
       if (le == ge)

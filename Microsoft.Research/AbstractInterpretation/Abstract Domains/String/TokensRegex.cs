@@ -26,91 +26,17 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-/*  class TokensRegexMatch : SimpleRegexVisitor<ProofOutcome, InnerNode>
-  {
 
-    private InnerNode root;
-
-    protected override ProofOutcome Unsupported(Element regex, ref InnerNode data)
-    {
-      data = null;
-      return ProofOutcome.Top;
-    }
-
-    protected override ProofOutcome Visit(Empty element, ref InnerNode data)
-    {
-      return ProofOutcome.True;
-    }
-
-    protected override ProofOutcome Visit(SingleElement element, ref InnerNode data)
-    {
-      if (data == null)
-      {
-        // We do not know the position in the trie
-        return ProofOutcome.Top;
-      }
-      else
-      {
-        PrefixTreeNode next;
-        if (!data.children.TryGetValue(cl, out next))
-        {
-          return ProofOutcome.False;
-        }
-        else if (next is RepeatNode)
-          data = root;
-        else
-          data = (InnerNode)next;
-      }
-    }
-
-    protected override ProofOutcome Visit(Loop element, ref InnerNode data)
-    {
-      throw new NotImplementedException();
-    }
-
-    protected override ProofOutcome Visit(Concatenation element, ref InnerNode data)
-    {
-      ProofOutcome o = ProofOutcome.True;
-      foreach (Element e in element.Parts)
-      {
-        VisitElement(e, ref data);
-      }
-
-      return o;
-    }
-
-    protected override ProofOutcome Visit(Anchor element, ref InnerNode data)
-    {
-      if (element.IsStartAnchor())
-      {
-        data = root;
-        return ProofOutcome.True;
-      }
-      else
-      {
-        data = root;
-        return ProofOutcome.Top;
-      }
-    }
-
-    protected override ProofOutcome Visit(Alternation element, ref InnerNode data)
-    {
-      InnerNode advanced = null;
-      foreach (Element e in element.Patterns)
-      {
-        InnerNode next = data;
-        VisitElement(e, ref next);
-      }
-
-      data = advanced;
-
-      throw new NotImplementedException();
-    }
-  }
 
 
   class TokensFromRegex : SimpleRegexVisitor<InnerNode, Void>
   {
+        private bool underapprox;
+        public TokensFromRegex(bool underapprox)
+        {
+            this.underapprox = underapprox;
+        }
+
     protected override InnerNode Unsupported(Element regex, ref Void data)
     {
       return PrefixTreeBuilder.Unknown();
@@ -156,6 +82,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
     }
 
 
+        public InnerNode Build(Element element)
+        {
+            Void v = null;
+            return VisitSimpleRegex(element, ref v);
+        }
+
+
   }
-  */
+  
+    internal class TokensRegex
+    {
+        public static Tokens FromRegex(Element regex, bool underapprox)
+        {
+            TokensFromRegex tfr = new TokensFromRegex(underapprox);
+
+            return new Tokens(tfr.Build(regex));
+        }
+    }
 }
