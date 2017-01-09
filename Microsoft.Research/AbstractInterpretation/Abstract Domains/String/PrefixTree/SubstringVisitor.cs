@@ -6,56 +6,84 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-    class IntervalMarkVisitor : CachedPrefixTreeVisitor<Void>
+    class  MarkSplitVisitor : PrefixTreeTransformer
     {
-        HashSet<PrefixTreeNode> markedStates;
-        IndexInterval interval;
-        int depth;
+        HashSet<InnerNode> markedStates;
 
-        public void MarkNodes(InnerNode root, IndexInterval interval, HashSet<PrefixTreeNode> marks)
-        {
-            depth = 0;
-            markedStates = marks;
-            this.interval = interval;
-            VisitNodeCached(root);
 
-            markedStates = null;
+        public MarkSplitVisitor(PrefixTreeMerger merger, HashSet<InnerNode> marked) : base(merger) {
+            this.markedStates = marked;
         }
 
-        protected override Void VisitInnerNode(InnerNode inn)
+        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
         {
-            if (interval.ContainsValue(depth))
-                markedStates.Add(inn);
+            if (markedStates.Contains(inn))
+                return Cutoff(inn);
+            else
+                return inn;
 
-            ++depth;
-            foreach(var v in inn.children)
-            {
-                VisitNodeCached(v.Value);
-            }
-            --depth;
-
-            return null;
         }
 
-        protected override Void VisitRepeatNode(RepeatNode inn)
+        protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
         {
             // nothing
-            return null;
+            return inn;
         }
-    }
-
-
-    class SubstringVisitor
-    {
-        HashSet<PrefixTreeNode> startStates = new HashSet<PrefixTreeNode>();
-
-        public InnerNode Substrings(InnerNode root, IndexInterval start, IndexInterval length)
+        public void Split(InnerNode root)
+        {
+            Transform(root);
+        }
+        /*public void Substrings(InnerNode root, IndexInterval start, IndexInterval length)
         {
             LengthCongruenceVisitor lcv = new LengthCongruenceVisitor();
             //Congruence cong = lcv.GetLengthCommonDivisor(root);
 
-            throw new NotImplementedException();
+            IntervalMarkVisitor mv = new IntervalMarkVisitor(start);
+
+            Transform(root);
+        }*/
+    }
+    abstract class IntervalVisitor : ForwardVisitor<IndexInterval>
+    {
+
+        protected override IndexInterval Default()
+        {
+            return IndexInterval.Unreached;
         }
 
+        protected override IndexInterval Merge(IndexInterval oldData, IndexInterval newData)
+        {
+            return oldData.Join(newData);
+        }
+        protected void PushChildren(InnerNode node, IndexInterval curr)
+        {
+            foreach (var c in node.children)
+            {
+                Push(c.Value, curr.Add(1));
+            }
+        }
+}
+
+    class IntervalMarkVisitor : IntervalVisitor
+    {
+        HashSet<PrefixTreeNode> startStates = new HashSet<PrefixTreeNode>();
+        IndexInterval marking;
+
+        public IntervalMarkVisitor(IndexInterval markIntervaa)
+        {
+            marking = markIntervaa;
+        }
+
+
+        protected override void VisitInnerNode(InnerNode node)
+        {
+            IndexInterval nodeInterval = Get(node);
+            if (!nodeInterval.Meet(marking).IsBottom)
+            {
+                startStates.Add(node);
+            }
+
+            PushChildren(node, nodeInterval);
+        }
     }
 }

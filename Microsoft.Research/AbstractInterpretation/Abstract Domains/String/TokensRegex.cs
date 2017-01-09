@@ -26,76 +26,110 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-
-
-
-  class TokensFromRegex : SimpleRegexVisitor<InnerNode, Void>
-  {
-        private bool underapprox;
+    /// <summary>
+    /// Visitis a regular expression AST and builds a prefix tree.
+    /// </summary>
+    /// <remarks>
+    /// While it may seem good to interpret the regex from back and prepending (or from the fronta and appending) characters, 
+    /// due to the fact, that this domain cannot represent any pattern that contains an entirely unknown part (that means all unanchored patterns),
+    /// it really suffices to interpret the closed part, and if it is open, TOP is always returnet (if overapproximating)
+    /// </remarks>
+    class TokensFromRegex : OpenClosedRegexVisitor<InnerNode, InnerNode>
+    {
+        private bool underapproximate;
         public TokensFromRegex(bool underapprox)
         {
-            this.underapprox = underapprox;
+            this.underapproximate = underapprox;
         }
 
-    protected override InnerNode Unsupported(Element regex, ref Void data)
-    {
-      return PrefixTreeBuilder.Unknown();
-    }
+        protected override InnerNode VisitConcatenation(Concatenation element, int startIndex, int endIndex, RegexEndsData ends, ref InnerNode data)
+        {
+            throw new NotImplementedException();
 
-    protected override InnerNode Visit(Loop element, ref Void data)
-    {
-      throw new NotImplementedException();
-    }
+        }
 
-    protected override InnerNode Visit(Concatenation element, ref Void data)
-    {
-      throw new NotImplementedException();
-    }
+        protected override InnerNode Unsupported(Element regex, ref InnerNode data)
+        {
+            return data = PrefixTreeBuilder.Unknown();
+        }
 
-    protected override InnerNode Visit(Anchor element, ref Void data)
-    {
-      throw new NotImplementedException();
-    }
+        protected override InnerNode Visit(Loop element, ref InnerNode data)
+        {
+            InnerNode inner = VisitSimpleRegex(element.Content, ref data);
+            PrefixTreeMerger merger = new PrefixTreeMerger();
+            new RepeatVisitor(merger).Repeat(inner);
 
-    protected override InnerNode Visit(SingleElement element, ref Void data)
-    {
-      throw new NotImplementedException();
-    }
+            return merger.Build();
+        }
 
-    protected override InnerNode Visit(Empty element, ref Void data)
-    {
-      return PrefixTreeBuilder.Empty();
-    }
+        protected override InnerNode Visit(Concatenation element, ref InnerNode data)
+        {
+            foreach (var c in element.Parts)
+            {
+                VisitElement(c, ref data);
+            }
+            return data;
+        }
 
-    protected override InnerNode Visit(Alternation element, ref Void data)
-    {
-      InnerNode bot = PrefixTreeBuilder.Unreached();
+        protected override InnerNode Visit(Anchor element, ref InnerNode data)
+        {
+            //TODO:what about start-of string???
 
-      PrefixTreeJoiner joiner = new PrefixTreeJoiner();
+            if (element.IsStartAnchor())
+            {
+                return data = PrefixTreeBuilder.Empty();
+            }
 
-      foreach (var e in element.Patterns)
-      {
-        joiner.Add(VisitElement(e, ref data));
-      }
+            throw new NotImplementedException();
+        }
 
-      return joiner.Result();
-    }
+        protected override InnerNode Visit(SingleElement element, ref InnerNode data)
+        {
+            IEnumerable<Tuple<char,char>> ci;
+            if (underapproximate)
+                ci = element.MustMatchIntervals;
+            else
+                ci = element.CanMatchIntervals;
+
+            return data = PrefixTreeBuilder.CharIntervalsNode(ci.Select(t => CharInterval.For(t.Item1, t.Item2)), data);
+        }
+
+        protected override InnerNode Visit(Empty element, ref InnerNode data)
+        {
+            return data = PrefixTreeBuilder.Empty();
+        }
+
+        protected override InnerNode Visit(Alternation element, ref InnerNode data)
+        {
+            //TODO: underapproximate
+            //InnerNode bot = PrefixTreeBuilder.Unreached();
+
+            PrefixTreeMerger merger = new PrefixTreeMerger();
+
+            foreach (var e in element.Patterns)
+            {
+                InnerNode inn = data;
+                merger.Cutoff(VisitElement(e, ref inn));
+            }
+
+            return data = merger.Build();
+        }
 
 
         public InnerNode Build(Element element)
         {
-            Void v = null;
-            return VisitSimpleRegex(element, ref v);
+            InnerNode end = PrefixTreeBuilder.Unknown();
+            return VisitSimpleRegex(element, ref end);
         }
 
 
-  }
-  
+    }
+
     internal class TokensRegex
     {
-        public static Tokens FromRegex(Element regex, bool underapprox)
+        public static Tokens FromRegex(Element regex, bool underapproximate)
         {
-            TokensFromRegex tfr = new TokensFromRegex(underapprox);
+            TokensFromRegex tfr = new TokensFromRegex(underapproximate);
 
             return new Tokens(tfr.Build(regex));
         }

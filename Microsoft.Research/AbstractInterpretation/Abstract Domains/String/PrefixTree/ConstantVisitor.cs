@@ -22,11 +22,19 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-
-    class ConcatVisitor : PrefixTreeVisitor<bool>
+    /// <summary>
+    /// Tries to extract a constant string.
+    /// </summary>
+    class ConstantVisitor : PrefixTreeVisitor<bool>
     {
         private StringBuilder sb;
 
+        /// <summary>
+        /// Gets the constant string represented by prefix tree
+        /// rooted in <paramref name="root"/>, or null.
+        /// </summary>
+        /// <param name="root">Root of the prefix tree.</param>
+        /// <returns>The constant or null.</returns>
         public string GetConstant(PrefixTreeNode root)
         {
             sb = new StringBuilder();
@@ -35,7 +43,6 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             else
                 return null;
         }
-
 
         protected override bool VisitRepeatNode(RepeatNode inn)
         {

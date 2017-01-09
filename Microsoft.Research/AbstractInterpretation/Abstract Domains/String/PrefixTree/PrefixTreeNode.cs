@@ -22,40 +22,45 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-  public abstract class PrefixTreeNode
-  {
- 
-  }
-
-  
-
+    public abstract class PrefixTreeNode
+    {
+        public abstract InnerNode ToInner(InnerNode root);
+    }
     public class InnerNode : PrefixTreeNode
-  {
-    internal Dictionary<char, PrefixTreeNode> children;
-    internal bool accepting;
-
-    public bool Accepting { get { return accepting; } }
-
-    public InnerNode(bool accepting)
     {
-      this.accepting = accepting;
-      children = new Dictionary<char, PrefixTreeNode>();
+        internal Dictionary<char, PrefixTreeNode> children;
+        internal bool accepting;
+
+        public bool Accepting { get { return accepting; } }
+
+        public InnerNode(bool accepting)
+        {
+            this.accepting = accepting;
+            children = new Dictionary<char, PrefixTreeNode>();
+        }
+        public InnerNode(InnerNode inn)
+        {
+            this.accepting = inn.Accepting;
+            children = new Dictionary<char, PrefixTreeNode>(inn.children);
+        }
+
+        public override InnerNode ToInner(InnerNode root)
+        {
+            return this;
+        }
     }
-    public InnerNode(InnerNode inn)
+    
+    public class RepeatNode : PrefixTreeNode
     {
-      this.accepting = inn.Accepting;
-      children = new Dictionary<char, PrefixTreeNode>(inn.children);
+        private RepeatNode()
+        {
+        }
+
+        public static RepeatNode Repeat = new RepeatNode();
+
+        public override InnerNode ToInner(InnerNode root)
+        {
+            return root;
+        }
     }
-
-  
-  }
-
-  public class RepeatNode : PrefixTreeNode
-  {
-    private RepeatNode()
-    {
-    }
-
-    public static RepeatNode Repeat = new RepeatNode();
-  }
 }

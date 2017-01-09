@@ -81,6 +81,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
   /// </summary>
   /// <typeparam name="Expression">Type of expressions in the operations.</typeparam>
   public class StringAbstractDomain<Variable, Expression, StringAbstraction> :
+        //TODO: VD: remove base class, make it similarly to prefix pentagons, and DERIVE pentangons from this domain..
       ReducedCartesianAbstractDomain<
         SimpleFunctionalAbstractDomain<Variable, StringAbstraction>,
         SimpleFunctionalAbstractDomain<Variable, IStringPredicate>

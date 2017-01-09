@@ -26,89 +26,117 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class TokensTests
-  {
-    Tokens.Operations<TestVariable> t = new Tokens.Operations<TestVariable>();
-    Tokens constant;
-    //Tokens constantSet;
-    //Tokens repeatedConstant;
-    Tokens top, bottom;
-
-    public TokensTests()
+    [TestClass]
+    public class TokensTests : TokensTestBase
     {
-      constant = t.Constant("const");
-      top = t.Top;
-      bottom = top.Bottom;
+        Tokens constant;
+        //Tokens constantSet;
+        //Tokens repeatedConstant;
+  
+        public TokensTests()
+        {
+            constant = operations.Constant("const");
+         
+        }
+
+        [TestMethod]
+        public void TestToString()
+        {
+            Assert.AreEqual("{c{o{n{s{t{}!}.}.}.}.}.", constant.ToString());
+            Assert.AreEqual("{}.", bottom.ToString());
+            //TODO: VD: toString should be more sensible and not be used for tests really
+            //Assert.AreEqual("", top.ToString());
+        }
+
+        [TestMethod]
+        public void TestJoin()
+        {
+            /* Assert.AreEqual(some, something.Join(somePrefix));
+             Assert.AreEqual(some, some.Join(somePrefix));
+             Assert.AreEqual(some, something.Join(some));*/
+
+            AssertAreEqual(bottom, bottom.Join(bottom));
+
+            AssertAreEqual(constant, constant.Join(constant));
+            AssertAreEqual(constant, bottom.Join(constant));
+            AssertAreEqual(constant, constant.Join(bottom));
+
+            AssertAreEqual(top, top.Join(constant));
+            AssertAreEqual(top, constant.Join(top));
+            AssertAreEqual(top, top.Join(top));
+
+            Tokens longConstant = operations.Constant("constant");
+
+            Assert.AreEqual("{c{o{n{s{t{a{n{t{}!}.}.}!}.}.}.}.}.", constant.Join(longConstant).ToString());
+
+            Tokens otherConstant = operations.Constant("other");
+
+            Assert.AreEqual("{c{o{n{s{t{}!}.}.}.}.o{t{h{e{r{}!}.}.}.}.}.", constant.Join(otherConstant).ToString());
+        }
+        
+        [TestMethod]
+        public void TestMeet()
+        {
+            Tokens longConstant = operations.Constant("constant");
+
+            AssertAreEqual(bottom, constant.Meet(longConstant));
+            AssertAreEqual(bottom, longConstant.Meet(constant));
+            AssertAreEqual(constant, constant.Meet(constant));
+        
+            AssertAreEqual(bottom, bottom.Meet(constant));
+            AssertAreEqual(bottom, constant.Meet(bottom));
+
+            AssertAreEqual(constant, top.Meet(constant));
+            AssertAreEqual(constant, constant.Meet(top));
+        }
+
+        [TestMethod]
+        public void TestTop()
+        {
+            Assert.IsTrue(top.IsTop);
+            Assert.IsFalse(constant.IsTop);
+            Assert.IsFalse(bottom.IsTop);
+        }
+
+        [TestMethod]
+        public void TestBottom()
+        {
+            Assert.IsFalse(top.IsBottom);
+            Assert.IsFalse(constant.IsBottom);
+            Assert.IsTrue(bottom.IsBottom);
+        }
+
+        [TestMethod]
+        public void TestLessEqual()
+        {
+            Tokens longConstant = operations.Constant("constant");
+
+            Assert.IsTrue(constant.LessThanEqual(constant));
+            /*Assert.IsTrue(somePrefix.LessThanEqual(some));*/
+            Assert.IsFalse(constant.LessThanEqual(longConstant));
+            Assert.IsFalse(longConstant.LessThanEqual(constant));
+
+            Assert.IsTrue(constant.LessThanEqual(top));
+
+            Assert.IsTrue(bottom.LessThanEqual(bottom));
+            Assert.IsTrue(bottom.LessThanEqual(constant));
+            Assert.IsFalse(constant.LessThanEqual(bottom));
+        }
+        [TestMethod]
+        public void TestEqual()
+        {
+            Tokens longConstant = operations.Constant("constant");
+            Tokens sameConstant = operations.Constant("const");
+
+            AssertAreNotEqual(top, bottom);
+            AssertAreNotEqual(constant, longConstant);
+            AssertAreNotEqual(constant, top);
+            AssertAreNotEqual(constant, bottom);
+
+            AssertAreEqual(constant, sameConstant);
+            Assert.AreEqual(top, top);
+            Assert.AreEqual(bottom, bottom);
+        }
     }
-    /*
-    [TestMethod]
-    public void TestJoin()
-    {
-      Assert.AreEqual(some, something.Join(somePrefix));
-      Assert.AreEqual(some, some.Join(somePrefix));
-      Assert.AreEqual(some, something.Join(some));
-
-      Assert.AreEqual(somePrefix, bottom.Join(somePrefix));
-      Assert.AreEqual(somePrefix, somePrefix.Join(bottom));
-
-      Assert.AreEqual(top, top.Join(somePrefix));
-      Assert.AreEqual(top, somePrefix.Join(top));
-    }
-
-    [TestMethod]
-    public void TestMeet()
-    {
-      Assert.AreEqual(bottom, something.Meet(somePrefix));
-      Assert.AreEqual(somePrefix, some.Meet(somePrefix));
-      Assert.AreEqual(something, something.Meet(some));
-
-      Assert.AreEqual(bottom, bottom.Meet(somePrefix));
-      Assert.AreEqual(bottom, somePrefix.Meet(bottom));
-
-      Assert.AreEqual(somePrefix, top.Meet(somePrefix));
-      Assert.AreEqual(somePrefix, somePrefix.Meet(top));
-    }*/
-
-    [TestMethod]
-    public void TestTop()
-    {
-      Assert.IsTrue(top.IsTop);
-      Assert.IsFalse(constant.IsTop);
-      Assert.IsFalse(bottom.IsTop);
-    }
-
-    [TestMethod]
-    public void TestBottom()
-    {
-      Assert.IsFalse(top.IsBottom);
-      Assert.IsFalse(constant.IsBottom);
-      Assert.IsTrue(bottom.IsBottom);
-    }
-
-    /*[TestMethod]
-    public void TestPrefixCompare()
-    {
-      Assert.IsTrue(somePrefix.LessThanEqual(somePrefix));
-      Assert.IsTrue(somePrefix.LessThanEqual(some));
-      Assert.IsFalse(some.LessThanEqual(somePrefix));
-      Assert.IsFalse(somePrefix.LessThanEqual(something));
-
-      Assert.IsTrue(some.LessThanEqual(top));
-
-      Assert.IsTrue(bottom.LessThanEqual(bottom));
-      Assert.IsTrue(bottom.LessThanEqual(somePrefix));
-      Assert.IsFalse(somePrefix.LessThanEqual(bottom));
-    }
-    */
-    /*[TestMethod]
-    public void TestPrefixEqual()
-    {
-      Assert.AreNotEqual(top, bottom);
-      Assert.AreNotEqual(some, somePrefix);
-      Assert.AreNotEqual(some, top);
-      Assert.AreNotEqual(some, bottom);
-    }*/
-  }
 
 }

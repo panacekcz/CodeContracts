@@ -22,13 +22,21 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-    class PrefixTreeBuilder
+    public class PrefixTreeBuilder
     {
+        /// <summary>
+        /// Builds a prefix tree representing the empty string.
+        /// </summary>
+        /// <returns>Root node of a tree representing the empty string.</returns>
         public static InnerNode Empty()
         {
             return new InnerNode(true);
         }
 
+        /// <summary>
+        /// Builds a prefix tree representing all strings.
+        /// </summary>
+        /// <returns>Root node of the tree.</returns>
         public static InnerNode Unknown()
         {
             InnerNode top = new InnerNode(true);
@@ -40,7 +48,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return top;
         }
 
-
+        /// <summary>
+        /// Builds a prefix tree representing no strings.
+        /// </summary>
+        /// <returns>Root node of the tree.</returns>
         public static InnerNode Unreached()
         {
             return new InnerNode(false);
@@ -54,40 +65,53 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return inn;
         }
 
-        public static InnerNode FromString(string c)
+        /// <summary>
+        /// Builds a prefix tree representing a single constant.
+        /// </summary>
+        /// <param name="constant">The string constant.</param>
+        /// <returns>Root node of the tree.</returns>
+        public static InnerNode FromString(string constant)
         {
             InnerNode tn = Empty();
 
-            for (int i = c.Length - 1; i >= 0; --i)
+            for (int i = constant.Length - 1; i >= 0; --i)
             {
-                tn = PrependChar(c[i], tn);
+                tn = PrependChar(constant[i], tn);
             }
 
             return tn;
         }
 
-        public static PrefixTreeNode FromToken(string c)
+        /// <summary>
+        /// Builds a prefix tree representing strings which are repetitions of a single token.
+        /// </summary>
+        /// <param name="token">The repeated token.</param>
+        /// <returns>Root node of the tree</returns>
+        public static PrefixTreeNode FromToken(string token)
         {
-            if (c == "")
+            if (token == "")
                 return Empty();
             PrefixTreeNode tn = RepeatNode.Repeat;
 
-            for (int i = c.Length - 1; i >= 0; --i)
+            for (int i = token.Length - 1; i >= 0; --i)
             {
-                tn = PrependChar(c[i], tn);
+                tn = PrependChar(token[i], tn);
             }
 
             return tn;
         }
 
-        public static PrefixTreeNode FromCharInterval(CharInterval interval, int repeat = 1)
+        public static PrefixTreeNode PrependFromCharInterval(CharInterval interval, int repeat, PrefixTreeNode e)
         {
-            PrefixTreeNode e = Empty();
-            for(int i = 0; i < repeat; ++i)
+            for (int i = 0; i < repeat; ++i)
             {
                 e = CharIntervalNode(interval, e);
             }
             return e;
+        }
+        public static PrefixTreeNode FromCharInterval(CharInterval interval, int repeat = 1)
+        {
+            return PrependFromCharInterval(interval, repeat, Empty());
         }
         public static PrefixTreeNode CharIntervalTokens(CharInterval interval)
         {
@@ -101,6 +125,20 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             for (int i = interval.LowerBound; i <= interval.UpperBound; ++i)
             {
                 node.children[(char)i] = next;
+            }
+
+            return node;
+        }
+
+        public static InnerNode CharIntervalsNode(IEnumerable<CharInterval> intervals, PrefixTreeNode next)
+        {
+            InnerNode node = new InnerNode(true);
+            foreach (var interval in intervals)
+            {
+                for (int i = interval.LowerBound; i <= interval.UpperBound; ++i)
+                {
+                    node.children[(char)i] = next;
+                }
             }
 
             return node;

@@ -53,6 +53,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <param name="rightExp">The right argument of the method.</param>
     void Concat(Expression targetExp, Expression leftExp, Expression rightExp);
 
+
+        //TODO: VD: merge the following two, so that they use array
     /// <summary>
     /// Applies a transition function for the <see cref="String.Concat(String,String,String)"/> method.
     /// </summary>
@@ -125,6 +127,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     void Remove(Expression targetExp, Expression valueExp, Expression indexExp, Expression lengthExp,
       INumericalAbstractDomain<Variable, Expression> numericalDomain);
 
+        //TODO: merge the following two
     /// <summary>
     /// Applies a transition function for the <see cref="String.PadLeft"/> method.
     /// </summary>
@@ -153,6 +156,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <param name="valueExp">The expression of the object on which the method is called.</param>
     /// <param name="trimExp">The expression that evaluates the trimmed characters argument.</param>
     void Trim(Expression targetExp, Expression valueExp, Expression trimExp);
+        //TODO: VD: merge the following two
     /// <summary>
     /// Applies a transition function for the <see cref="String.TrimStart"/> method.
     /// </summary>
@@ -182,6 +186,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <param name="valueExp">The expression of the object on which the method is called.</param>
     /// <param name="partExp">The expression that evaluates the needle argument.</param>
     void Contains(Expression targetExp, Expression valueExp, Expression partExp);
+
+        //TODO: VD: merge the following two
     /// <summary>
     /// Applies a transition function for the <see cref="String.StartsWith"/> method.
     /// </summary>
@@ -229,6 +235,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
     void GetLength(Expression targetExp, Expression valueExp,
       INumericalAbstractDomain<Variable, Expression> numericalDomain);
 
+
+        //TODO: merge the following two
     /// <summary>
     /// Applies a transition function for the <see cref="String.IndexOf"/> method,
     /// optionally querying or updating a numerical domain. 
@@ -256,6 +264,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     void LastIndexOf(Expression indexExp, Expression valueExp, Expression needleExp, Expression offsetExp, Expression countExp,
       Expression cmpExp, INumericalAbstractDomain<Variable, Expression> numericalDomain);
 
+        //TODO: merge the following two
     /// <summary>
     /// Applies a transition function for the <see cref="String.IndexOf"/> method,
     /// optionally querying or updating a numerical domain. 

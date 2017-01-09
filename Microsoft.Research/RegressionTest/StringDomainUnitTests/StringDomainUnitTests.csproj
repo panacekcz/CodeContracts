@@ -54,10 +54,12 @@
     <Compile Include="BricksOperationsTest.cs" />
     <Compile Include="BricksTest.cs" />
     <Compile Include="BricksTestBase.cs" />
+    <Compile Include="TokensRegexTest.cs" />
     <Compile Include="CharacterInclusionRegexTest.cs" />
     <Compile Include="CharacterInclusionOperationsTest.cs" />
     <Compile Include="CharacterInclusionTest.cs" />
     <Compile Include="IndexIntTest.cs" />
+    <Compile Include="TokensOperationsTest.cs" />
     <Compile Include="PrefixRegexTest.cs" />
     <Compile Include="PrefixOperationsTest.cs" />
     <Compile Include="TokensTest.cs" />

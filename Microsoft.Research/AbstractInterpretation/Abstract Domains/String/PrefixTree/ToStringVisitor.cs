@@ -6,13 +6,22 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
+    /// <summary>
+    /// Generates a string representation of a prefix tree.
+    /// </summary>
+    /// <remarks>
+    /// Repeat node is *, inner node is {cX...}. or {cX...}! if accepting.
+    /// For str it is {s{t{r{}!}.}.}.
+    /// </remarks>
     class ToStringVisitor : PrefixTreeVisitor<string>
     {
-        
+        public string ToString(PrefixTreeNode node)
+        {
+            return VisitNode(node);
+        }
 
         protected override string VisitInnerNode(InnerNode inn)
         {
-
             StringBuilder sb = new StringBuilder();
 
             sb.Append('{');
@@ -20,15 +29,11 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             foreach (var child in inn.children)
             {
                 sb.Append(child.Key);
-                VisitNode(child.Value);
+                sb.Append(VisitNode(child.Value));
             }
-
            
             sb.Append('}');
-
-            //if (inn.Accepting)
             sb.Append(inn.Accepting ? '!' : '.');
-                
 
             return sb.ToString();
         }
@@ -42,17 +47,17 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
     class PrefixTreeParser
     {
-        Dictionary<int, PrefixTreeNode> indexedNodes;
-
-        Stack<InnerNode> openedNodes;
-
-        string s;
-        int i;
-
         private enum State
         {
             OUTSIDE, INSIDE, END
         }
+
+        private readonly Dictionary<int, PrefixTreeNode> indexedNodes;
+        private readonly Stack<InnerNode> openedNodes;
+
+        string s;
+        int i;
+
         State state;
         char current;
 

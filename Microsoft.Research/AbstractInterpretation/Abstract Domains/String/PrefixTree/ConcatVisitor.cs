@@ -22,15 +22,20 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-  
-  class RepeatVisitor : PrefixTreeTransformer
-  {
-        PrefixTreeNode root;
 
-        public PrefixTreeNode Repeat(PrefixTreeNode root)
+    class RepeatVisitor : PrefixTreeTransformer
+    {
+        private InnerNode root;
+
+        public RepeatVisitor(PrefixTreeMerger merger)
+            : base(merger)
+        {
+        }
+
+        public void Repeat(InnerNode root)
         {
             this.root = root;
-            return VisitNodeCached(root);
+            Transform(root);
         }
 
 
@@ -46,26 +51,47 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return inn;
         }
     }
-    /*
-  class ConcatVisitor : PrefixTreeTransformer
-  {
-    private InnerNode append;
 
-    public InnerNode Concat(InnerNode left, InnerNode right)
+    class ConcatVisitor : PrefixTreeTransformer
     {
-      append = right;
-      return Transform(left);
+        private InnerNode append;
+        private bool addedAsRoot = false;
+        public ConcatVisitor(PrefixTreeMerger merger, InnerNode append) :
+            base(merger)
+        {
+            this.append = append;
+        }
+
+
+        public void ConcatTo(InnerNode left)
+        {
+            Transform(left);
+        }
+
+        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
+        {
+            //TODO: VD: here it could go quadratic!!
+
+            // Concat to children first
+            PrefixTreeNode newInn = base.VisitInnerNode(inn);
+
+            if (inn.Accepting)
+            {
+                //TODO: VD: not optimal
+                InnerNode newInnNotAccepting = new InnerNode((InnerNode)newInn);
+                newInnNotAccepting.accepting = false;
+
+                return Merge(newInnNotAccepting, append);
+            }
+            else
+                return newInn;
+        }
+
+        protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
+        {
+            throw new InvalidOperationException();
+
+        }
     }
-
-
-    protected override TrieNode VisitRepeatNode(RepeatNode inn)
-    {
-      if (!inn.repeat)
-      {
-
-      }
-
-    }
-  }*/
 
 }

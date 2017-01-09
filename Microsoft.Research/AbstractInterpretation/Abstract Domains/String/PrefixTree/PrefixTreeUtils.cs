@@ -23,55 +23,118 @@ using Microsoft.Research.DataStructures;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-  struct InnerNodePair
-  {
-    public InnerNode left;
-    public InnerNode right;
-
-    public InnerNodePair(InnerNode left, InnerNode right)
+    internal struct InnerNodePair
     {
-      this.left = left;
-      this.right = right;
-    }
-  }
+        public readonly InnerNode left;
+        public readonly InnerNode right;
 
-  public static class PrefixTreeUtils
-  {
-
-
-    public static bool LessEqual(InnerNode le, InnerNode ge)
-    {
-      if (le == ge)
-        return true;
-
-      var initialPair = new InnerNodePair(le, ge);
-
-      HashSet<InnerNodePair> knownPairs = new HashSet<InnerNodePair> { initialPair };
-      WorkList<InnerNodePair> pendingPairs = new WorkList<InnerNodePair> ();
-      pendingPairs.Add(initialPair);
-
-      while (!pendingPairs.IsEmpty)
-      {
-        var pair = pendingPairs.Pull();
-
-        foreach(var child in pair.left.children)
+        public InnerNodePair(InnerNode left, InnerNode right)
         {
-          PrefixTreeNode rightChild;
-          if (!pair.right.children.TryGetValue(child.Key, out rightChild))
-            return false;
-
-          InnerNode innerLeft = (child.Value is RepeatNode) ? le : (InnerNode)child.Value;
-          InnerNode innerRight = (rightChild is RepeatNode) ? ge : (InnerNode)rightChild;
-          InnerNodePair innerPair = new InnerNodePair(innerLeft, innerRight);
-
-          if (knownPairs.Add(innerPair))
-          {
-            pendingPairs.Add(innerPair);
-          }
+            this.left = left;
+            this.right = right;
         }
-      }
-
-      return true;
     }
-  }
+
+    public abstract class PrefixTreeRelation
+    {
+        internal readonly HashSet<InnerNodePair> knownPairs = new HashSet<InnerNodePair>();
+        private readonly WorkList<InnerNodePair> pendingPairs = new WorkList<InnerNodePair>();
+        protected readonly InnerNode leftRoot, rightRoot;
+
+        public PrefixTreeRelation(InnerNode leftRoot, InnerNode rightRoot)
+        {
+            this.leftRoot = leftRoot;
+            this.rightRoot = rightRoot;
+        }
+
+        public abstract void Init();
+        public abstract bool Next(InnerNode left, InnerNode right);
+
+        public void Request(PrefixTreeNode left, PrefixTreeNode right)
+        {
+            InnerNode innerLeft = (left is RepeatNode) ? leftRoot : (InnerNode)left;
+            InnerNode innerRight = (right is RepeatNode) ? rightRoot : (InnerNode)right;
+            InnerNodePair innerPair = new InnerNodePair(innerLeft, innerRight);
+
+            if (knownPairs.Add(innerPair))
+            {
+                pendingPairs.Add(innerPair);
+            }
+        }
+
+        public bool Solve()
+        {
+            Init();
+
+            while (!pendingPairs.IsEmpty)
+            {
+                var pair = pendingPairs.Pull();
+                if (!Next(pair.left, pair.right))
+                    return false;
+                
+            }
+
+            return true;
+        }
+    }
+
+    public class PrefixTreePreorder : PrefixTreeRelation
+    {
+        public PrefixTreePreorder(InnerNode leftRoot, InnerNode rightRoot):
+            base(leftRoot, rightRoot)
+        { }
+        public static bool LessEqual(InnerNode le, InnerNode ge)
+        {
+            if (le == ge)
+                return true;
+
+            PrefixTreePreorder preorder = new PrefixTreePreorder(le, ge);
+            return preorder.Solve();
+
+        }
+        public override void Init()
+        {
+            Request(leftRoot, rightRoot);
+        }
+        public override bool Next(InnerNode left, InnerNode right)
+        {
+
+            if (left.Accepting && !right.Accepting)
+                return false;
+
+            foreach (var child in left.children)
+            {
+                PrefixTreeNode rightChild;
+                if (!right.children.TryGetValue(child.Key, out rightChild))
+                    return false;
+
+                Request(child.Value, rightChild);
+            }
+
+            return true;
+
+        }
+    }
+
+
+    class PrefixTreeBounded : CachedPrefixTreeVisitor<bool>
+    {
+        public bool IsBounded(PrefixTreeNode node)
+        {
+            return VisitNode(node);
+        }
+        protected override bool VisitInnerNode(InnerNode inn)
+        {
+            foreach(var k in inn.children)
+            {
+                if (!VisitNode(k.Value))
+                    return false;
+            }
+            return true;
+        }
+        protected override bool VisitRepeatNode(RepeatNode inn)
+        {
+            return false;
+        }
+    }
 }

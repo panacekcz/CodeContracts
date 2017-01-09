@@ -23,15 +23,47 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
 
+    struct InnerNodeBuilder
+    {
+        InnerNode newNode;
+        InnerNode oldNode;
+
+        public InnerNodeBuilder(InnerNode oldNode)
+        {
+            this.newNode = null;
+            this.oldNode = oldNode;
+        }
+
+        public void SetChild(char c, PrefixTreeNode next)
+        {
+
+
+            if(newNode == null)
+            {
+                newNode = new InnerNode(oldNode);
+            }
+        }
+
+        public InnerNode Build()
+        {
+            return newNode ?? oldNode;
+        }
+    }
+
     class ReplaceCharVisitor : PrefixTreeTransformer
     {
         private CharInterval from, to;
 
-        public InnerNode ReplaceChar(InnerNode root, CharInterval from, CharInterval to)
+        public ReplaceCharVisitor(PrefixTreeMerger merger, CharInterval from, CharInterval to)
+            : base(merger)
         {
             this.from = from;
             this.to = to;
-            return Transform(root);
+        }
+
+        public void ReplaceChar(InnerNode root)
+        {
+            Transform(root);
         }
 
 
@@ -44,11 +76,13 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         {
               
             InnerNode newInn = null;
-            PrefixTreeNode next = null;
+            PrefixTreeNode next = PrefixTreeBuilder.Unreached(); //could be optinized
 
             
             foreach(var child in inn.children)
             {
+                PrefixTreeNode newChild = VisitNodeCached(child.Value);
+
                 if (from.Contains(child.Key))
                 {
                     if(newInn == null)

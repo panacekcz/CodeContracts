@@ -8,6 +8,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
     public class PrefixTreeNodeComparer : IEqualityComparer<PrefixTreeNode>
     {
+        public static readonly PrefixTreeNodeComparer Comparer = new PrefixTreeNodeComparer();
+
+        private PrefixTreeNodeComparer() { }
+
         public bool Equals(PrefixTreeNode x, PrefixTreeNode y)
         {
             if (x == y)
@@ -23,7 +27,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             foreach (var xchild in xinn.children)
             {
-                if (!Equals(xchild.Value, yinn.children[xchild.Key]))
+                PrefixTreeNode ychild;
+                if (!yinn.children.TryGetValue(xchild.Key, out ychild))
+                    return false;
+                if (!Equals(xchild.Value, ychild))
                     return false;
             }
 

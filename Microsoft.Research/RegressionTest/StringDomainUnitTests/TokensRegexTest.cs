@@ -1,0 +1,76 @@
+﻿// CodeContracts
+// 
+// Copyright (c) Microsoft Corporation
+// 
+// All rights reserved. 
+// 
+// MIT License
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// Created by Vlastimil Dort (2015-2016)
+// Master thesis String Analysis for Code Contracts
+
+using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Research.AbstractDomains.Strings;
+using Microsoft.Research.CodeAnalysis;
+using Microsoft.Research.Regex;
+
+
+namespace StringDomainUnitTests
+{
+
+    [TestClass]
+    public class TokensRegexTest : StringAbstractionTestBase<Tokens>
+    {
+        private readonly Tokens.Operations<TestVariable> operations;
+        private readonly Tokens top;
+
+        public TokensRegexTest()
+        {
+            operations = new Tokens.Operations<TestVariable>();
+            top = operations.Top;
+
+        }
+
+        [TestMethod]
+        public void TestIsMatch()
+        {
+            // Constant "a" must contain "a" and unions with other expressions
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(operations.Constant("a"), null, RegexParser.Parse("a")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(operations.Constant("a"), null, RegexParser.Parse("[a-f]")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(operations.Constant("a"), null, RegexParser.Parse("a|bcd")));
+            
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(operations.Constant("const"), null, RegexParser.Parse("^const$")));
+            
+        }
+        [TestMethod]
+        public void TestIsNotMatch()
+        {
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexParser.Parse("b")));
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexParser.Parse("[b-f]")));
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexParser.Parse("bcd|ghi")));
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("const"), null, RegexParser.Parse("^c$")));
+        }
+        [TestMethod]
+        public void TestUnknownMatch()
+        {
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(top, null, RegexParser.Parse("a")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(top, null, RegexParser.Parse("[a-f]")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(top, null, RegexParser.Parse("a|bcd")));
+
+            /*Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexParser.Parse("a\\z")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexParser.Parse("a")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexParser.Parse("[a-z]")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("x", "ab"), null, RegexParser.Parse("a|b")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("x", "ab"), null, RegexParser.Parse("a|y")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("@", ".abcdefgh_"), null, RegexParser.Parse("^[a-z0-9_]+(?:.[a-z0-9_]+)*@[a-z0-9_]+(?:.[a-z0-9_]+)+\\z")));
+            */
+        }
+    }
+}

@@ -26,296 +26,455 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  
-  public class Tokens : IStringAbstraction<Tokens, string>
-  {
-    private readonly InnerNode root;
 
-    internal Tokens(InnerNode root)
+    public class Tokens : IStringAbstraction<Tokens, string>
     {
-      this.root = root;
-    }
+        private readonly InnerNode root;
 
-    public Tokens Top
-    {
-      get
-      {
-        return new Tokens(PrefixTreeBuilder.Unknown());
-      }
-    }
-
-    public Tokens Bottom
-    {
-      get
-      {
-        return new Tokens(PrefixTreeBuilder.Unreached());
-      }
-    }
-
-    public bool IsTop
-    {
-      get
-      {
-        if (!root.Accepting)
-          return false;
-        for(int c=char.MinValue; c <= char.MaxValue; ++c)
+        internal Tokens(InnerNode root)
         {
-          PrefixTreeNode next;
-          if (!root.children.TryGetValue((char)c, out next))
-          {
-            return false;
-          }
-          else if (!(next is RepeatNode))
-            return false;
+            this.root = root;
         }
 
-        return true;
-      }
-    }
-
-    public bool IsBottom
-    {
-      get
-      {
-        return !root.Accepting && root.children.Count == 0;
-      }
-    }
-
-    IAbstractDomain IAbstractDomain.Bottom
-    {
-      get
-      {
-        return Bottom;
-      }
-    }
-
-    IAbstractDomain IAbstractDomain.Top
-    {
-      get
-      {
-        return Top;
-      }
-    }
-
-    public bool ContainsValue(string s)
-    {
-      InnerNode current = root;
-      foreach (char c in s)
-      {
-        PrefixTreeNode next;
-        if (!current.children.TryGetValue(c, out next))
+        public Tokens Top
         {
-          return false;
+            get
+            {
+                return new Tokens(PrefixTreeBuilder.Unknown());
+            }
         }
-        else if (next is RepeatNode)
-          current = root;
-        else
-          current = (InnerNode)next;
-      }
 
-      return current.Accepting;
-    }
-
-    public class Operations<Variable> : IStringOperations<Tokens, Variable>
-      where Variable:class,IEquatable<Variable>
-    {
-      public Tokens Top
-      {
-        get
+        public Tokens Bottom
         {
-          return new Tokens(PrefixTreeBuilder.Unknown());
+            get
+            {
+                return new Tokens(PrefixTreeBuilder.Unreached());
+            }
         }
-      }
 
-      public Tokens Substring(Tokens tokens, IndexInterval index, IndexInterval length)
-      {
-        //TODO: cutoff at various places
-        return tokens.Top;
-      }
+        public bool IsTop
+        {
+            get
+            {
+                if (!root.Accepting)
+                    return false;
+                for (int c = char.MinValue; c <= char.MaxValue; ++c)
+                {
+                    PrefixTreeNode next;
+                    if (!root.children.TryGetValue((char)c, out next))
+                    {
+                        return false;
+                    }
+                    else if (!(next is RepeatNode))
+                        return false;
+                }
 
-      public Tokens Remove(Tokens tokens, IndexInterval index, IndexInterval length)
-      {
-        //TODO: cutoff at various places
-        return tokens.Top;
-      }
+                return true;
+            }
+        }
 
-      public Tokens Insert(Tokens tokens, IndexInterval index, Tokens insertion)
-      {
-        //TODO: cutoff at index and merge
-        return tokens.Top;
-      }
+        public bool IsBottom
+        {
+            get
+            {
+                return !root.Accepting && root.children.Count == 0;
+            }
+        }
 
-      public Tokens Concat(WithConstants<Tokens> left, WithConstants<Tokens> right)
-      {
-        /*
-         *    TrieNode Repeat(TrieNode inner)
-    {
-      RepeatVisitor rv = new RepeatVisitor();
-      return rv.AcceptNode(rv);
-    }
+        IAbstractDomain IAbstractDomain.Bottom
+        {
+            get
+            {
+                return Bottom;
+            }
+        }
 
-    TrieNode Concat(TrieNode left, TrieNode right)
-    {
-      // if any of the trees contains repeat node, append to root, change ends in the left one to repeats
-      TrieNode repeatedLeft = Repeat(left);
-      return repeatedLeft; //TODO: merge
-    }
-    */
-        throw new NotImplementedException();
-      }
+        IAbstractDomain IAbstractDomain.Top
+        {
+            get
+            {
+                return Top;
+            }
+        }
 
-      public Tokens Insert(WithConstants<Tokens> self, IndexInterval index, WithConstants<Tokens> other)
-      {
-        throw new NotImplementedException();
-      }
+        public bool ContainsValue(string s)
+        {
+            InnerNode current = root;
+            foreach (char c in s)
+            {
+                PrefixTreeNode next;
+                if (!current.children.TryGetValue(c, out next))
+                {
+                    return false;
+                }
+                else if (next is RepeatNode)
+                    current = root;
+                else
+                    current = (InnerNode)next;
+            }
 
-      public Tokens Replace(Tokens self, CharInterval from, CharInterval to)
-      {
-        throw new NotImplementedException();
-      }
+            return current.Accepting;
+        }
 
-      public Tokens Replace(WithConstants<Tokens> self, WithConstants<Tokens> from, WithConstants<Tokens> to)
-      {
-        throw new NotImplementedException();
-      }
+        public class Operations<Variable> : IStringOperations<Tokens, Variable>
+          where Variable : class, IEquatable<Variable>
+        {
+            public Tokens Top
+            {
+                get
+                {
+                    return new Tokens(PrefixTreeBuilder.Unknown());
+                }
+            }
 
-      public Tokens PadLeft(Tokens self, IndexInterval length, CharInterval fill)
-      {
-        //TODO:
-        // compare length intervals.
-        // if may pad, add repeating node with fill edge from root
-        // there may be more ways to optimize, for example if there are no repeat nodes and we know we will have to pad, add nodes at root?
-        return self.Top;
-      }
+            public Tokens Substring(Tokens tokens, IndexInterval index, IndexInterval length)
+            {
+                //TODO: cutoff at various places
+                return tokens.Top;
+            }
 
-      public Tokens PadRight(Tokens self, IndexInterval length, CharInterval fill)
-      {
+            public Tokens Remove(Tokens tokens, IndexInterval index, IndexInterval length)
+            {
+                //TODO: cutoff at various places
+                return tokens.Top;
+            }
+
+            public Tokens Concat(WithConstants<Tokens> left, WithConstants<Tokens> right)
+            {
+                Tokens leftAbstraction = left.ToAbstract(this);
+                Tokens rightAbstraction = right.ToAbstract(this);
+
+                PrefixTreeBounded boundedVisitor = new PrefixTreeBounded();
+                bool bounded = boundedVisitor.IsBounded(leftAbstraction.root) && boundedVisitor.IsBounded(rightAbstraction.root);
+
+                PrefixTreeMerger merger = new PrefixTreeMerger();
+
+                if (!bounded)
+                {
+
+                    RepeatVisitor rv = new RepeatVisitor(merger);
+                    rv.Repeat(leftAbstraction.root);
+                    merger.Cutoff(rightAbstraction.root);
+
+                }
+                else
+                {
+                    ConcatVisitor cv = new ConcatVisitor(merger, rightAbstraction.root);
+                    cv.ConcatTo(leftAbstraction.root);
+                }
+
+                return new Tokens(merger.Build());
+            }
+
+            public Tokens Insert(WithConstants<Tokens> self, IndexInterval index, WithConstants<Tokens> other)
+            {
+                Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
+
+                //Split at the index, merge with the inserted part
+                PrefixTreeMerger merger = new PrefixTreeMerger();
+
+                merger.Cutoff(otherAbstraction.root);
+
+                return new Tokens(merger.Build());
+            }
+
+            public Tokens Replace(Tokens self, CharInterval from, CharInterval to)
+            {
+                var merger = new PrefixTreeMerger();
+                new ReplaceCharVisitor(merger, from, to).ReplaceChar(self.root);
+                return new Tokens(merger.Build());
+            }
+
+            public Tokens Replace(WithConstants<Tokens> self, WithConstants<Tokens> from, WithConstants<Tokens> to)
+            {
+                Tokens selfAbstract = self.ToAbstract(this);
+                Tokens fromAbstract = from.ToAbstract(this);
+                Tokens toAbstract = to.ToAbstract(this);
+
+                PrefixTreeBackwardSearch ptbs = new PrefixTreeBackwardSearch(selfAbstract.root, fromAbstract.root, true);
+                ptbs.Solve();
+                ptbs.BackwardStage(true);
+                // Split everywhere from can occur (both start and end) merge with to
+                PrefixTreeMerger merger = new PrefixTreeMerger();
+                MarkSplitVisitor splitter = new MarkSplitVisitor(merger, ptbs.GetEndpoints());
+                splitter.Split(selfAbstract.root);
+                merger.Cutoff(toAbstract.root);
+
+
+                return new Tokens(merger.Build());
+            }
+
+            public Tokens PadLeft(Tokens self, IndexInterval length, CharInterval fill)
+            {
+                // compare length intervals.
+                // if may pad, add repeating node with fill edge from root
+                // there may be more ways to optimize, for example if there are no repeat nodes and we know we will have to pad, add nodes at root?
+                InnerNode root = self.root;
+                PrefixTreeMerger merger = new PrefixTreeMerger();
+                LengthIntervalVisitor liv = new LengthIntervalVisitor();
+                IndexInterval oldLength = liv.GetLengthInterval(root);
+
+                int mustPad;
+                bool mayPadMore;
+
+                if (oldLength.UpperBound.IsInfinite)
+                {
+                    //There are repeat nodes. We are not sure we will pad
+                    mustPad = 0;
+                }
+                else
+                {
+                    //It is finite, 
+                    mustPad = length.LowerBound.AsInt - oldLength.UpperBound.AsInt;
+                }
+
+                mayPadMore = length.UpperBound.IsInfinite || length.UpperBound.AsInt > oldLength.LowerBound.AsInt + mustPad;
+
+                merger.Cutoff(PrefixTreeBuilder.PrependFromCharInterval(fill, mustPad, root));
+                if (mayPadMore)
+                    merger.Cutoff(PrefixTreeBuilder.CharIntervalTokens(fill));
+                return new Tokens(merger.Build());
+            }
+
+            public Tokens PadRight(Tokens self, IndexInterval length, CharInterval fill)
+            {
+                // compare lengths
+                // add repeating node, or add constant string of fill chars at accepting nodes
+
                 LengthIntervalVisitor liv = new LengthIntervalVisitor();
                 IndexInterval oldLength = liv.GetLengthInterval(self.root);
+                PrefixTreeMerger merger = new PrefixTreeMerger();
 
                 if (oldLength.LowerBound >= length.UpperBound)
                 {
                     //The string must be longer, no action
                     return self;
                 }
-                else if(oldLength.IsFiniteConstant && length.IsFiniteConstant)
+                else if (oldLength.IsFiniteConstant && length.IsFiniteConstant)
                 {
                     // We know exactly how many characters to add
-                    PrefixTreeNode padding = PrefixTreeBuilder.FromCharInterval(fill, length.LowerBound.AsInt - oldLength.UpperBound.AsInt);
-                    
-                    //TODO: concatenate padding
+                    InnerNode padding = (InnerNode)PrefixTreeBuilder.FromCharInterval(fill, length.LowerBound.AsInt - oldLength.UpperBound.AsInt);
+                    ConcatVisitor cv = new ConcatVisitor(merger, padding);
+
+                    cv.ConcatTo(self.root);
                 }
                 else
                 {
-                    //TODO: change accepting to repeat
+                    RepeatVisitor rv = new RepeatVisitor(merger);
+                    rv.Repeat(self.root);
                     PrefixTreeNode padding = PrefixTreeBuilder.CharIntervalTokens(fill);
-                    //TODO: join padding
+                    merger.Cutoff(padding);
                 }
-                
-        //TODO:
-        // compare lengths
-        // add repeating node, or add constant string of fill chars at accepting nodes
-        return self.Top;
-      }
 
-      public Tokens Trim(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
-      {
-        //TODO:
-        return Top;
-      }
+                return new Tokens(merger.Build());
+            }
 
-      public Tokens TrimStart(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
-      {
-        //TODO:
-        // if does not contain repeat nodes,
-        // then trim the characters from the root, merge the cutted subtrees with root
+            public Tokens Trim(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
+            {
+                //TODO:
+                return Top;
+            }
 
-        // if does contain repeat nodes, do the same, but keep the original root
-        return Top;
-      }
+            public Tokens TrimStart(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
+            {
+                //TODO:
+                // if does not contain repeat nodes,
+                // then trim the characters from the root, merge the cutted subtrees with root
 
-      public Tokens TrimEnd(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
-      {
-        //TODO:
+                // if does contain repeat nodes, do the same, but keep the original root
+                return Top;
+            }
 
-        // trim from accepting nodes
-        // if reached root, ???
+            public Tokens TrimEnd(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
+            {
+                //TODO:
 
-        return Top;
-      }
+                // trim from accepting nodes
+                // if reached root, ???
 
-      public Tokens SetCharAt(Tokens self, IndexInterval index, CharInterval value)
-      {
-        //TODO:
-        return Top;
-      }
+                return Top;
+            }
 
-      public IStringPredicate IsEmpty(Tokens self, Variable selfVariable)
-      {
-        bool canBeEmpty = self.root.Accepting;
-        bool canBeNonEmpty = self.root.children.Count > 0;
+            public Tokens SetCharAt(Tokens self, IndexInterval index, CharInterval value)
+            {
+                //TODO:
+                return Top;
+            }
 
-        if(canBeEmpty && canBeNonEmpty && selfVariable != null)
-        {
-          return StringAbstractionPredicate.ForTrue(selfVariable, new Tokens(PrefixTreeBuilder.Empty()));
-        }
+            public IStringPredicate IsEmpty(Tokens self, Variable selfVariable)
+            {
+                bool canBeEmpty = self.root.Accepting;
+                bool canBeNonEmpty = self.root.children.Count > 0;
 
-        return new FlatPredicate(canBeEmpty, canBeNonEmpty);
-      }
+                if (canBeEmpty && canBeNonEmpty && selfVariable != null)
+                {
+                    return StringAbstractionPredicate.ForTrue(selfVariable, new Tokens(PrefixTreeBuilder.Empty()));
+                }
 
-      public IStringPredicate Contains(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
-      {
-        throw new NotImplementedException();
-        // Seems there is no possibiliry to return predicate here
-      }
+                return new FlatPredicate(canBeEmpty, canBeNonEmpty);
+            }
 
-      public IStringPredicate StartsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
-      {
-        // Seems there is no possiblity to return predicate here
-        throw new NotImplementedException();
-      }
+            public IStringPredicate Contains(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
+            {
 
-      public IStringPredicate EndsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
-      {
-        // Seems there is no possiblity to return predicate here
-        throw new NotImplementedException();
-      }
+                // Seems there is no possibiliry to return predicate here
 
-      public IStringPredicate Equals(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
-      {
+
+                Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
+
+                PrefixTreeForwardSearch ptfm = new PrefixTreeForwardSearch(selfAbstraction.root, otherAbstraction.root, true);
+                ptfm.Solve();
+                if (ptfm.AnyEnd())
+                    return FlatPredicate.Top;
+                else
+                    return FlatPredicate.False;
+            }
+
+            public IStringPredicate StartsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
+            {
+                Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
+
+                // Seems there is no possiblity to return predicate here
+
+                // Can return true only if other is constant
+                ConstantVisitor cv = new ConstantVisitor();
+                string prefix = cv.GetConstant(otherAbstraction.root);
+
+                if (prefix != null)
+                {
+                    InnerNode node = selfAbstraction.root;
+                    bool unique = true;
+
+                    foreach (char c in prefix)
+                    {
+                        PrefixTreeNode ptn;
+                        if (!node.children.TryGetValue(c, out ptn))
+                        {
+                            return FlatPredicate.False;
+                        }
+                        if (node.children.Count > 1)
+                            unique = false;
+                        node = ptn.ToInner(selfAbstraction.root);
+                    }
+
+                    return unique ? FlatPredicate.True : FlatPredicate.Top;
+                }
+                else
+                {
+                    //cubic occurence finder that will aling nodes by pairs from the start
+                    // used also for replace, meet, endswith, indexOf
+
+                    PrefixTreeForwardSearch ptfm = new PrefixTreeForwardSearch(selfAbstraction.root, otherAbstraction.root, false);
+                    ptfm.Solve();
+                    if (ptfm.AnyEnd())
+                        return FlatPredicate.Top;
+                    else
+                        return FlatPredicate.False;
+                }
+            }
+
+            public IStringPredicate EndsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
+            {
+                // Seems there is no possiblity to return predicate here 
+
+                // Even if other is a single constant, then if we tried to represent te suffix, due to the fact that all characters are
+                // possible in the first part, there must be a repeat node after each character, which will collapse anything joined to it
+                // That means, any string that may contain an entirely unknown part, is automatically TOP in this domain.
+                //TODO: if other is constant return true if possible
+
+                Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
+
+                PrefixTreeForwardSearch ptfm = new PrefixTreeForwardSearch(selfAbstraction.root, otherAbstraction.root, true);
+                ptfm.Solve();
+                if (ptfm.AlignedEnd())
+                    return FlatPredicate.Top;
+                else
+                    return FlatPredicate.False;
+            }
+
+            public IStringPredicate Equals(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
+            {
                 //True only if both are constants
-        // return self predicate
-        throw new NotImplementedException();
-      }
+                //False if they cannot be equal
+                // return self predicate
+                Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
+                if (EqualityVisitor.CanBeEqual(selfAbstraction.root, otherAbstraction.root))
+                {
+                    if (otherVariable != null)
+                        return StringAbstractionPredicate.ForTrue(otherVariable, selfAbstraction);
+                    else if (selfVariable != null)
+                        return StringAbstractionPredicate.ForTrue(selfVariable, otherAbstraction);
+                    else
+                        return FlatPredicate.Top;
+                }
+                else
+                {
+                    return FlatPredicate.False;
+                }
+            }
 
-      public CompareResult CompareOrdinal(WithConstants<Tokens> self, WithConstants<Tokens> other)
-      {
-        throw new NotImplementedException();
-      }
+            public CompareResult CompareOrdinal(WithConstants<Tokens> self, WithConstants<Tokens> other)
+            {
+                //Preorders on nodes
+                InnerNode leftRoot = self.ToAbstract(this).root, rightRoot = other.ToAbstract(this).root;
 
-      public IndexInterval GetLength(Tokens self)
-      {
-        LengthIntervalVisitor liv = new LengthIntervalVisitor();
-        return liv.GetLengthInterval(self.root);
-      }
+                bool canle = CompareVisitor.CanBeLessEqual(leftRoot, rightRoot);
+                bool cange = CompareVisitor.CanBeLessEqual(rightRoot, leftRoot);
 
-      public IndexInterval IndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count)
-      {
-        throw new NotImplementedException();
-      }
+                //TODO: if both are constants, we know the result exactly
 
-      public IndexInterval LastIndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count)
-      {
-        throw new NotImplementedException();
-      }
+                return CompareResultExtensions.Build(canle, canle && cange, cange);
+            }
 
-      public CharInterval GetCharAt(Tokens self, IndexInterval index)
-      {
-        throw new NotImplementedException();
-      }
+            public IndexInterval GetLength(Tokens self)
+            {
+                LengthIntervalVisitor liv = new LengthIntervalVisitor();
+                return liv.GetLengthInterval(self.root);
+            }
 
-      public IStringPredicate RegexIsMatch(Tokens self, Variable selfVariable, Element regex)
-      {
+            public IndexInterval AnyIndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count)
+            {
+                Tokens selfAbstraction = self.ToAbstract(this);
+                Tokens needleAbstraction = needle.ToAbstract(this);
+                //TODO: use offset and count to limit the beginnings/ends
+                PrefixTreeBackwardSearch ptbs = new PrefixTreeBackwardSearch(selfAbstraction.root, needleAbstraction.root, true);
+                ptbs.Solve();
+                ptbs.BackwardStage(true);
+
+                IndexOfVisitor iof = new IndexOfVisitor(ptbs.GetStarts());
+
+                IndexInterval ii = iof.Interval;
+                PrefixTreeBounded boundedVisitor = new PrefixTreeBounded();
+                if (boundedVisitor.IsBounded(selfAbstraction.root))
+                {
+                    return ii;
+                }
+                else
+                {
+                    return IndexInterval.For(ii.LowerBound, IndexInt.Infinity);
+                }
+
+                
+            }
+
+            public IndexInterval IndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count)
+            {
+                return AnyIndexOf(self, needle, offset, count);
+            }
+
+            public IndexInterval LastIndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count)
+            {
+                return AnyIndexOf(self, needle, offset, count);
+            }
+
+            public CharInterval GetCharAt(Tokens self, IndexInterval index)
+            {
+                CharAtVisitor cav = new CharAtVisitor();
+                return cav.CharAt(index, self.root);
+            }
+
+            public IStringPredicate RegexIsMatch(Tokens self, Variable selfVariable, Element regex)
+            {
                 //regex underapprox less equal self -> return true
                 //self meet regex overapprox is bottom -> return false
                 // else return overapprox predicate.
@@ -328,85 +487,95 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 if (self.Meet(regexOver).IsBottom)
                     return FlatPredicate.False;
 
-
                 return StringAbstractionPredicate.ForTrue(selfVariable, regexOver);
-        //throw new NotImplementedException();
-      }
+            }
 
-      public Tokens Constant(string constant)
-      {
-        return new Tokens(PrefixTreeBuilder.FromString(constant));
-      }
+            public Tokens Constant(string constant)
+            {
+                return new Tokens(PrefixTreeBuilder.FromString(constant));
+            }
+        }
+
+        public bool Equals(Tokens other)
+        {
+            return PrefixTreeNodeComparer.Comparer.Equals(root, other.root);
+        }
+        public override bool Equals(object obj)
+        {
+            Tokens other = obj as Tokens;
+            if (other == null)
+                return false;
+            return Equals(other);
+        }
+
+        public bool LessThanEqual(Tokens other)
+        {
+            return PrefixTreePreorder.LessEqual(root, other.root);
+        }
+
+        public Tokens Join(Tokens other)
+        {
+            PrefixTreeMerger merger = new PrefixTreeMerger();
+            merger.Cutoff(root);
+            merger.Cutoff(other.root);
+
+            return new Tokens(merger.Build());
+        }
+
+        public Tokens Meet(Tokens other)
+        {
+            //TODO: intersection
+            return this;
+        }
+
+        public Tokens Constant(string cst)
+        {
+            return new Tokens(PrefixTreeBuilder.FromString(cst));
+        }
+
+        public bool LessEqual(IAbstractDomain a)
+        {
+            return LessThanEqual(a as Tokens);
+        }
+
+        public IAbstractDomain Join(IAbstractDomain a)
+        {
+            return Join(a as Tokens);
+        }
+
+        public IAbstractDomain Meet(IAbstractDomain a)
+        {
+            return Meet(a as Tokens);
+        }
+
+        public IAbstractDomain Widening(IAbstractDomain prev)
+        {
+            PrefixTreeMerger merger = new PrefixTreeMerger();
+            RepeatVisitor rv = new RepeatVisitor(merger);
+            rv.Repeat(root);
+            rv.Repeat((prev as Tokens).root);
+
+            //TODO: this is not enough i think
+            return new Tokens(merger.Build());
+
+        }
+
+        public T To<T>(IFactory<T> factory)
+        {
+            return factory.Constant(true);
+        }
+
+        public object Clone()
+        {
+            return new Tokens(root);
+        }
+        public override string ToString()
+        {
+            ToStringVisitor visitor = new ToStringVisitor();
+            return visitor.ToString(root);
+        }
+
     }
 
 
-
-
-
- 
-
-    public bool Equals(Tokens other)
-    {
-      return root.Equals(other.root);
-    }
-
-    public bool LessThanEqual(Tokens other)
-    {
-      return PrefixTreeUtils.LessEqual(root, other.root);
-    }
-
-    public Tokens Join(Tokens other)
-    {
-      PrefixTreeJoiner joiner = new PrefixTreeJoiner();
-      joiner.Add(root);
-      joiner.Add(other.root);
-
-      return new Tokens(joiner.Result());
-    }
-
-    public Tokens Meet(Tokens other)
-    {
-      throw new NotImplementedException();
-    }
-
-    public Tokens Constant(string cst)
-    {
-      return new Tokens(PrefixTreeBuilder.FromString(cst));
-    }
-
-    public bool LessEqual(IAbstractDomain a)
-    {
-      return LessThanEqual(a as Tokens);
-    }
-
-    public IAbstractDomain Join(IAbstractDomain a)
-    {
-      return Join(a as Tokens);
-    }
-
-    public IAbstractDomain Meet(IAbstractDomain a)
-    {
-      return Meet(a as Tokens);
-    }
-
-    public IAbstractDomain Widening(IAbstractDomain prev)
-    {
-            Tokens join = Join(prev as Tokens);
-            RepeatVisitor rv = new RepeatVisitor();
-            return new Tokens((InnerNode)rv.Repeat(join.root));
-      
-    }
-
-    public T To<T>(IFactory<T> factory)
-    {
-      return factory.Constant(true);
-    }
-
-    public object Clone()
-    {
-      return new Tokens(root);
-    }
-  }
-
-  
 }
