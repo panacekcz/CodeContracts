@@ -125,11 +125,24 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
     }
 
+    internal class TokensFromNegativeRegex
+    {
+        public TokensFromNegativeRegex(bool u) { }
+        public InnerNode Build(Regex.AST.Element e) { throw new NotImplementedException(); }
+    }
+
     internal class TokensRegex
     {
         public static Tokens FromRegex(Element regex, bool underapproximate)
         {
             TokensFromRegex tfr = new TokensFromRegex(underapproximate);
+
+            return new Tokens(tfr.Build(regex));
+        }
+
+        public static Tokens FromNegativeRegex(Element regex, bool underapproximate)
+        {
+            TokensFromNegativeRegex tfr = new TokensFromNegativeRegex(underapproximate);
 
             return new Tokens(tfr.Build(regex));
         }

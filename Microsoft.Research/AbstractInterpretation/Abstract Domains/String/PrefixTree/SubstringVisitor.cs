@@ -17,10 +17,12 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
         protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
         {
-            if (markedStates.Contains(inn))
-                return Cutoff(inn);
+            InnerNode ninn = (InnerNode)base.VisitInnerNode(inn);
+
+            if (markedStates.Contains(ninn))
+                return Cutoff(ninn);
             else
-                return inn;
+                return ninn;
 
         }
 
@@ -66,7 +68,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
     class IntervalMarkVisitor : IntervalVisitor
     {
-        HashSet<PrefixTreeNode> startStates = new HashSet<PrefixTreeNode>();
+        HashSet<InnerNode> startStates = new HashSet<InnerNode>();
         IndexInterval marking;
 
         public IntervalMarkVisitor(IndexInterval markIntervaa)
@@ -74,6 +76,19 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             marking = markIntervaa;
         }
 
+        public HashSet<InnerNode> Nodes
+        {
+            get
+            {
+                return startStates;
+            }
+        }
+
+        public void Collect(InnerNode i)
+        {
+            Push(i, IndexInterval.For(0));
+            Traverse(i);
+        }
 
         protected override void VisitInnerNode(InnerNode node)
         {

@@ -436,6 +436,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return abstraction;
             }
         }
+
+        public override string ToString()
+        {
+            if (constant != null)
+                return constant;
+            else if (abstraction != null)
+                return abstraction.ToString();
+            else
+                return "(no abstraction)";
+        }
     }
 
     public interface IStringInterval<Self> : IStringAbstraction<Self, string>

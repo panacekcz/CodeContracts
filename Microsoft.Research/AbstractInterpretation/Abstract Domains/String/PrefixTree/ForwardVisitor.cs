@@ -13,9 +13,9 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// <typeparam name="T">A value that will be associated with each node.</typeparam>
     abstract class ForwardVisitor<T>
     {
-        private readonly Dictionary<InnerNode, int> inputDegree;
-        private readonly Dictionary<InnerNode, T> data;
-        private readonly List<InnerNode> accessible;
+        private readonly Dictionary<InnerNode, int> inputDegree = new Dictionary<InnerNode, int>();
+        private readonly Dictionary<InnerNode, T> data = new Dictionary<InnerNode, T>();
+        private readonly List<InnerNode> accessible = new List<InnerNode>();
 
         private void Collect(InnerNode node)
         {
@@ -32,14 +32,14 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             inputDegree[node] = i + 1;
         }
-        private void FindRoots()
+        /*private void FindRoots()
         {
             foreach(var c in inputDegree)
             {
-                if (c.Value == 1)
+                if (c.Value == 0)
                     accessible.Add(c.Key);
             }
-        }
+        }*/
         private void Discount(InnerNode node)
         {
             foreach (var c in node.children)
@@ -47,7 +47,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
                 var cn = c.Value;
                 if (cn is InnerNode)
                 {
-                    if(--inputDegree[(InnerNode)cn] == 1)
+                    if(--inputDegree[(InnerNode)cn] == 0)
                     {
                         accessible.Add((InnerNode)cn);
                     }
@@ -97,7 +97,9 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         protected void Traverse(InnerNode root)
         {
             Collect(root);
-            FindRoots();
+            //FindRoots();
+
+            accessible.Add(root);
 
             while(accessible.Count > 0){
                 InnerNode next = accessible[accessible.Count - 1];

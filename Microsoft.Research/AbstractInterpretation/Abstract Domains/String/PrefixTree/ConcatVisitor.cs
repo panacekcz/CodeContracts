@@ -41,10 +41,12 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
         protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
         {
-            if (inn.Accepting && inn != root)
-                return Cutoff(inn);
+            InnerNode ninn = (InnerNode)base.VisitInnerNode(inn);
+
+            if (ninn.Accepting &&ninn != root)
+                return Cutoff(ninn);
             else
-                return VisitNodeCached(inn);
+                return ninn;
         }
         protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
         {

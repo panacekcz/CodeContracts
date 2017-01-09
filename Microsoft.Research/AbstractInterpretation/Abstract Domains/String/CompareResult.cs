@@ -23,106 +23,117 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  /// <summary>
-  /// Represents possible results of the <see cref="IComparable.CompareTo"/> method.
-  /// </summary>
-  public enum CompareResult
-  {
     /// <summary>
-    /// No possible result (unreachable).
+    /// Represents possible results of the <see cref="IComparable.CompareTo"/> method.
     /// </summary>
-    Bottom,
-    /// <summary>
-    /// Less (negative).
-    /// </summary>
-    Less,
-    /// <summary>
-    /// Equal (zero).
-    /// </summary>
-    Equal,
-    /// <summary>
-    /// Less or equal (negative, zero).
-    /// </summary>
-    LessEqual,
-    /// <summary>
-    /// Greater (positive).
-    /// </summary>
-    Greater,
-    /// <summary>
-    /// Not equal (negative, positive).
-    /// </summary>
-    NotEqual,
-    /// <summary>
-    /// Greater or equal (zero, positive).
-    /// </summary>
-    GreaterEqual,
-    /// <summary>
-    /// All possible results (negative, zero, positive).
-    /// </summary>
-    Top
-  }
-
-  /// <summary>
-  /// Extension methods for <see cref="CompareResult"/>.
-  /// </summary>
-  public static class CompareResultExtensions
-  {
-    /// <summary>
-    /// Creates a compare result corresponding to compare with swapped sides.
-    /// </summary>
-    /// <param name="result">The original compare result.</param>
-    /// <returns>The swapped compare result.</returns>
-    public static CompareResult SwapSides(this CompareResult result)
+    public enum CompareResult
     {
-      return Build(result.HasFlag(CompareResult.Greater), result.HasFlag(CompareResult.Equal), result.HasFlag(CompareResult.Less));
+        /// <summary>
+        /// No possible result (unreachable).
+        /// </summary>
+        Bottom,
+        /// <summary>
+        /// Less (negative).
+        /// </summary>
+        Less,
+        /// <summary>
+        /// Equal (zero).
+        /// </summary>
+        Equal,
+        /// <summary>
+        /// Less or equal (negative, zero).
+        /// </summary>
+        LessEqual,
+        /// <summary>
+        /// Greater (positive).
+        /// </summary>
+        Greater,
+        /// <summary>
+        /// Not equal (negative, positive).
+        /// </summary>
+        NotEqual,
+        /// <summary>
+        /// Greater or equal (zero, positive).
+        /// </summary>
+        GreaterEqual,
+        /// <summary>
+        /// All possible results (negative, zero, positive).
+        /// </summary>
+        Top
     }
 
     /// <summary>
-    /// Converts <see cref="CompareResult"/> to <see cref="Numerical.DisInterval"/>.
+    /// Extension methods for <see cref="CompareResult"/>.
     /// </summary>
-    /// <param name="compareResult">Possible compare results.</param>
-    /// <returns>Intervals of possible compare result integer values.</returns>
-    public static Numerical.DisInterval ToDisInterval(this CompareResult compareResult)
+    public static class CompareResultExtensions
     {
-      switch (compareResult)
-      {
-        case CompareResult.Bottom:
-          return Numerical.DisInterval.UnreachedInterval;
-        case CompareResult.Less:
-          return Numerical.DisInterval.For(Numerical.Rational.MinusInfinity, -1);
-        case CompareResult.Equal:
-          return Numerical.DisInterval.Zero;
-        case CompareResult.LessEqual:
-          return Numerical.DisInterval.Negative;
-        case CompareResult.Greater:
-          return Numerical.DisInterval.For(1, Numerical.Rational.PlusInfinity);
-        case CompareResult.NotEqual:
-          return Numerical.DisInterval.NotZero;
-        case CompareResult.GreaterEqual:
-          return Numerical.DisInterval.Positive;
-        default:
-          return Numerical.DisInterval.UnknownInterval;
-      }
+        /// <summary>
+        /// Creates a compare result corresponding to compare with swapped sides.
+        /// </summary>
+        /// <param name="result">The original compare result.</param>
+        /// <returns>The swapped compare result.</returns>
+        public static CompareResult SwapSides(this CompareResult result)
+        {
+            return Build(result.HasFlag(CompareResult.Greater), result.HasFlag(CompareResult.Equal), result.HasFlag(CompareResult.Less));
+        }
 
-    }
+        /// <summary>
+        /// Converts <see cref="CompareResult"/> to <see cref="Numerical.DisInterval"/>.
+        /// </summary>
+        /// <param name="compareResult">Possible compare results.</param>
+        /// <returns>Intervals of possible compare result integer values.</returns>
+        public static Numerical.DisInterval ToDisInterval(this CompareResult compareResult)
+        {
+            switch (compareResult)
+            {
+                case CompareResult.Bottom:
+                    return Numerical.DisInterval.UnreachedInterval;
+                case CompareResult.Less:
+                    return Numerical.DisInterval.For(Numerical.Rational.MinusInfinity, -1);
+                case CompareResult.Equal:
+                    return Numerical.DisInterval.Zero;
+                case CompareResult.LessEqual:
+                    return Numerical.DisInterval.Negative;
+                case CompareResult.Greater:
+                    return Numerical.DisInterval.For(1, Numerical.Rational.PlusInfinity);
+                case CompareResult.NotEqual:
+                    return Numerical.DisInterval.NotZero;
+                case CompareResult.GreaterEqual:
+                    return Numerical.DisInterval.Positive;
+                default:
+                    return Numerical.DisInterval.UnknownInterval;
+            }
 
-    /// <summary>
-    /// Builds a <see cref="CompareResult"/> value from possible results.
-    /// </summary>
-    /// <param name="less">Whether negativer result is possible.</param>
-    /// <param name="equal">Whether zero result is possible.</param>
-    /// <param name="greater">Whether positive result is possible.</param>
-    /// <returns>A <see cref="CompareResult"/> representing the specified possible result.</returns>
-    internal static CompareResult Build(bool less, bool equal, bool greater)
-    {
-      CompareResult result = CompareResult.Bottom;
-      if (less)
-        result |= CompareResult.Less;
-      if (equal)
-        result |= CompareResult.Equal;
-      if (greater)
-        result |= CompareResult.Greater;
-      return result;
+        }
+
+        /// <summary>
+        /// Builds a <see cref="CompareResult"/> value from possible results.
+        /// </summary>
+        /// <param name="less">Whether negativer result is possible.</param>
+        /// <param name="equal">Whether zero result is possible.</param>
+        /// <param name="greater">Whether positive result is possible.</param>
+        /// <returns>A <see cref="CompareResult"/> representing the specified possible result.</returns>
+        public static CompareResult Build(bool less, bool equal, bool greater)
+        {
+            CompareResult result = CompareResult.Bottom;
+            if (less)
+                result |= CompareResult.Less;
+            if (equal)
+                result |= CompareResult.Equal;
+            if (greater)
+                result |= CompareResult.Greater;
+            return result;
+        }
+
+        public static CompareResult FromInt(int result)
+        {
+            if (result < 0)
+                return CompareResult.Less;
+            else if (result > 0)
+                return CompareResult.Greater;
+            else
+                return CompareResult.Equal;
+
+        }
     }
-  }
 }

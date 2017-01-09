@@ -119,7 +119,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
 
-        private static InnerNode CharIntervalNode(CharInterval interval, PrefixTreeNode next)
+        public static InnerNode CharIntervalNode(CharInterval interval, PrefixTreeNode next)
         {
             InnerNode node = new InnerNode(true);
             for (int i = interval.LowerBound; i <= interval.UpperBound; ++i)

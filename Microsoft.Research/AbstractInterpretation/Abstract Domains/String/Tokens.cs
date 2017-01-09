@@ -170,10 +170,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
 
+                IntervalMarkVisitor imv = new IntervalMarkVisitor(index);
+                imv.Collect(selfAbstraction.root);
+
+                
+                if(imv.Nodes.Count == 1)
+                {
+                    //TODO:
+                }
+
                 //Split at the index, merge with the inserted part
                 PrefixTreeMerger merger = new PrefixTreeMerger();
 
-                merger.Cutoff(otherAbstraction.root);
+                MarkSplitVisitor msv = new MarkSplitVisitor(merger, imv.Nodes);
+                msv.Split(selfAbstraction.root);
+                RepeatVisitor rv = new RepeatVisitor(merger);
+                rv.Repeat(otherAbstraction.root);
 
                 return new Tokens(merger.Build());
             }
@@ -198,7 +210,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 PrefixTreeMerger merger = new PrefixTreeMerger();
                 MarkSplitVisitor splitter = new MarkSplitVisitor(merger, ptbs.GetEndpoints());
                 splitter.Split(selfAbstract.root);
-                merger.Cutoff(toAbstract.root);
+                RepeatVisitor rv = new RepeatVisitor(merger);
+                rv.Repeat(toAbstract.root);
 
 
                 return new Tokens(merger.Build());
@@ -297,8 +310,29 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public Tokens SetCharAt(Tokens self, IndexInterval index, CharInterval value)
             {
-                //TODO:
-                return Top;
+                IndexInterval end = index.Add(1);
+
+                IntervalMarkVisitor imv = new IntervalMarkVisitor(index);
+                imv.Collect(self.root);
+                IntervalMarkVisitor imve = new IntervalMarkVisitor(end);
+                imve.Collect(self.root);
+
+                if (imv.Nodes.Count == 1)
+                {
+                    //TODO:
+                }
+
+                HashSet<InnerNode> union = new HashSet<InnerNode>(imv.Nodes);
+                union.UnionWith(imve.Nodes);
+
+                //Split at the index, merge with the inserted part
+                PrefixTreeMerger merger = new PrefixTreeMerger();
+
+                MarkSplitVisitor msv = new MarkSplitVisitor(merger, union);
+                msv.Split(self.root);
+                merger.Cutoff(PrefixTreeBuilder.CharIntervalNode(value, RepeatNode.Repeat));
+
+                return new Tokens(merger.Build());
             }
 
             public IStringPredicate IsEmpty(Tokens self, Variable selfVariable)
@@ -400,6 +434,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
                 if (EqualityVisitor.CanBeEqual(selfAbstraction.root, otherAbstraction.root))
                 {
+                    string lc = new ConstantVisitor().GetConstant(selfAbstraction.root);
+                    string rc = new ConstantVisitor().GetConstant(otherAbstraction.root);
+                    if (lc == rc)
+                        return FlatPredicate.True;
+
                     if (otherVariable != null)
                         return StringAbstractionPredicate.ForTrue(otherVariable, selfAbstraction);
                     else if (selfVariable != null)
@@ -413,6 +452,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
 
+            private string ToConstant(InnerNode nd, WithConstants<Tokens> arg)
+            {
+                if (arg.IsConstant)
+                    return arg.Constant;
+                else
+                {
+                    ConstantVisitor cv = new ConstantVisitor();
+                    return cv.GetConstant(nd);
+                }
+
+            }
+
             public CompareResult CompareOrdinal(WithConstants<Tokens> self, WithConstants<Tokens> other)
             {
                 //Preorders on nodes
@@ -420,10 +471,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 bool canle = CompareVisitor.CanBeLessEqual(leftRoot, rightRoot);
                 bool cange = CompareVisitor.CanBeLessEqual(rightRoot, leftRoot);
+                bool canlt = StrictCompareVisitor.CanBeLess(leftRoot, rightRoot);
+                bool cangt = StrictCompareVisitor.CanBeLess(rightRoot, leftRoot);
 
-                //TODO: if both are constants, we know the result exactly
-
-                return CompareResultExtensions.Build(canle, canle && cange, cange);
+                return CompareResultExtensions.Build(canle && canlt, canle && cange, cange && cangt);
             }
 
             public IndexInterval GetLength(Tokens self)
@@ -479,15 +530,19 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 //self meet regex overapprox is bottom -> return false
                 // else return overapprox predicate.
                 Tokens regexUnder = TokensRegex.FromRegex(regex, true);
-                if (self.LessThanEqual(regexUnder))
+                Tokens regexOver = TokensRegex.FromRegex(regex, false);
+
+                Tokens negRegexUnder = TokensRegex.FromNegativeRegex(regex, true);
+                Tokens negRegexOver = TokensRegex.FromNegativeRegex(regex, false);
+
+                if (self.LessThanEqual(regexUnder) || self.Meet(negRegexOver).IsBottom)
                     return FlatPredicate.True;
 
 
-                Tokens regexOver = TokensRegex.FromRegex(regex, false);
-                if (self.Meet(regexOver).IsBottom)
+                if (self.Meet(regexOver).IsBottom || self.LessThanEqual(negRegexUnder))
                     return FlatPredicate.False;
 
-                return StringAbstractionPredicate.ForTrue(selfVariable, regexOver);
+                return StringAbstractionPredicate.For(selfVariable, regexOver, negRegexOver);
             }
 
             public Tokens Constant(string constant)

@@ -52,6 +52,14 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
     class ReplaceCharVisitor : PrefixTreeTransformer
     {
+        //Replace char from an interval with another char from another interval
+        //For each node, we look at edges that can be replaced, and construct a merged node of the childer.
+        //We also merge in the children of nodes that can be the replacement character, so that 
+        //we do not construct too many merged nodes.
+        //If the replaced char is known, we remove the edge.
+        //For each replacement edge, if it was there before or not, we add the merged ndoe.
+
+
         private CharInterval from, to;
 
         public ReplaceCharVisitor(PrefixTreeMerger merger, CharInterval from, CharInterval to)
@@ -78,31 +86,45 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             InnerNode newInn = null;
             PrefixTreeNode next = PrefixTreeBuilder.Unreached(); //could be optinized
 
+            bool canReplace = false;
             
             foreach(var child in inn.children)
             {
                 PrefixTreeNode newChild = VisitNodeCached(child.Value);
 
-                if (from.Contains(child.Key))
+                if (newChild != child.Value)
                 {
-                    if(newInn == null)
+                    if (newInn == null)
                         newInn = new InnerNode(inn);
 
-                    if (from.IsConstant)
-                        newInn.children.Remove(child.Key);
-
-                    next = Merge(next, child.Value);
+                    newInn.children[child.Key] = newChild;
                 }
-                if (to.Contains(child.Key))
+
+                if (from.Contains(child.Key))
                 {
-                    //TODO: order is completely wrong
-                    next = Merge(next, child.Value);
-                    newInn.children[child.Key] = next;
+                    canReplace = true;
+                    next = Merge(next, newChild);
                 }
-
+                else if (to.Contains(child.Key))
+                {
+                    next = Merge(next, child.Value);
+                }
             }
 
+            if (canReplace)
+            {
+                if (newInn == null)
+                    newInn = new InnerNode(inn);
 
+                if (from.IsConstant)
+                    newInn.children.Remove(from.LowerBound);
+
+                for (int i = to.LowerBound; i <= to.UpperBound; ++i)
+                {
+                    newInn.children[(char)i] = next;
+                }
+            }
+            
             return newInn ?? inn;
 
         }
