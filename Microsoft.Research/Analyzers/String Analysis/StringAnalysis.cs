@@ -295,7 +295,7 @@ namespace Microsoft.Research.CodeAnalysis
               state.ReplaceChar(target, target, ExprAt(pc, args[1]), ExprAt(pc, args[2]), numerical);
               break;
             case "Remove(System.Int32,System.Int32)":
-              state.Remove(target, target, ExprAt(pc, args[1]), ExprAt(pc, args[2]), numerical);
+              state.SubstringRemove(target, target, ExprAt(pc, args[1]), ExprAt(pc, args[2]), true, numerical);
               break;
             case "Clear()":
               state.Empty(target);
@@ -337,25 +337,25 @@ namespace Microsoft.Research.CodeAnalysis
               state.Concat(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]));
               break;
             case "Concat(System.String,System.String,System.String)":
-              state.Concat(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]));
+              state.Concat(target, new[] { ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]) });
               break;
             case "Concat(System.String,System.String,System.String,System.String)":
-              state.Concat(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]));
+              state.Concat(target, new[] { ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]) });
               break;
             case "Insert(System.Int32,System.String)":
               state.Insert(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), numerical);
               break;
             case "Remove(System.Int32)":
-              state.Remove(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, numerical);
+              state.SubstringRemove(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, true, numerical);
               break;
             case "Remove(System.Int32,System.Int32)":
-              state.Remove(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), numerical);
+              state.SubstringRemove(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), true, numerical);
               break;
             case "Substring(System.Int32)":
-              state.Substring(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, numerical);
+              state.SubstringRemove(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, false, numerical);
               break;
             case "Substring(System.Int32,System.Int32)":
-              state.Substring(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), numerical);
+              state.SubstringRemove(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), false, numerical);
               break;
             case "Replace(System.Char,System.Char)":
               state.ReplaceChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), numerical);
@@ -364,25 +364,25 @@ namespace Microsoft.Research.CodeAnalysis
               state.ReplaceString(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]));
               break;
             case "PadLeft(System.Int32)":
-              state.PadLeft(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, numerical);
+              state.PadLeftRight(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, false, numerical);
               break;
             case "PadLeft(System.Int32,System.Char)":
-              state.PadLeft(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), numerical);
+              state.PadLeftRight(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), false, numerical);
               break;
             case "PadRight(System.Int32)":
-              state.PadRight(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, numerical);
+              state.PadLeftRight(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, true, numerical);
               break;
             case "PadRight(System.Int32,System.Char)":
-              state.PadRight(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), numerical);
+              state.PadLeftRight(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), true, numerical);
               break;
             case "Trim(System.Char[])":
               state.Trim(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]));
               break;
             case "TrimStart(System.Char[])":
-              state.TrimStart(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]));
+              state.TrimStartEnd(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), false);
               break;
             case "TrimEnd(System.Char[])":
-              state.TrimEnd(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]));
+              state.TrimStartEnd(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), true);
               break;
             case "IsNullOrEmpty(System.String)":
               state.IsNullOrEmpty(target, ExprAt(pc, args[0]));
@@ -391,10 +391,10 @@ namespace Microsoft.Research.CodeAnalysis
               state.Contains(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]));
               break;
             case "EndsWith(System.String,System.StringComparison)":
-              state.EndsWith(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]));
+              state.StartsEndsWith(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), true);
               break;
             case "StartsWith(System.String,System.StringComparison)":
-              state.StartsWith(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]));
+              state.StartsEndsWith(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), false);
               break;
             case "Equals(System.String,System.String)":
               state.Equals(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), nullQuery);
@@ -403,40 +403,40 @@ namespace Microsoft.Research.CodeAnalysis
               state.CompareOrdinal(target, ExprAt(pc, args[0]), ExprAt(pc, args[0]), numerical, nullQuery);
               break;
             case "IndexOf(System.String,System.StringComparison)":
-              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, null, ExprAt(pc, args[2]), numerical);
+              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, null, ExprAt(pc, args[2]), false, numerical);
               break;
             case "IndexOf(System.String,System.Int32,System.StringComparison)":
-              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), null, ExprAt(pc, args[3]), numerical);
+              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), null, ExprAt(pc, args[3]), false, numerical);
               break;
             case "IndexOf(System.String,System.Int32,System.Int32,System.StringComparison)":
-              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]), ExprAt(pc, args[4]), numerical);
+              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]), ExprAt(pc, args[4]), false, numerical);
               break;
             case "IndexOf(System.Char)":
-              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, null, numerical);
+              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, null, false, numerical);
               break;
             case "IndexOf(System.Char,System.Int32)":
-              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), null, numerical);
+              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), null, false, numerical);
               break;
             case "IndexOf(System.Char,System.Int32,System.Int32)":
-              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]), numerical);
+              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]), false, numerical);
               break;
             case "LastIndexOf(System.String,System.StringComparison)":
-              state.LastIndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, null, ExprAt(pc, args[2]), numerical);
+              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, null, ExprAt(pc, args[2]), true, numerical);
               break;
             case "LastIndexOf(System.String,System.Int32,System.StringComparison)":
-              state.LastIndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), null, ExprAt(pc, args[3]), numerical);
+              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), null, ExprAt(pc, args[3]), true, numerical);
               break;
             case "LastIndexOf(System.String,System.Int32,System.Int32,System.StringComparison)":
-              state.LastIndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]), ExprAt(pc, args[4]), numerical);
+              state.IndexOf(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]), ExprAt(pc, args[4]), true, numerical);
               break;
             case "LastIndexOf(System.Char)":
-              state.LastIndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, null, numerical);
+              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), null, null, true, numerical);
               break;
             case "LastIndexOf(System.Char,System.Int32)":
-              state.LastIndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), null, numerical);
+              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), null, true, numerical);
               break;
             case "LastIndexOf(System.Char,System.Int32,System.Int32)":
-              state.LastIndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]), numerical);
+              state.IndexOfChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), ExprAt(pc, args[2]), ExprAt(pc, args[3]), true, numerical);
               break;
             case "get_Chars(System.Int32)":
               state.GetChar(target, ExprAt(pc, args[0]), ExprAt(pc, args[1]), numerical);
