@@ -597,14 +597,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             else if (!TryBottomArguments(out targetAbstraction, valueAbstraction))
             {
-                if (!right)
-                {
-                    targetAbstraction = operations.PadLeft(valueAbstraction.ToAbstract(operations), lengthAbstraction, fillInterval);
-                }
-                else
-                {
-                    targetAbstraction = operations.PadRight(valueAbstraction.ToAbstract(operations), lengthAbstraction, fillInterval);
-                }
+                targetAbstraction = operations.PadLeftRight(valueAbstraction.ToAbstract(operations), lengthAbstraction, fillInterval, right);
             }
 
             AssignLeftTarget(targetExp, targetAbstraction);
@@ -613,6 +606,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         private void Trim(Expression targetExp, Expression valueExp, Expression trimExp, bool start, bool end)
         {
+            Debug.Assert(start || end);
+
             WithConstants<StringAbstraction> valueAbstraction = EvalStringArgument(valueExp, NullHandling.Exception);
             WithConstants<StringAbstraction> trimAbstraction = EvalStringArgument(trimExp, NullHandling.Empty);
             StringAbstraction targetAbstraction;
@@ -638,18 +633,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             else if (!TryBottomArguments(out targetAbstraction, valueAbstraction, trimAbstraction))
             {
-                if (!start)
-                {
-                    targetAbstraction = operations.TrimEnd(valueAbstraction, trimAbstraction);
-                }
-                else if (!end)
-                {
-                    targetAbstraction = operations.TrimStart(valueAbstraction, trimAbstraction);
-                }
-                else
+                if (start && end)
                 {
                     targetAbstraction = operations.Trim(valueAbstraction, trimAbstraction);
                 }
+                else
+                { 
+                    targetAbstraction = operations.TrimStartEnd(valueAbstraction, trimAbstraction, end);
+                }
+                
             }
             AssignLeftTarget(targetExp, targetAbstraction);
         }
@@ -927,15 +919,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     indexInterval = IndexInterval.Unknown.Bottom;
                 }
-                else if (!last)
-                {
-                    indexInterval = operations.IndexOf(thisAbstraction, needleAbstraction, offsetInterval, countInterval);
-                }
                 else
                 {
-                    indexInterval = operations.LastIndexOf(thisAbstraction, needleAbstraction, offsetInterval, countInterval);
+                    indexInterval = operations.IndexOf(thisAbstraction, needleAbstraction, offsetInterval, countInterval, last);
                 }
-
+       
                 AssignIndexInterval(indexVar, indexInterval, numericalDomain);
             }
         }

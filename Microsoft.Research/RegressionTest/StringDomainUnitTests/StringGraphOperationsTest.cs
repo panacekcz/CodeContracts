@@ -81,12 +81,12 @@ namespace StringDomainUnitTests
       StringGraph graph = StringGraph.ForString("abc");
 
       // Not padded
-      Assert.AreEqual("<[a][b][c]>", operations.PadLeft(graph, IndexInterval.For(0, 3), CharInterval.For('x')).ToString());
-      Assert.AreEqual("<[a][b][c]>", operations.PadRight(graph, IndexInterval.For(0, 3), CharInterval.For('x')).ToString());
+      Assert.AreEqual("<[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 3), CharInterval.For('x'), false).ToString());
+      Assert.AreEqual("<[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 3), CharInterval.For('x'), true).ToString());
 
       // Padded
-      Assert.AreEqual("<a:{<><[x]a>}[a][b][c]>", operations.PadLeft(graph, IndexInterval.For(0, 1000), CharInterval.For('x')).ToString());
-      Assert.AreEqual("<[a][b][c]a:{<><[x]a>}>", operations.PadRight(graph, IndexInterval.For(0, 1000), CharInterval.For('x')).ToString());
+      Assert.AreEqual("<a:{<><[x]a>}[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 1000), CharInterval.For('x'), false).ToString());
+      Assert.AreEqual("<[a][b][c]a:{<><[x]a>}>", operations.PadLeftRight(graph, IndexInterval.For(0, 1000), CharInterval.For('x'), true).ToString());
     }
 
 
@@ -96,8 +96,8 @@ namespace StringDomainUnitTests
       StringGraph trimmed = StringGraph.ForString("x");
       StringGraph constant = StringGraph.ForString("xxxabcxxx");
 
-      Assert.AreEqual("<[a][b][c][x][x][x]>", operations.TrimStart(Arg(constant), Arg(trimmed)).ToString());
-      Assert.AreEqual("<[x][x][x][a][b][c]>", operations.TrimEnd(Arg(constant), Arg(trimmed)).ToString());
+      Assert.AreEqual("<[a][b][c][x][x][x]>", operations.TrimStartEnd(Arg(constant), Arg(trimmed), false).ToString());
+      Assert.AreEqual("<[x][x][x][a][b][c]>", operations.TrimStartEnd(Arg(constant), Arg(trimmed), true).ToString());
       Assert.AreEqual("<[a][b][c]>", operations.Trim(Arg(constant), Arg(trimmed)).ToString());
 
       Assert.AreEqual("<[b]>", operations.Trim(Arg(constant), Arg("xac")).ToString());

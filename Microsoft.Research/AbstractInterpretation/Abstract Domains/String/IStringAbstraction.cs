@@ -162,21 +162,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
         StringAbstraction Remove(StringAbstraction self, IndexInterval index, IndexInterval length);
 
         /// <summary>
-        /// Evaluates the <see cref="String.PadLeft(int,char)"/> method in abstract.
+        /// Evaluates the <see cref="String.PadLeft(int,char)"/> or <see cref="String.PadRight(int,char)"/> method in abstract
         /// </summary>
         /// <param name="self">Abstraction of the this argument.</param>
         /// <param name="length">Abstraction of the target length.</param>
         /// <param name="fill">Abstraction of padding character.</param>
+        /// <param name="right">True if the method is <see cref="String.PadRight(int,char)"/>, false if it is <see cref="String.PadLeft(int,char)"/>.</param>
         /// <returns>Abstraction of the return value.</returns>
-        StringAbstraction PadLeft(StringAbstraction self, IndexInterval length, CharInterval fill);
-        /// <summary>
-        /// Evaluates the <see cref="String.PadRight(int,char)"/> method in abstract.
-        /// </summary>
-        /// <param name="self">Abstraction of the this argument.</param>
-        /// <param name="length">Abstraction of the target length.</param>
-        /// <param name="fill">Abstraction of padding character.</param>
-        /// <returns>Abstraction of the return value.</returns>
-        StringAbstraction PadRight(StringAbstraction self, IndexInterval length, CharInterval fill);
+        StringAbstraction PadLeftRight(StringAbstraction self, IndexInterval length, CharInterval fill, bool right);
 
         /// <summary>
         /// Evaluates the <see cref="String.Trim(char[])"/> method in abstract.
@@ -186,20 +179,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <returns>Abstraction of the return value.</returns>
         StringAbstraction Trim(WithConstants<StringAbstraction> self, WithConstants<StringAbstraction> trimmed);
         /// <summary>
-        /// Evaluates the <see cref="String.TrimStart(char[])"/> method in abstract.
+        /// Evaluates the <see cref="String.TrimStart(char[])"/> or <see cref="String.TrimEnd(char[])"/> method in abstract.
         /// </summary>
         /// <param name="self">Abstraction or constant value of the this argument.</param>
         /// <param name="trimmed">Abstraction or constant value of the array of trimmed characters.</param>
         /// <returns>Abstraction of the return value.</returns>
-        StringAbstraction TrimStart(WithConstants<StringAbstraction> self, WithConstants<StringAbstraction> trimmed);
-        /// <summary>
-        /// Evaluates the <see cref="String.TrimEnd(char[])"/> method in abstract.
-        /// </summary>
-        /// <param name="self">Abstraction or constant value of the this argument.</param>
-        /// <param name="trimmed">Abstraction or constant value of the array of trimmed characters.</param>
-        /// <returns>Abstraction of the return value.</returns>
-        StringAbstraction TrimEnd(WithConstants<StringAbstraction> self, WithConstants<StringAbstraction> trimmed);
-
+        StringAbstraction TrimStartEnd(WithConstants<StringAbstraction> self, WithConstants<StringAbstraction> trimmed, bool end);
+        
         /// <summary>
         /// Evaluates the setter of a character in a string in abstract.
         /// </summary>
@@ -275,23 +261,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
         IndexInterval GetLength(StringAbstraction self);
 
         /// <summary>
-        /// Evaluates the <see cref="String.IndexOf"/> method in abstract.
+        /// Evaluates the <see cref="String.IndexOf"/> or <see cref="String.LastIndexOf"/>  method in abstract.
         /// </summary>
         /// <param name="self">Abstraction or constant value of the this argument.</param>
         /// <param name="needle">Abstraction or constant value of the needle argument.</param>
         /// <param name="offset">Abstraction of the offset argument.</param>
         /// <param name="count">Abstraction of the count argument.</param>
         /// <returns>Abstraction of the return value.</returns>
-        IndexInterval IndexOf(WithConstants<StringAbstraction> self, WithConstants<StringAbstraction> needle, IndexInterval offset, IndexInterval count);
-        /// <summary>
-        /// Evaluates the <see cref="String.LastIndexOf"/> method in abstract.
-        /// </summary>
-        /// <param name="self">Abstraction or constant value of the this argument.</param>
-        /// <param name="needle">Abstraction or constant value of the needle argument.</param>
-        /// <param name="offset">Abstraction of the offset argument.</param>
-        /// <param name="count">Abstraction of the count argument.</param>
-        /// <returns>Abstraction of the return value.</returns>
-        IndexInterval LastIndexOf(WithConstants<StringAbstraction> self, WithConstants<StringAbstraction> needle, IndexInterval offset, IndexInterval count);
+        IndexInterval IndexOf(WithConstants<StringAbstraction> self, WithConstants<StringAbstraction> needle, IndexInterval offset, IndexInterval count, bool last);
 
         /// <summary>
         /// Evaluates the getter of a character in a string in abstract.

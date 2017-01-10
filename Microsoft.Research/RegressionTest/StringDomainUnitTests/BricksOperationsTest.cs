@@ -58,35 +58,36 @@ namespace StringDomainUnitTests
       Assert.AreEqual("{efgh}[1,1]", operations.Substring(longer, IndexInterval.For(4), IndexInterval.For(4)).ToString());
     }
 
-    [TestMethod]
-    public void PadLeftPadRight()
-    {
+        [TestMethod]
+        public void PadLeftRight()
+        {
+
       IndexInterval index5 = IndexInterval.For(5);
       CharInterval charX = CharInterval.For('x');
 
       Bricks empty = MakeBricks("");
-      Assert.AreEqual("{x}[5,5]", operations.PadLeft(empty, index5, charX).ToString());
-      Assert.AreEqual("{x}[5,5]", operations.PadRight(empty, index5, charX).ToString());
+      Assert.AreEqual("{x}[5,5]", operations.PadLeftRight(empty, index5, charX, false).ToString());
+      Assert.AreEqual("{x}[5,5]", operations.PadLeftRight(empty, index5, charX, true).ToString());
 
       Bricks longer = MakeBricks("abcdefgh");
-      Assert.AreEqual("{abcdefgh}[1,1]", operations.PadLeft(longer, index5, charX).ToString());
-      Assert.AreEqual("{abcdefgh}[1,1]", operations.PadRight(longer, index5, charX).ToString());
+      Assert.AreEqual("{abcdefgh}[1,1]", operations.PadLeftRight(longer, index5, charX, false).ToString());
+      Assert.AreEqual("{abcdefgh}[1,1]", operations.PadLeftRight(longer, index5, charX, true).ToString());
 
       Bricks shorter = MakeBricks("ij");
-      Assert.AreEqual("{x}[3,3]{ij}[1,1]", operations.PadLeft(shorter, index5, charX).ToString());
-      Assert.AreEqual("{ij}[1,1]{x}[3,3]", operations.PadRight(shorter, index5, charX).ToString());
+      Assert.AreEqual("{x}[3,3]{ij}[1,1]", operations.PadLeftRight(shorter, index5, charX, false).ToString());
+      Assert.AreEqual("{ij}[1,1]{x}[3,3]", operations.PadLeftRight(shorter, index5, charX, true).ToString());
 
       Bricks emptyOrLonger = empty.Join(longer);
-      Assert.AreEqual("{x}[0,5]{abcdefgh}[0,1]", operations.PadLeft(emptyOrLonger, index5, charX).ToString());
-      Assert.AreEqual("{abcdefgh}[0,1]{x}[0,5]", operations.PadRight(emptyOrLonger, index5, charX).ToString());
+      Assert.AreEqual("{x}[0,5]{abcdefgh}[0,1]", operations.PadLeftRight(emptyOrLonger, index5, charX, false).ToString());
+      Assert.AreEqual("{abcdefgh}[0,1]{x}[0,5]", operations.PadLeftRight(emptyOrLonger, index5, charX, true).ToString());
 
       Bricks emptyOrShorter = empty.Join(shorter);
-      Assert.AreEqual("{x}[3,3]{x}[0,2]{ij}[0,1]", operations.PadLeft(emptyOrShorter, index5, charX).ToString());
-      Assert.AreEqual("{ij}[0,1]{x}[3,3]{x}[0,2]", operations.PadRight(emptyOrShorter, index5, charX).ToString());
+      Assert.AreEqual("{x}[3,3]{x}[0,2]{ij}[0,1]", operations.PadLeftRight(emptyOrShorter, index5, charX, false).ToString());
+      Assert.AreEqual("{ij}[0,1]{x}[3,3]{x}[0,2]", operations.PadLeftRight(emptyOrShorter, index5, charX, true).ToString());
 
       Bricks longerOrShorter = longer.Join(shorter);
-      Assert.AreEqual("{x}[0,3]{abcdefgh,ij}[1,1]", operations.PadLeft(longerOrShorter, index5, charX).ToString());
-      Assert.AreEqual("{abcdefgh,ij}[1,1]{x}[0,3]", operations.PadRight(longerOrShorter, index5, charX).ToString());
+      Assert.AreEqual("{x}[0,3]{abcdefgh,ij}[1,1]", operations.PadLeftRight(longerOrShorter, index5, charX, false).ToString());
+      Assert.AreEqual("{abcdefgh,ij}[1,1]{x}[0,3]", operations.PadLeftRight(longerOrShorter, index5, charX, true).ToString());
     }
 
     [TestMethod]

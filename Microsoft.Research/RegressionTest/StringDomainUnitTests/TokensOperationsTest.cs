@@ -53,9 +53,9 @@ namespace StringDomainUnitTests
     [TestClass]
     public class TokensOperationsTests : TokensTestBase
     {
-        
 
-     
+
+
         [TestMethod]
         public void TestConcat()
         {
@@ -113,36 +113,36 @@ namespace StringDomainUnitTests
 
 
         [TestMethod]
-    public void TestStartsWith()
-    {
+        public void TestStartsWith()
+        {
             Tokens constant = operations.Constant("const");
             Tokens longConstant = operations.Constant("constant");
 
             Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(Arg(longConstant), null, Arg(constant), null).ProofOutcome);
             Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(Arg(constant), null, Arg(longConstant), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(Arg(constant), null, Arg(top), null).ProofOutcome);
-    }
-   
-    [TestMethod]
-    public void TestReplaceString()
-    {
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(Arg(constant), null, Arg(top), null).ProofOutcome);
+        }
+
+        [TestMethod]
+        public void TestReplaceString()
+        {
             Tokens constant = operations.Constant("const");
             Tokens longConstant = operations.Constant("constant");
             Tokens otherConstant = operations.Constant("other");
             Tokens anotherConstant = operations.Constant("another");
 
             Assert.AreEqual(constant, operations.Replace(Arg(constant), Arg(otherConstant), Arg(anotherConstant)));
-    }
-    [TestMethod]
-    public void TestContains()
-    {
+        }
+        [TestMethod]
+        public void TestContains()
+        {
             Tokens constant = operations.Constant("const");
             Tokens longConstant = operations.Constant("constant");
 
-      Assert.AreEqual(FlatPredicate.True, operations.Contains(Arg(longConstant), null, Arg(constant), null));
-      Assert.AreEqual(FlatPredicate.Top, operations.Contains(Arg(longConstant), null, Arg(top), null));
-      Assert.AreEqual(FlatPredicate.False, operations.Contains(Arg(constant), null, Arg(longConstant), null));
-    }
+            Assert.AreEqual(FlatPredicate.True, operations.Contains(Arg(longConstant), null, Arg(constant), null));
+            Assert.AreEqual(FlatPredicate.Top, operations.Contains(Arg(longConstant), null, Arg(top), null));
+            Assert.AreEqual(FlatPredicate.False, operations.Contains(Arg(constant), null, Arg(longConstant), null));
+        }
 #if false
         [TestMethod]
     public void TestPrefixSubstring()
@@ -174,25 +174,21 @@ namespace StringDomainUnitTests
       Assert.AreEqual(somePrefix, operations.Remove(somePrefix, IndexInterval.For(0), IndexInterval.For(0)));
     }
 #endif
-    [TestMethod]
-    public void TestPadLeft()
-    {
+        [TestMethod]
+        public void TestPadLeftRight()
+        {
             Tokens constant = operations.Constant("const");
-            Assert.AreEqual(constant, operations.PadLeft(constant, IndexInterval.For(1), CharInterval.For(' ')));
+            Assert.AreEqual(constant, operations.PadLeftRight(constant, IndexInterval.For(1), CharInterval.For(' '), false));
+            Assert.AreEqual(constant, operations.PadLeftRight(constant, IndexInterval.For(1), CharInterval.For(' '), true));
         }
-    [TestMethod]
-    public void TestPadRight()
-    {
-            Tokens constant = operations.Constant("const");
-      Assert.AreEqual(constant, operations.PadRight(constant, IndexInterval.For(1), CharInterval.For(' ')));
-    }
-    [TestMethod]
-    public void TestInsert()
-    {
 
-      Assert.AreEqual(operations.Constant("someOtherString"), operations.Insert(Arg(operations.Constant("someString")), IndexInterval.For(4), Arg("Other")));
+        [TestMethod]
+        public void TestInsert()
+        {
 
-    }
+            Assert.AreEqual(operations.Constant("someOtherString"), operations.Insert(Arg(operations.Constant("someString")), IndexInterval.For(4), Arg("Other")));
+
+        }
 
 
     }

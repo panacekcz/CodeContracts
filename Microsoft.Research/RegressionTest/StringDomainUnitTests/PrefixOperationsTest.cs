@@ -99,17 +99,13 @@ namespace StringDomainUnitTests
       Assert.AreEqual(somePrefix, operations.Remove(somePrefix, IndexInterval.For(0), IndexInterval.For(0)));
     }
     [TestMethod]
-    public void TestPrefixPadLeft()
+    public void TestPrefixPadLeftRight()
     {
-      Assert.AreEqual(new Prefix(""), operations.PadLeft(somePrefix, IndexInterval.For(20), CharInterval.For(' ')));
-      Assert.AreEqual(new Prefix("s"), operations.PadLeft(somePrefix, IndexInterval.For(20), CharInterval.For('s')));
-      Assert.AreEqual(new Prefix("    "), operations.PadLeft(new Prefix("    prefix"), IndexInterval.For(20), CharInterval.For(' ')));
-      Assert.AreEqual(new Prefix("somePrefix"), operations.PadLeft(somePrefix, IndexInterval.For(10), CharInterval.For('x')));
-    }
-    [TestMethod]
-    public void TestPrefixPadRight()
-    {
-      Assert.AreEqual(somePrefix, operations.PadRight(somePrefix, IndexInterval.For(20), CharInterval.For(' ')));
+      Assert.AreEqual(new Prefix(""), operations.PadLeftRight(somePrefix, IndexInterval.For(20), CharInterval.For(' '), false));
+      Assert.AreEqual(new Prefix("s"), operations.PadLeftRight(somePrefix, IndexInterval.For(20), CharInterval.For('s'), false));
+      Assert.AreEqual(new Prefix("    "), operations.PadLeftRight(new Prefix("    prefix"), IndexInterval.For(20), CharInterval.For(' '), false));
+      Assert.AreEqual(new Prefix("somePrefix"), operations.PadLeftRight(somePrefix, IndexInterval.For(10), CharInterval.For('x'), false));
+      Assert.AreEqual(somePrefix, operations.PadLeftRight(somePrefix, IndexInterval.For(20), CharInterval.For(' '), true));
     }
     [TestMethod]
     public void TestPrefixInsert()

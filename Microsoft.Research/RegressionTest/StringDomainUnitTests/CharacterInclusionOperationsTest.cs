@@ -23,139 +23,145 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  public class CharacterInclusionTestBase : StringAbstractionTestBase<CharacterInclusion>
-  {
-    protected readonly ICharacterClassification classification = new CompleteClassification();
-
-    protected CharacterInclusion Build(string mandatory, string additionalAllowed)
+    public class CharacterInclusionTestBase : StringAbstractionTestBase<CharacterInclusion>
     {
-      return new CharacterInclusion(mandatory, mandatory + additionalAllowed, classification);
-    }
+        protected readonly ICharacterClassification classification = new CompleteClassification();
 
-    protected WithConstants<CharacterInclusion> BuildArg(string mandatory, string additionalAllowed)
-    {
-      return Arg(Build(mandatory, additionalAllowed));
-    }
+        protected CharacterInclusion Build(string mandatory, string additionalAllowed)
+        {
+            return new CharacterInclusion(mandatory, mandatory + additionalAllowed, classification);
+        }
 
-  }
-
-
-  [TestClass]
-  public class CharacterInclusionOperationsTest : CharacterInclusionTestBase
-  {
-    private readonly CharacterInclusion.Operations<TestVariable> operations;
-    private readonly CharacterInclusion top;
-
-    public CharacterInclusionOperationsTest()
-    {
-      operations = new CharacterInclusion.Operations<TestVariable>(classification);
-      top = new CharacterInclusion(true, classification);
+        protected WithConstants<CharacterInclusion> BuildArg(string mandatory, string additionalAllowed)
+        {
+            return Arg(Build(mandatory, additionalAllowed));
+        }
 
     }
 
 
-    [TestMethod]
-    public void TestReplaceChar()
+    [TestClass]
+    public class CharacterInclusionOperationsTest : CharacterInclusionTestBase
     {
-      CharInterval charD = CharInterval.For('d');
-      CharInterval charE = CharInterval.For('e');
+        private readonly CharacterInclusion.Operations<TestVariable> operations;
+        private readonly CharacterInclusion top;
 
-      Assert.AreEqual(Build("", "abce"), operations.Replace(Build("", "abcd"), charD, charE));
-      Assert.AreEqual(Build("", "abcde"), operations.Replace(Build("", "abcd"), CharInterval.For('a', 'c'), charE));
-      Assert.AreEqual(Build("", "abcd"), operations.Replace(Build("", "abcd"), CharInterval.For('x', 'z'), charE));
-      Assert.AreEqual(Build("", "abcde"), operations.Replace(Build("", "abcd"), CharInterval.For('a', 'z'), charE));
-      Assert.AreEqual(Build("ce", "ab"), operations.Replace(Build("cd", "ab"), charD, charE));
+        public CharacterInclusionOperationsTest()
+        {
+            operations = new CharacterInclusion.Operations<TestVariable>(classification);
+            top = new CharacterInclusion(true, classification);
+
+        }
+
+
+        [TestMethod]
+        public void TestReplaceChar()
+        {
+            CharInterval charD = CharInterval.For('d');
+            CharInterval charE = CharInterval.For('e');
+
+            Assert.AreEqual(Build("", "abce"), operations.Replace(Build("", "abcd"), charD, charE));
+            Assert.AreEqual(Build("", "abcde"), operations.Replace(Build("", "abcd"), CharInterval.For('a', 'c'), charE));
+            Assert.AreEqual(Build("", "abcd"), operations.Replace(Build("", "abcd"), CharInterval.For('x', 'z'), charE));
+            Assert.AreEqual(Build("", "abcde"), operations.Replace(Build("", "abcd"), CharInterval.For('a', 'z'), charE));
+            Assert.AreEqual(Build("ce", "ab"), operations.Replace(Build("cd", "ab"), charD, charE));
+        }
+        private void TestPadLeftRight(bool right)
+        {
+            CharInterval charX = CharInterval.For('x');
+            Assert.AreEqual(Build("x", ""), operations.PadLeftRight(Build("", ""), IndexInterval.For(1), charX, right));
+            Assert.AreEqual(Build("x", ""), operations.PadLeftRight(Build("", "x"), IndexInterval.For(1), charX, right));
+            Assert.AreEqual(Build("", "yx"), operations.PadLeftRight(Build("", "y"), IndexInterval.For(10), charX, right));
+
+            Assert.AreEqual(Build("y", ""), operations.PadLeftRight(Build("y", ""), IndexInterval.For(1), charX, right));
+        }
+
+        [TestMethod]
+        public void TestPadLeftPadRight()
+        {
+
+
+            TestPadLeftRight(false);
+            TestPadLeftRight(true);
+        }
+
+        [TestMethod]
+        public void TestCombine()
+        {
+            Assert.AreEqual(Build("defghij", "abc"), operations.Concat(BuildArg("defgh", "ab"), BuildArg("defij", "bc")));
+            Assert.AreEqual(Build("defghij", "abc"), operations.Insert(BuildArg("defgh", "ab"), IndexInterval.For(10), BuildArg("defij", "bc")));
+        }
+
+        [TestMethod]
+        public void TestSubstring()
+        {
+            Assert.AreEqual(Build("bc", "a"), operations.Substring(Build("bc", "a"), IndexInterval.For(0), IndexInterval.Infinity));
+            Assert.AreEqual(Build("", "abc"), operations.Substring(Build("bc", "a"), IndexInterval.For(1), IndexInterval.Infinity));
+            Assert.AreEqual(Build("", ""), operations.Substring(Build("", ""), IndexInterval.For(0), IndexInterval.Infinity));
+            Assert.IsTrue(operations.Substring(Build("", ""), IndexInterval.For(1), IndexInterval.Infinity).IsBottom);
+
+            Assert.AreEqual(Build("", ""), operations.Substring(Build("bc", "a"), IndexInterval.For(10), IndexInterval.For(0)));
+            Assert.AreEqual(Build("", "abc"), operations.Substring(Build("bc", "a"), IndexInterval.For(10), IndexInterval.For(1)));
+
+            Assert.AreEqual(Build("a", ""), operations.Substring(Build("", "a"), IndexInterval.For(10), IndexInterval.For(1)));
+        }
+
+
+        [TestMethod]
+        public void TestContains()
+        {
+            Assert.AreEqual(ProofOutcome.True, operations.Contains(BuildArg("bc", "a"), null, Arg(""), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.Contains(BuildArg("bc", "a"), null, Arg("d"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.Contains(BuildArg("bc", "a"), null, Arg("a"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.Contains(BuildArg("bc", "a"), null, Arg("b"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.Contains(BuildArg("bc", "a"), null, Arg("bc"), null).ProofOutcome);
+
+            Assert.AreEqual(ProofOutcome.True, operations.Contains(BuildArg("b", ""), null, Arg("b"), null).ProofOutcome);
+
+            Assert.AreEqual(ProofOutcome.True, operations.Contains(BuildArg("bc", "a"), null, BuildArg("", ""), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.Contains(BuildArg("bc", "a"), null, BuildArg("", "b"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.Contains(BuildArg("bc", "a"), null, BuildArg("d", "b"), null).ProofOutcome);
+        }
+
+        [TestMethod]
+        public void TestStartEndsWith()
+        {
+            Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg(""), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("d"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("a"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("b"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("b", ""), null, Arg("b"), null).ProofOutcome);
+
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("bc"), null).ProofOutcome);
+
+            Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("", ""), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("", "b"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("d", "b"), null).ProofOutcome);
+        }
+
+        [TestMethod]
+        public void TestIsNullOrEmpty()
+        {
+            Assert.AreEqual(ProofOutcome.True, operations.IsEmpty(Build("", ""), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.IsEmpty(Build("", "a"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.IsEmpty(Build("a", ""), null).ProofOutcome);
+        }
+
+
+        [TestMethod]
+        public void TestCompare()
+        {
+            Assert.AreEqual(CompareResult.Equal, operations.CompareOrdinal(BuildArg("", ""), BuildArg("", "")));
+
+            Assert.AreEqual(CompareResult.Top, operations.CompareOrdinal(BuildArg("", "x"), BuildArg("", "x")));
+            Assert.AreEqual(CompareResult.Top, operations.CompareOrdinal(BuildArg("y", "x"), BuildArg("y", "x"))); // y=y, yy>y, y<yy
+
+            Assert.AreEqual(CompareResult.Less, operations.CompareOrdinal(BuildArg("a", ""), BuildArg("b", ""))); // a < b
+            Assert.AreEqual(CompareResult.Less, operations.CompareOrdinal(BuildArg("a", "e"), BuildArg("g", "e"))); // eeeea < eeeeg
+            Assert.AreEqual(CompareResult.NotEqual, operations.CompareOrdinal(BuildArg("a", "e"), BuildArg("e", "g"))); //  eeeea > eee, ea < eee
+
+
+        }
+
     }
-
-    [TestMethod]
-    public void TestPadLeftPadRight()
-    {
-      CharInterval charX = CharInterval.For('x');
-
-      Assert.AreEqual(Build("x", ""), operations.PadLeft(Build("", ""), IndexInterval.For(1), charX));
-      Assert.AreEqual(Build("x", ""), operations.PadLeft(Build("", "x"), IndexInterval.For(1), charX));
-      Assert.AreEqual(Build("", "yx"), operations.PadLeft(Build("", "y"), IndexInterval.For(10), charX));
-
-      Assert.AreEqual(Build("y", ""), operations.PadLeft(Build("y", ""), IndexInterval.For(1), charX));
-    }
-
-    [TestMethod]
-    public void TestCombine()
-    {
-      Assert.AreEqual(Build("defghij", "abc"), operations.Concat(BuildArg("defgh", "ab"), BuildArg("defij", "bc")));
-      Assert.AreEqual(Build("defghij", "abc"), operations.Insert(BuildArg("defgh", "ab"), IndexInterval.For(10), BuildArg("defij", "bc")));
-    }
-
-    [TestMethod]
-    public void TestSubstring()
-    {
-      Assert.AreEqual(Build("bc", "a"), operations.Substring(Build("bc", "a"), IndexInterval.For(0), IndexInterval.Infinity));
-      Assert.AreEqual(Build("", "abc"), operations.Substring(Build("bc", "a"), IndexInterval.For(1), IndexInterval.Infinity));
-      Assert.AreEqual(Build("", ""), operations.Substring(Build("", ""), IndexInterval.For(0), IndexInterval.Infinity));
-      Assert.IsTrue(operations.Substring(Build("", ""), IndexInterval.For(1), IndexInterval.Infinity).IsBottom);
-
-      Assert.AreEqual(Build("", ""), operations.Substring(Build("bc", "a"), IndexInterval.For(10), IndexInterval.For(0)));
-      Assert.AreEqual(Build("", "abc"), operations.Substring(Build("bc", "a"), IndexInterval.For(10), IndexInterval.For(1)));
-
-      Assert.AreEqual(Build("a", ""), operations.Substring(Build("", "a"), IndexInterval.For(10), IndexInterval.For(1)));
-    }
-
-
-    [TestMethod]
-    public void TestContains()
-    {
-      Assert.AreEqual(ProofOutcome.True, operations.Contains(BuildArg("bc", "a"), null, Arg(""), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.Contains(BuildArg("bc", "a"), null, Arg("d"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.Contains(BuildArg("bc", "a"), null, Arg("a"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.True, operations.Contains(BuildArg("bc", "a"), null, Arg("b"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.Contains(BuildArg("bc", "a"), null, Arg("bc"), null).ProofOutcome);
-
-      Assert.AreEqual(ProofOutcome.True, operations.Contains(BuildArg("b", ""), null, Arg("b"), null).ProofOutcome);
-
-      Assert.AreEqual(ProofOutcome.True, operations.Contains(BuildArg("bc", "a"), null, BuildArg("", ""), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.Contains(BuildArg("bc", "a"), null, BuildArg("", "b"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.Contains(BuildArg("bc", "a"), null, BuildArg("d", "b"), null).ProofOutcome);
-    }
-
-    [TestMethod]
-    public void TestStartEndsWith()
-    {
-      Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg(""), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("d"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("a"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("b"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("b", ""), null, Arg("b"), null).ProofOutcome);
-
-      Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("bc"), null).ProofOutcome);
-
-      Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("", ""), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("", "b"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("d", "b"), null).ProofOutcome);
-    }
-
-    [TestMethod]
-    public void TestIsNullOrEmpty()
-    {
-      Assert.AreEqual(ProofOutcome.True, operations.IsEmpty(Build("", ""), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.IsEmpty(Build("", "a"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.IsEmpty(Build("a", ""), null).ProofOutcome);
-    }
-
-
-    [TestMethod]
-    public void TestCompare()
-    {
-      Assert.AreEqual(CompareResult.Equal, operations.CompareOrdinal(BuildArg("", ""), BuildArg("", "")));
-
-      Assert.AreEqual(CompareResult.Top, operations.CompareOrdinal(BuildArg("", "x"), BuildArg("", "x")));
-      Assert.AreEqual(CompareResult.Top, operations.CompareOrdinal(BuildArg("y", "x"), BuildArg("y", "x"))); // y=y, yy>y, y<yy
-
-      Assert.AreEqual(CompareResult.Less, operations.CompareOrdinal(BuildArg("a", ""), BuildArg("b", ""))); // a < b
-      Assert.AreEqual(CompareResult.Less, operations.CompareOrdinal(BuildArg("a", "e"), BuildArg("g", "e"))); // eeeea < eeeeg
-      Assert.AreEqual(CompareResult.NotEqual, operations.CompareOrdinal(BuildArg("a", "e"), BuildArg("e", "g"))); //  eeeea > eee, ea < eee
-
-
-    }
-
-  }
 }

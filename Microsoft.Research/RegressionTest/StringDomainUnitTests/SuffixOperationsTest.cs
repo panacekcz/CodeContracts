@@ -112,17 +112,13 @@ namespace StringDomainUnitTests
       Assert.AreEqual(new Suffix("ijklmnocdefg"), operations.Remove(new Suffix("ijklmnocdefg"), IndexInterval.For(100), IndexInterval.For(0)));
     }
     [TestMethod]
-    public void TestPadLeft()
+    public void TestPadLeftRight()
     {
-      Assert.AreEqual(someSuffix, operations.PadLeft(someSuffix, IndexInterval.For(20), CharInterval.For(' ')));
-    }
-    [TestMethod]
-    public void TestPadRight()
-    {
-      Assert.AreEqual(new Suffix(""), operations.PadRight(someSuffix, IndexInterval.For(20), CharInterval.For(' ')));
-      Assert.AreEqual(new Suffix("x"), operations.PadRight(someSuffix, IndexInterval.For(20), CharInterval.For('x')));
-      Assert.AreEqual(new Suffix("    "), operations.PadRight(new Suffix("Suffix    "), IndexInterval.For(20), CharInterval.For(' ')));
-      Assert.AreEqual(new Suffix("someSuffix"), operations.PadRight(someSuffix, IndexInterval.For(10), CharInterval.For('z')));
+      Assert.AreEqual(someSuffix, operations.PadLeftRight(someSuffix, IndexInterval.For(20), CharInterval.For(' '), false));
+      Assert.AreEqual(new Suffix(""), operations.PadLeftRight(someSuffix, IndexInterval.For(20), CharInterval.For(' '), true));
+      Assert.AreEqual(new Suffix("x"), operations.PadLeftRight(someSuffix, IndexInterval.For(20), CharInterval.For('x'), true));
+      Assert.AreEqual(new Suffix("    "), operations.PadLeftRight(new Suffix("Suffix    "), IndexInterval.For(20), CharInterval.For(' '), true));
+      Assert.AreEqual(new Suffix("someSuffix"), operations.PadLeftRight(someSuffix, IndexInterval.For(10), CharInterval.For('z'), true));
     }
 
     [TestMethod]

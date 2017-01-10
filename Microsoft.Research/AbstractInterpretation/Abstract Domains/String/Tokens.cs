@@ -217,67 +217,82 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return new Tokens(merger.Build());
             }
 
-            public Tokens PadLeft(Tokens self, IndexInterval length, CharInterval fill)
+            public Tokens PadLeftRight(Tokens self, IndexInterval length, CharInterval fill, bool right)
             {
+                //LEFT:
                 // compare length intervals.
                 // if may pad, add repeating node with fill edge from root
                 // there may be more ways to optimize, for example if there are no repeat nodes and we know we will have to pad, add nodes at root?
+                //RIGHT:
+                // compare lengths
+                // add repeating node, or add constant string of fill chars at accepting nodes
+
                 InnerNode root = self.root;
                 PrefixTreeMerger merger = new PrefixTreeMerger();
                 LengthIntervalVisitor liv = new LengthIntervalVisitor();
                 IndexInterval oldLength = liv.GetLengthInterval(root);
 
-                int mustPad;
-                bool mayPadMore;
-
-                if (oldLength.UpperBound.IsInfinite)
+                if (right)
                 {
-                    //There are repeat nodes. We are not sure we will pad
-                    mustPad = 0;
+
+                    if (oldLength.LowerBound >= length.UpperBound)
+                    {
+                        //The string must be longer, no action
+                        return self;
+                    }
+                    else if (oldLength.IsFiniteConstant && length.IsFiniteConstant)
+                    {
+                        // We know exactly how many characters to add
+                        InnerNode padding = (InnerNode)PrefixTreeBuilder.FromCharInterval(fill, length.LowerBound.AsInt - oldLength.UpperBound.AsInt);
+                        ConcatVisitor cv = new ConcatVisitor(merger, padding);
+
+                        cv.ConcatTo(self.root);
+                    }
+                    else
+                    {
+                        RepeatVisitor rv = new RepeatVisitor(merger);
+                        rv.Repeat(self.root);
+                        PrefixTreeNode padding = PrefixTreeBuilder.CharIntervalTokens(fill);
+                        merger.Cutoff(padding);
+                    }
+
                 }
                 else
                 {
-                    //It is finite, 
-                    mustPad = length.LowerBound.AsInt - oldLength.UpperBound.AsInt;
+                    int mustPad;
+                    bool mayPadMore;
+
+                    if (oldLength.UpperBound.IsInfinite)
+                    {
+                        //There are repeat nodes. We are not sure we will pad
+                        mustPad = 0;
+                    }
+                    else
+                    {
+                        //It is finite, 
+                        mustPad = length.LowerBound.AsInt - oldLength.UpperBound.AsInt;
+                    }
+
+                    mayPadMore = length.UpperBound.IsInfinite || length.UpperBound.AsInt > oldLength.LowerBound.AsInt + mustPad;
+
+                    merger.Cutoff(PrefixTreeBuilder.PrependFromCharInterval(fill, mustPad, root));
+                    if (mayPadMore)
+                        merger.Cutoff(PrefixTreeBuilder.CharIntervalTokens(fill));
+
                 }
-
-                mayPadMore = length.UpperBound.IsInfinite || length.UpperBound.AsInt > oldLength.LowerBound.AsInt + mustPad;
-
-                merger.Cutoff(PrefixTreeBuilder.PrependFromCharInterval(fill, mustPad, root));
-                if (mayPadMore)
-                    merger.Cutoff(PrefixTreeBuilder.CharIntervalTokens(fill));
                 return new Tokens(merger.Build());
             }
 
-            public Tokens PadRight(Tokens self, IndexInterval length, CharInterval fill)
+            private Tokens AnyTrim(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
             {
-                // compare lengths
-                // add repeating node, or add constant string of fill chars at accepting nodes
-
-                LengthIntervalVisitor liv = new LengthIntervalVisitor();
-                IndexInterval oldLength = liv.GetLengthInterval(self.root);
+                Tokens selfAbstraction = self.ToAbstract(this), trimmedAbstraction = trimmed.ToAbstract(this);
                 PrefixTreeMerger merger = new PrefixTreeMerger();
 
-                if (oldLength.LowerBound >= length.UpperBound)
-                {
-                    //The string must be longer, no action
-                    return self;
-                }
-                else if (oldLength.IsFiniteConstant && length.IsFiniteConstant)
-                {
-                    // We know exactly how many characters to add
-                    InnerNode padding = (InnerNode)PrefixTreeBuilder.FromCharInterval(fill, length.LowerBound.AsInt - oldLength.UpperBound.AsInt);
-                    ConcatVisitor cv = new ConcatVisitor(merger, padding);
+                NodeCollectVisitor ncv = new NodeCollectVisitor();
+                ncv.Collect(selfAbstraction.root);
 
-                    cv.ConcatTo(self.root);
-                }
-                else
-                {
-                    RepeatVisitor rv = new RepeatVisitor(merger);
-                    rv.Repeat(self.root);
-                    PrefixTreeNode padding = PrefixTreeBuilder.CharIntervalTokens(fill);
-                    merger.Cutoff(padding);
-                }
+                MarkSplitVisitor msv = new MarkSplitVisitor(merger, ncv.Nodes);
+                msv.Split(selfAbstraction.root);
 
                 return new Tokens(merger.Build());
             }
@@ -285,27 +300,25 @@ namespace Microsoft.Research.AbstractDomains.Strings
             public Tokens Trim(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
             {
                 //TODO:
-                return Top;
+                //return Top;
+                return AnyTrim(self, trimmed);
             }
 
-            public Tokens TrimStart(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
+            public Tokens TrimStartEnd(WithConstants<Tokens> self, WithConstants<Tokens> trimmed, bool end)
             {
+                return AnyTrim(self, trimmed);
                 //TODO:
+                //START:
                 // if does not contain repeat nodes,
                 // then trim the characters from the root, merge the cutted subtrees with root
 
                 // if does contain repeat nodes, do the same, but keep the original root
-                return Top;
-            }
-
-            public Tokens TrimEnd(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
-            {
-                //TODO:
+                //END:
 
                 // trim from accepting nodes
                 // if reached root, ???
 
-                return Top;
+                //return Top;
             }
 
             public Tokens SetCharAt(Tokens self, IndexInterval index, CharInterval value)
@@ -483,7 +496,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return liv.GetLengthInterval(self.root);
             }
 
-            public IndexInterval AnyIndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count)
+            public IndexInterval IndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count, bool last)
             {
                 Tokens selfAbstraction = self.ToAbstract(this);
                 Tokens needleAbstraction = needle.ToAbstract(this);
@@ -508,15 +521,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 
             }
 
-            public IndexInterval IndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count)
-            {
-                return AnyIndexOf(self, needle, offset, count);
-            }
-
-            public IndexInterval LastIndexOf(WithConstants<Tokens> self, WithConstants<Tokens> needle, IndexInterval offset, IndexInterval count)
-            {
-                return AnyIndexOf(self, needle, offset, count);
-            }
+ 
 
             public CharInterval GetCharAt(Tokens self, IndexInterval index)
             {
