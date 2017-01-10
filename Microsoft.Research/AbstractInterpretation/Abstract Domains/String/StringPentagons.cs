@@ -470,7 +470,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
               );
         }
 
-        public void Assign(Expression x, Expression exp)
+        public override void Assign(Expression x, Expression exp)
         {
             strings.ResetToNormal();
             strings[this.decoder.UnderlyingVariable(x)] = EvalInterval(exp);
@@ -480,37 +480,24 @@ namespace Microsoft.Research.AbstractDomains.Strings
             predicates[this.decoder.UnderlyingVariable(x)] = EvalBoolExpression(exp);
         }
 
-        public void ProjectVariable(Variable var)
+        public override void ProjectVariable(Variable var)
         {
             RemoveVariable(var);
         }
 
-        public void RemoveVariable(Variable var)
+        public override void RemoveVariable(Variable var)
         {
             strings.RemoveElement(var);
             upperBounds.RemoveElement(var);
             predicates.RemoveElement(var);
         }
 
-        public void RenameVariable(Variable OldName, Variable NewName)
+        public override void RenameVariable(Variable OldName, Variable NewName)
         {
             strings[NewName] = strings[OldName];
             upperBounds[NewName] = upperBounds[OldName];
             predicates[NewName] = predicates[OldName];
             RemoveVariable(OldName);
-        }
-
-
-        private class StringPentagonsTestVisitor : StringDomainTestVisitor<StringPentagons<Variable, Expression, StringAbstraction>, Variable, Expression>
-        {
-            public StringPentagonsTestVisitor(IExpressionDecoder<Variable, Expression> decoder)
-              : base(decoder)
-            {
-            }
-            protected internal override StringPentagons<Variable, Expression, StringAbstraction> TestVariableHolds(Variable var, bool holds, StringPentagons<Variable, Expression, StringAbstraction> data)
-            {
-                return data.Test(var, holds);
-            }
         }
 
         private void TestTruePredicate(OrderPredicate<Variable> orderPredicate)
@@ -521,7 +508,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        private StringPentagons<Variable, Expression, StringAbstraction>/*!*/ Test(Variable assumedVariable, bool holds)
+        protected override StringAbstractDomain<Variable, Expression, StringAbstraction>/*!*/ Test(Variable assumedVariable, bool holds)
         {
 
             // We must create a copy of the domain because the test visitor assumes that (see Not-LogicalAnd)
@@ -563,16 +550,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             mutable.predicates[assumedVariable] = new FlatPredicate(holds);
 
             return mutable;
-        }
-
-        public IAbstractDomainForEnvironments<Variable, Expression> TestTrue(Expression guard)
-        {
-            return testVisitor.VisitTrue(guard, this);
-        }
-
-        public IAbstractDomainForEnvironments<Variable, Expression> TestFalse(Expression guard)
-        {
-            return testVisitor.VisitFalse(guard, this);
         }
 
         private void TestTrueLessEqualThan(Variable leftVariable, Variable rightVariable)
@@ -638,11 +615,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         }
 
-        public FlatAbstractDomain<bool> CheckIfHolds(Expression exp)
-        {
-            return new FlatAbstractDomain<bool>(true).Top;
-        }
-
         public bool CheckMustBeLessEqualThan(Variable leftVariable, Variable rightVariable)
         {
             StringAbstraction leftInterval = EvalInterval(leftVariable);
@@ -681,7 +653,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             bounds.Add(upperBound);
         }
 
-        public void AssignInParallel(Dictionary<Variable, FList<Variable>> sourcesToTargets, Converter<Variable, Expression> convert)
+        public override void AssignInParallel(Dictionary<Variable, FList<Variable>> sourcesToTargets, Converter<Variable, Expression> convert)
         {
             strings.ResetToNormal();
             upperBounds.ResetToNormal();

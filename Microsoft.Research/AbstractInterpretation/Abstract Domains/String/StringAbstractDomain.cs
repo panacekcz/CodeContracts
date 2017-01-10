@@ -140,7 +140,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region IPureExpressionAssignmentsWithForward<Expression> Members
 
-        public void Assign(Expression x, Expression exp)
+        public virtual void Assign(Expression x, Expression exp)
         {
             this.strings.ResetToNormal();
             this.strings[this.decoder.UnderlyingVariable(x)] = EvalStringAbstraction(exp);
@@ -162,23 +162,23 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public void AddVariable(Variable var)
+        public virtual void AddVariable(Variable var)
         {
             // do nothing
         }
 
-        public void ProjectVariable(Variable var)
+        public virtual void ProjectVariable(Variable var)
         {
             this.RemoveVariable(var);
         }
 
-        public void RemoveVariable(Variable var)
+        public virtual void RemoveVariable(Variable var)
         {
             this.strings.RemoveElement(var);
             this.predicates.RemoveElement(var);
         }
 
-        public void RenameVariable(Variable OldName, Variable NewName)
+        public virtual void RenameVariable(Variable OldName, Variable NewName)
         {
             this.strings[NewName] = this.strings[OldName];
             this.predicates[NewName] = this.predicates[OldName];
@@ -204,16 +204,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public IAbstractDomainForEnvironments<Variable, Expression>/*!*/ TestTrue(Expression/*!*/ guard)
+        public IAbstractDomainForEnvironments<Variable, Expression> TestTrue(Expression guard)
         {
             return testVisitor.VisitTrue(guard, this);
         }
-        public IAbstractDomainForEnvironments<Variable, Expression>/*!*/ TestFalse(Expression/*!*/ guard)
+        public IAbstractDomainForEnvironments<Variable, Expression> TestFalse(Expression guard)
         {
             return testVisitor.VisitFalse(guard, this);
         }
 
-        private StringAbstractDomain<Variable, Expression, StringAbstraction>/*!*/ Test(Variable assumedVariable, bool holds)
+        protected virtual StringAbstractDomain<Variable, Expression, StringAbstraction>/*!*/ Test(Variable assumedVariable, bool holds)
         {
 
             // We must create a copy of the domain because the test visitor assumes that (see Not-LogicalAnd)
@@ -267,7 +267,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region IAssignInParallel<Expression> Members
 
-        public void AssignInParallel(Dictionary<Variable, FList<Variable>> sourcesToTargets, Converter<Variable, Expression> convert)
+        public virtual void AssignInParallel(Dictionary<Variable, FList<Variable>> sourcesToTargets, Converter<Variable, Expression> convert)
         {
 
             this.strings.ResetToNormal();
