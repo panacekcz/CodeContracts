@@ -527,7 +527,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 return StartsWithOrdinal(self, selfVariable, other, otherVariable, new NoOrderQuery<Variable>());
             }
-            public IStringPredicate StartsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, IOrderQuery<Variable> orderQuery)
+            public IStringPredicate StartsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery)
             {
 
                 if (selfVariable != null && otherVariable != null && orderQuery.CheckMustBeLessEqualThan(selfVariable, otherVariable))
@@ -564,7 +564,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             }
             ///<inheritdoc/>
-            public IStringPredicate EndsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, IOrderQuery<Variable> orderQuery)
+            public IStringPredicate EndsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery)
             {
                 return EndsWithOrdinal(self, selfVariable, other, otherVariable);
             }
@@ -598,7 +598,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
 
             public IStringPredicate Equals(WithConstants<PrefixInterval> self, Variable selfVariable,
-              WithConstants<PrefixInterval> other, Variable otherVariable, IOrderQuery<Variable> orderQuery)
+              WithConstants<PrefixInterval> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery)
             {
                 if (selfVariable != null && otherVariable != null && orderQuery.CheckMustBeLessEqualThan(selfVariable, otherVariable) && orderQuery.CheckMustBeLessEqualThan(otherVariable, selfVariable))
                 {

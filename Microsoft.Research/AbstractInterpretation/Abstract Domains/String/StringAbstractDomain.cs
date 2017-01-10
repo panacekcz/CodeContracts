@@ -81,56 +81,58 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// </summary>
     /// <typeparam name="Expression">Type of expressions in the operations.</typeparam>
     public class StringAbstractDomain<Variable, Expression, StringAbstraction> :
-        //TODO: VD: remove base class, make it similarly to prefix pentagons, and DERIVE pentangons from this domain..
-        ReducedCartesianAbstractDomain<
-          SimpleFunctionalAbstractDomain<Variable, StringAbstraction>,
-          SimpleFunctionalAbstractDomain<Variable, IStringPredicate>
-        >,
       IAbstractDomainForEnvironments<Variable, Expression>,
       IStringAbstractDomain<Variable, Expression>
       where StringAbstraction : class, IStringAbstraction<StringAbstraction, string>
       where Variable : class, IEquatable<Variable>
       where Expression : class
     {
-
         #region Private state
-        IExpressionDecoder<Variable, Expression>/*!*/ decoder;
-        IStringOperations<StringAbstraction, Variable> operations;
+        private readonly IExpressionDecoder<Variable, Expression> decoder;
+        private readonly StringSimpleTestVisitor testVisitor;
+        // Implementation of string operations
+        private readonly IStringOperations<StringAbstraction, Variable> operations;
+        // Abstractions of string variables
+        private SimpleFunctionalAbstractDomain<Variable, StringAbstraction> strings;
+        // Abstractions and predicates of boolean variables
+        private SimpleFunctionalAbstractDomain<Variable, IStringPredicate> predicates;
         #endregion
 
         #region Constructor
 
         public StringAbstractDomain(
           IExpressionDecoder<Variable, Expression>/*!*/ decoder,
-          IStringOperations<StringAbstraction, Variable> operations) :
-          base(
-            new SimpleFunctionalAbstractDomain<Variable, StringAbstraction>(),
-            new SimpleFunctionalAbstractDomain<Variable, IStringPredicate>())
+          IStringOperations<StringAbstraction, Variable> operations)
         {
             this.decoder = decoder;
             this.operations = operations;
+
+            this.strings = new SimpleFunctionalAbstractDomain<Variable, StringAbstraction>();
+            this.predicates = new SimpleFunctionalAbstractDomain<Variable, IStringPredicate>();
 
             this.testVisitor = new StringSimpleTestVisitor(decoder);
         }
 
         private StringAbstractDomain(IExpressionDecoder<Variable, Expression>/*!*/ decoder,
-          IStringOperations<StringAbstraction, Variable> operations, SimpleFunctionalAbstractDomain<Variable, StringAbstraction> left,
-          SimpleFunctionalAbstractDomain<Variable, IStringPredicate> right) :
-          base(left, right)
+          IStringOperations<StringAbstraction, Variable> operations,
+          SimpleFunctionalAbstractDomain<Variable, StringAbstraction> strings,
+          SimpleFunctionalAbstractDomain<Variable, IStringPredicate> predicates,
+          StringSimpleTestVisitor testVisitor
+          )
         {
             this.decoder = decoder;
             this.operations = operations;
-
-            this.testVisitor = new StringSimpleTestVisitor(decoder);
+            this.strings = strings;
+            this.predicates = predicates;
+            this.testVisitor = testVisitor;
         }
 
         private StringAbstractDomain(StringAbstractDomain<Variable, Expression, StringAbstraction>/*!*/ source)
-          : base(new SimpleFunctionalAbstractDomain<Variable, StringAbstraction>(source.Left),
-              new SimpleFunctionalAbstractDomain<Variable, IStringPredicate>(source.Right))
         {
             this.decoder = source.decoder;
             this.operations = source.operations;
-
+            this.strings = source.strings;
+            this.predicates = source.predicates;
             this.testVisitor = source.testVisitor;
         }
         #endregion
@@ -140,10 +142,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public void Assign(Expression x, Expression exp)
         {
-            this.Left.ResetToNormal();
-            this.Left[this.decoder.UnderlyingVariable(x)] = EvalStringAbstraction(exp);
-            this.Right.ResetToNormal();
-            this.Right[this.decoder.UnderlyingVariable(x)] = EvalBoolExpression(exp);
+            this.strings.ResetToNormal();
+            this.strings[this.decoder.UnderlyingVariable(x)] = EvalStringAbstraction(exp);
+            this.predicates.ResetToNormal();
+            this.predicates[this.decoder.UnderlyingVariable(x)] = EvalBoolExpression(exp);
         }
 
         #endregion
@@ -154,8 +156,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                var l = new List<Variable>(this.Left.Keys);
-                l.AddRange(this.Right.Keys);
+                var l = new List<Variable>(this.strings.Keys);
+                l.AddRange(this.predicates.Keys);
                 return l;
             }
         }
@@ -172,14 +174,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public void RemoveVariable(Variable var)
         {
-            this.Left.RemoveElement(var);
-            this.Right.RemoveElement(var);
+            this.strings.RemoveElement(var);
+            this.predicates.RemoveElement(var);
         }
 
         public void RenameVariable(Variable OldName, Variable NewName)
         {
-            this.Left[NewName] = this.Left[OldName];
-            this.Right[NewName] = this.Right[OldName];
+            this.strings[NewName] = this.strings[OldName];
+            this.predicates[NewName] = this.predicates[OldName];
             this.RemoveVariable(OldName);
         }
 
@@ -187,7 +189,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region IPureExpressionTest<Expression> Members
 
-        private readonly StringSimpleTestVisitor testVisitor;
+        
 
 
         private class StringSimpleTestVisitor : StringDomainTestVisitor<StringAbstractDomain<Variable, Expression, StringAbstraction>, Variable, Expression>
@@ -219,20 +221,20 @@ namespace Microsoft.Research.AbstractDomains.Strings
             StringAbstractDomain<Variable, Expression, StringAbstraction> mutable = new StringAbstractDomain<Variable, Expression, StringAbstraction>(this);
 
             IStringPredicate predicate;
-            if (mutable.Right.TryGetValue(assumedVariable, out predicate))
+            if (mutable.predicates.TryGetValue(assumedVariable, out predicate))
             {
                 if (predicate is StringAbstractionPredicate<StringAbstraction, Variable>)
                 {
                     var abstractionPredicate = predicate as StringAbstractionPredicate<StringAbstraction, Variable>;
 
-                    if (mutable.Left.ContainsKey(abstractionPredicate.DependentVariable))
+                    if (mutable.strings.ContainsKey(abstractionPredicate.DependentVariable))
                     {
-                        StringAbstraction old = mutable.Left[abstractionPredicate.DependentVariable];
-                        mutable.Left[abstractionPredicate.DependentVariable] = old.Meet(abstractionPredicate.AbstractionIf(holds));
+                        StringAbstraction old = mutable.strings[abstractionPredicate.DependentVariable];
+                        mutable.strings[abstractionPredicate.DependentVariable] = old.Meet(abstractionPredicate.AbstractionIf(holds));
                     }
                     else
                     {
-                        mutable.Left[abstractionPredicate.DependentVariable] = abstractionPredicate.AbstractionIf(holds);
+                        mutable.strings[abstractionPredicate.DependentVariable] = abstractionPredicate.AbstractionIf(holds);
                     }
                 }
                 else if (!predicate.ContainsValue(holds))
@@ -245,7 +247,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
 
             //Change the known information
-            mutable.Right[assumedVariable] = new FlatPredicate(holds);
+            mutable.predicates[assumedVariable] = new FlatPredicate(holds);
 
             return mutable;
         }
@@ -259,7 +261,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         void IPureExpressionTest<Variable, Expression>.AssumeDomainSpecificFact(DomainSpecificFact fact)
         {
-            this.AssumeDomainSpecificFact(fact);
+            // Do nothing
         }
         #endregion
 
@@ -268,8 +270,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public void AssignInParallel(Dictionary<Variable, FList<Variable>> sourcesToTargets, Converter<Variable, Expression> convert)
         {
 
-            this.Left.ResetToNormal();
-            this.Right.ResetToNormal();
+            this.strings.ResetToNormal();
+            this.predicates.ResetToNormal();
 
             if (sourcesToTargets.Count == 0)
             {
@@ -294,13 +296,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     {
                         if (!value.IsTop)
                         {
-                            this.Left[target] = value;
+                            this.strings[target] = value;
                         }
                         else
                         {
-                            if (this.Left.ContainsKey(target))
+                            if (this.strings.ContainsKey(target))
                             {
-                                this.Left.RemoveElement(target);
+                                this.strings.RemoveElement(target);
                             }
                         }
                     }
@@ -324,13 +326,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     {
                         if (!value.IsTop)
                         {
-                            this.Right[target] = value;
+                            this.predicates[target] = value;
                         }
                         else
                         {
-                            if (this.Right.ContainsKey(target))
+                            if (this.predicates.ContainsKey(target))
                             {
-                                this.Right.RemoveElement(target);
+                                this.predicates.RemoveElement(target);
                             }
                         }
                     }
@@ -1030,7 +1032,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 // Find predicates that involve the variable
                 List<Variable> removedPredicates = new List<Variable>();
-                foreach (var element in this.Right.Elements)
+                foreach (var element in this.predicates.Elements)
                 {
                     if (element.Value is StringAbstractionPredicate<StringAbstraction, Variable>)
                     {
@@ -1044,7 +1046,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 // Forget about those predicates
                 foreach (var removedPredicate in removedPredicates)
                 {
-                    this.Right.RemoveElement(removedPredicate);
+                    this.predicates.RemoveElement(removedPredicate);
                 }
             }
         }
@@ -1053,20 +1055,20 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #region Assign to variables
         private void UnassignLeftTarget(Expression target)
         {
-            this.Left.RemoveElement(this.decoder.UnderlyingVariable(target));
+            this.strings.RemoveElement(this.decoder.UnderlyingVariable(target));
         }
         private void AssignLeftTarget(Expression target, StringAbstraction targetAbstraction)
         {
-            this.Left[this.decoder.UnderlyingVariable(target)] = targetAbstraction;
+            this.strings[this.decoder.UnderlyingVariable(target)] = targetAbstraction;
         }
         private void UnassignRightTarget(Expression target)
         {
-            this.Right.RemoveElement(this.decoder.UnderlyingVariable(target));
+            this.predicates.RemoveElement(this.decoder.UnderlyingVariable(target));
         }
         private void AssignRightTarget(Expression target, IStringPredicate targetPredicate)
         {
             Debug.Assert(targetPredicate != null);
-            this.Right[this.decoder.UnderlyingVariable(target)] = targetPredicate;
+            this.predicates[this.decoder.UnderlyingVariable(target)] = targetPredicate;
         }
         private void AssignIndexInterval(Variable indexVar, IndexInterval indexAbstraction, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
@@ -1088,10 +1090,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #region Boolean expressions
         public CodeAnalysis.ProofOutcome EvalBool(Variable variable)
         {
-            if (!Right.ContainsKey(variable))
+            if (!predicates.ContainsKey(variable))
                 return CodeAnalysis.ProofOutcome.Top;
 
-            IStringPredicate predicate = Right[variable];
+            IStringPredicate predicate = predicates[variable];
 
             return predicate.ProofOutcome;
         }
@@ -1116,9 +1118,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             Debug.Assert(variable != null);
 
-            if (Right.ContainsKey(variable))
+            if (predicates.ContainsKey(variable))
             {
-                return Right[variable];
+                return predicates[variable];
             }
             else
             {
@@ -1198,9 +1200,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 case ExpressionOperator.Variable:
                     // Variables evaluate according to the abstract elements stored in the left part
                     variable = this.decoder.UnderlyingVariable(expression);
-                    if (this.Left.ContainsKey(variable))
+                    if (this.strings.ContainsKey(variable))
                     {
-                        return new WithConstants<StringAbstraction>(this.Left[variable]);
+                        return new WithConstants<StringAbstraction>(this.strings[variable]);
                     }
                     else
                     {
@@ -1351,15 +1353,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 var tempStr = new StringBuilder();
 
-                foreach (var x in this.Left.Keys)
+                foreach (var x in this.strings.Keys)
                 {
                     string xAsString = this.decoder != null ? this.decoder.NameOf(x) : x.ToString();
-                    tempStr.Append(xAsString + ": " + this.Left[x] + ", ");
+                    tempStr.Append(xAsString + ": " + this.strings[x] + ", ");
                 }
-                foreach (var x in this.Right.Keys)
+                foreach (var x in this.predicates.Keys)
                 {
                     string xAsString = this.decoder != null ? this.decoder.NameOf(x) : x.ToString();
-                    tempStr.Append(xAsString + ": " + this.Right[x] + ", ");
+                    tempStr.Append(xAsString + ": " + this.predicates[x] + ", ");
                 }
 
 
@@ -1387,33 +1389,100 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
         #endregion
 
-        #region ReducedCartesianAbstractDomain
-        public override ReducedCartesianAbstractDomain<
-          SimpleFunctionalAbstractDomain<Variable, StringAbstraction>,
-          SimpleFunctionalAbstractDomain<Variable, IStringPredicate>
-          > Reduce(SimpleFunctionalAbstractDomain<Variable, StringAbstraction> left,
-          SimpleFunctionalAbstractDomain<Variable, IStringPredicate> right)
+        #region IAbstractDomain
+        public bool IsBottom
         {
-            return Factory(left, right);
+            get
+            {
+                return strings.IsBottom || predicates.IsBottom;
+            }
         }
 
-        public override IAbstractDomain Widening(IAbstractDomain prev)
+        public bool IsTop
+        {
+            get
+            {
+                return strings.IsTop && predicates.IsTop;
+            }
+        }
+
+        public IAbstractDomain Bottom
+        {
+            get
+            {
+                return new StringAbstractDomain<Variable, Expression, StringAbstraction>(
+                  decoder, operations, strings.Bottom, predicates.Bottom, testVisitor
+                  );
+            }
+        }
+
+        public IAbstractDomain Top
+        {
+            get
+            {
+                return new StringAbstractDomain<Variable, Expression, StringAbstraction>(
+                  decoder, operations, strings.Top, predicates.Top, testVisitor
+                  );
+            }
+        }
+
+        public bool LessEqual(IAbstractDomain a)
+        {
+            var right = (StringAbstractDomain<Variable, Expression, StringAbstraction>)a;
+
+            return strings.LessEqual(right.strings) && predicates.LessEqual(right.predicates);
+        }
+
+        public IAbstractDomain Join(IAbstractDomain a)
+        {
+            var right = (StringAbstractDomain<Variable, Expression, StringAbstraction>)a;
+
+            var joinStrings = strings.Join(right.strings);
+            var joinPredicates = predicates.Join(right.predicates);
+
+            return new StringAbstractDomain<Variable, Expression, StringAbstraction>(decoder, operations, joinStrings, joinPredicates, testVisitor);
+        }
+
+
+        public IAbstractDomain Meet(IAbstractDomain a)
+        {
+            var right = (StringAbstractDomain<Variable, Expression, StringAbstraction>)a;
+
+            var meetStrings = strings.Meet(right.strings);
+            var meetPredicates = predicates.Meet(right.predicates);
+
+            return new StringAbstractDomain<Variable, Expression, StringAbstraction>(decoder, operations, meetStrings, meetPredicates, testVisitor);
+        }
+
+        public IAbstractDomain Widening(IAbstractDomain prev)
         {
             var prevSad = (StringAbstractDomain<Variable, Expression, StringAbstraction>)prev;
-            var leftWide = (SimpleFunctionalAbstractDomain<Variable, StringAbstraction>)Left.Widening(prevSad.Left);
-            var rightWide = (SimpleFunctionalAbstractDomain<Variable, IStringPredicate>)Right.Widening(prevSad.Right);
+            var widenStrings = strings.Widening(prevSad.strings);
+            var widenPredicates = predicates.Widening(prevSad.predicates);
 
-            return new StringAbstractDomain<Variable, Expression, StringAbstraction>(decoder, operations, leftWide, rightWide);
+            return new StringAbstractDomain<Variable, Expression, StringAbstraction>(decoder, operations, widenStrings, widenPredicates, testVisitor);
         }
 
-        protected override ReducedCartesianAbstractDomain<
-          SimpleFunctionalAbstractDomain<Variable, StringAbstraction>,
-          SimpleFunctionalAbstractDomain<Variable, IStringPredicate>
-          > Factory(SimpleFunctionalAbstractDomain<Variable, StringAbstraction> left,
-          SimpleFunctionalAbstractDomain<Variable, IStringPredicate> right)
+
+        public T To<T>(IFactory<T> factory)
         {
-            return new StringAbstractDomain<Variable, Expression, StringAbstraction>(decoder, operations, left, right);
+            var stringsTo = strings.To(factory);
+            var predicatesTo = predicates.To(factory);
+
+            return factory.And(stringsTo, predicatesTo);
         }
+
+        public object Clone()
+        {
+            return new StringAbstractDomain<Variable, Expression, StringAbstraction>(
+              decoder, operations,
+              (SimpleFunctionalAbstractDomain<Variable, StringAbstraction>)strings.Clone(),
+              (SimpleFunctionalAbstractDomain<Variable, IStringPredicate>)predicates.Clone(),
+              testVisitor
+              );
+        }
+
+
         #endregion
 
     }

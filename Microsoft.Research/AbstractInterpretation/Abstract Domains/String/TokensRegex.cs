@@ -30,7 +30,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// Visitis a regular expression AST and builds a prefix tree.
     /// </summary>
     /// <remarks>
-    /// While it may seem good to interpret the regex from back and prepending (or from the fronta and appending) characters, 
+    /// While it may seem good to interpret the regex from back and prepending (or from the front and appending) characters, 
     /// due to the fact, that this domain cannot represent any pattern that contains an entirely unknown part (that means all unanchored patterns),
     /// it really suffices to interpret the closed part, and if it is open, TOP is always returnet (if overapproximating)
     /// </remarks>
@@ -125,10 +125,40 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
     }
 
-    internal class TokensFromNegativeRegex
+    internal class TokensFromNegativeRegex : OpenClosedRegexVisitor<InnerNode, bool>
     {
         public TokensFromNegativeRegex(bool u) { }
-        public InnerNode Build(Regex.AST.Element e) { throw new NotImplementedException(); }
+        public InnerNode Build(Regex.AST.Element e) { bool c = false; return VisitSimpleRegex(e, ref c); }
+
+        protected override InnerNode Unsupported(Element regex, ref bool data)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override InnerNode Visit(SingleElement element, ref bool data)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override InnerNode Visit(Empty element, ref bool data)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override InnerNode Visit(Loop element, ref bool data)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override InnerNode Visit(Alternation element, ref bool data)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override InnerNode VisitConcatenation(Concatenation element, int startIndex, int endIndex, RegexEndsData ends, ref bool data)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class TokensRegex

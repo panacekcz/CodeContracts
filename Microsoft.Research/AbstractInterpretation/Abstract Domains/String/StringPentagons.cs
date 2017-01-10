@@ -26,26 +26,10 @@ using System.Diagnostics;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-    public interface IOrderQuery<Variable>
-      where Variable : IEquatable<Variable>
-    {
-        bool CheckMustBeLessEqualThan(Variable leftVariable, Variable rightVariable);
-    }
-
-    public class NoOrderQuery<Variable> : IOrderQuery<Variable>
-      where Variable : IEquatable<Variable>
-    {
-        public bool CheckMustBeLessEqualThan(Variable leftVariable, Variable rightVariable)
-        {
-            return false;
-        }
-    }
-
-
     public class StringPentagons<Variable, Expression, StringAbstraction> :
       IAbstractDomainForEnvironments<Variable, Expression>,
       IStringAbstractDomain<Variable, Expression>,
-      IOrderQuery<Variable>
+      IStringOrderQuery<Variable>
 
       where StringAbstraction : class, IStringInterval<StringAbstraction>
       where Variable : class, IEquatable<Variable>

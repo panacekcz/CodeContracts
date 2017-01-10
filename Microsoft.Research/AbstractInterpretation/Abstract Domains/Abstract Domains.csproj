@@ -276,6 +276,7 @@
     <Compile Include="String\IndexInt.cs" />
     <Compile Include="String\IndexInterval.cs" />
     <Compile Include="String\CompareInterval.cs" />
+    <Compile Include="String\IStringOrderQuery.cs" />
     <Compile Include="String\OrderPredicate.cs" />
     <Compile Include="String\PrefixInterval.cs" />
     <Compile Include="String\PrefixTree\ForwardSearch.cs" />

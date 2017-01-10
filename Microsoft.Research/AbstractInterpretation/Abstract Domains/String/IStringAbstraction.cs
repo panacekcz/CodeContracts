@@ -292,11 +292,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
     where StringAbstraction : IStringInterval<StringAbstraction>
     where Variable : IEquatable<Variable>
     {
-        IStringPredicate StartsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, IOrderQuery<Variable> orderQuery);
-        IStringPredicate EndsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, IOrderQuery<Variable> orderQuery);
+        IStringPredicate StartsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery);
+        IStringPredicate EndsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery);
 
         IStringPredicate Equals(WithConstants<StringAbstraction> self, Variable selfVariable,
-          WithConstants<StringAbstraction> other, Variable otherVariable, IOrderQuery<Variable> orderQuery);
+          WithConstants<StringAbstraction> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery);
 
         IEnumerable<OrderPredicate<Variable>> ConcatOrder(Variable targetVariable, Variable selfVariable, Variable otherVariable);
     }
