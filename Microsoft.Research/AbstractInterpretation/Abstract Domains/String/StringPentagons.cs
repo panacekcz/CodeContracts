@@ -27,94 +27,79 @@ using System.Diagnostics;
 namespace Microsoft.Research.AbstractDomains.Strings
 {
     public class StringPentagons<Variable, Expression, StringAbstraction> :
-      IAbstractDomainForEnvironments<Variable, Expression>,
-      IStringAbstractDomain<Variable, Expression>,
+      StringAbstractDomain<Variable, Expression, StringAbstraction>,
       IStringOrderQuery<Variable>
 
       where StringAbstraction : class, IStringInterval<StringAbstraction>
       where Variable : class, IEquatable<Variable>
       where Expression : class
     {
-        private readonly IExpressionDecoder<Variable, Expression>/*!*/ decoder;
-
-        private SimpleFunctionalAbstractDomain<Variable, StringAbstraction> intervals;
         private SimpleFunctionalAbstractDomain<Variable, SetOfConstraints<Variable>> upperBounds;
-        private SimpleFunctionalAbstractDomain<Variable, IStringPredicate> predicates;
-        private readonly IStringIntervalOperations<StringAbstraction, Variable> operations;
 
-        private readonly StringPentagonsTestVisitor testVisitor;
+        private IStringIntervalOperations<StringAbstraction, Variable> IntervalOperations
+        {
+            get { return (IStringIntervalOperations<StringAbstraction, Variable>)operations; }
+        }
 
         private StringPentagons(
           IExpressionDecoder<Variable, Expression> decoder,
+          IStringIntervalOperations<StringAbstraction, Variable> operations,
           SimpleFunctionalAbstractDomain<Variable, StringAbstraction> intervals,
           SimpleFunctionalAbstractDomain<Variable, SetOfConstraints<Variable>> upperBounds,
           SimpleFunctionalAbstractDomain<Variable, IStringPredicate> predicates,
-          IStringIntervalOperations<StringAbstraction, Variable> operations,
-          StringPentagonsTestVisitor testVisitor
-          )
+          StringSimpleTestVisitor testVisitor
+          ) :  base(decoder, operations, intervals, predicates, testVisitor)
         {
-            this.decoder = decoder;
-            this.intervals = intervals;
             this.upperBounds = upperBounds;
-            this.predicates = predicates;
-            this.operations = operations;
-
-            this.testVisitor = testVisitor;
         }
 
         public StringPentagons(IExpressionDecoder<Variable, Expression> decoder, IStringIntervalOperations<StringAbstraction, Variable> operations)
+            : base(decoder, operations)
         {
-            this.decoder = decoder;
-            this.intervals = new SimpleFunctionalAbstractDomain<Variable, StringAbstraction>();
             this.upperBounds = new SimpleFunctionalAbstractDomain<Variable, SetOfConstraints<Variable>>();
-            this.predicates = new SimpleFunctionalAbstractDomain<Variable, IStringPredicate>();
-
-            this.operations = operations;
-
-            this.testVisitor = new StringPentagonsTestVisitor(decoder);
         }
 
-        public bool IsBottom
+        public override bool IsBottom
         {
             get
             {
-                return intervals.IsBottom || upperBounds.IsBottom || predicates.IsBottom;
+                return base.IsBottom || upperBounds.IsBottom;
             }
         }
 
-        public bool IsTop
+        public override bool IsTop
         {
             get
             {
-                return intervals.IsTop && upperBounds.IsTop && predicates.IsTop;
+                return base.IsTop && upperBounds.IsTop;
             }
         }
 
-        public IAbstractDomain Bottom
+        public override IAbstractDomain Bottom
         {
             get
             {
                 return new StringPentagons<Variable, Expression, StringAbstraction>(
-                  decoder, intervals.Bottom, upperBounds.Bottom, predicates.Bottom, operations, testVisitor
+                  decoder, IntervalOperations, strings.Bottom, upperBounds.Bottom, predicates.Bottom, testVisitor
                   );
             }
         }
 
-        public IAbstractDomain Top
+        public override IAbstractDomain Top
         {
             get
             {
                 return new StringPentagons<Variable, Expression, StringAbstraction>(
-                  decoder, intervals.Top, upperBounds.Top, predicates.Top, operations, testVisitor
+                  decoder, IntervalOperations, strings.Top, upperBounds.Top, predicates.Top, testVisitor
                   );
             }
         }
 
-        public List<Variable> Variables
+        public override List<Variable> Variables
         {
             get
             {
-                var l = new List<Variable>(intervals.Keys);
+                var l = new List<Variable>(strings.Keys);
                 l.AddRange(upperBounds.Keys);
                 l.AddRange(predicates.Keys);
                 return l;
@@ -123,14 +108,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region String operations
 
-        public void Empty(Expression targetExp)
+        public override void Empty(Expression targetExp)
         {
             Variable targetVariable = decoder.UnderlyingVariable(targetExp);
             StringAbstraction targetAbstraction = operations.Constant("");
-            intervals[targetVariable] = targetAbstraction;
+            strings[targetVariable] = targetAbstraction;
         }
 
-        public void Copy(Expression targetExp, Expression sourceExp)
+        public override void Copy(Expression targetExp, Expression sourceExp)
         {
             Variable targetVariable = decoder.UnderlyingVariable(targetExp);
             Variable sourceVariable = decoder.UnderlyingVariable(sourceExp);
@@ -139,7 +124,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             TestTrueLessEqualThan(sourceVariable, targetVariable);
         }
 
-        public void Concat(Expression targetExp, Expression leftExp, Expression rightExp)
+        public override void Concat(Expression targetExp, Expression leftExp, Expression rightExp)
         {
             Variable leftVariable, rightVariable;
             WithConstants<StringAbstraction> leftAbstraction = EvalStringArgument(leftExp, out leftVariable, NullHandling.Empty);
@@ -148,62 +133,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             // Interval concatenation
             StringAbstraction targetAbstraction = operations.Concat(leftAbstraction, rightAbstraction);
-            intervals[targetVariable] = targetAbstraction;
+            strings[targetVariable] = targetAbstraction;
 
             // Get predicates about variables
-            foreach (var order in operations.ConcatOrder(targetVariable, leftVariable, rightVariable))
+            foreach (var order in IntervalOperations.ConcatOrder(targetVariable, leftVariable, rightVariable))
             {
                 TestTruePredicate(order);
             }
         }
 
-        public void Concat(Expression targetExp, Expression[] argExp)
+        public override void Contains(Expression targetExp, Expression valueExp, Expression partExp)
         {
-            throw new NotImplementedException();
-        }
-
-        public void Insert(Expression targetExp, Expression valueExp, Expression indexExp, Expression partExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
-        {
-            //TODO: now nothing
-        }
-
-        public void ReplaceChar(Expression targetExp, Expression valueExp, Expression fromExp, Expression toExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ReplaceString(Expression targetExp, Expression valueExp, Expression fromExp, Expression toExp)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SubstringRemove(Expression targetExp, Expression valueExp, Expression indexExp, Expression lengthExp, bool remove, INumericalAbstractDomain<Variable, Expression> numericalDomain)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void PadLeftRight(Expression targetExp, Expression valueExp, Expression lengthExp, Expression charExp, bool right, INumericalAbstractDomain<Variable, Expression> numericalDomain)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Trim(Expression targetExp, Expression valueExp, Expression trimExp)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void TrimStartEnd(Expression targetExp, Expression valueExp, Expression trimExp, bool end)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void IsNullOrEmpty(Expression targetExp, Expression valueExp)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Contains(Expression targetExp, Expression valueExp, Expression partExp)
-        {
+            //TODO: this is a copy, not adding anything
             Variable partVar, valueVar;
             WithConstants<StringAbstraction> partAbstraction = EvalStringArgument(partExp, out partVar, NullHandling.Exception);
             WithConstants<StringAbstraction> valueAbstraction = EvalStringArgument(valueExp, out valueVar, NullHandling.Exception);
@@ -229,7 +170,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             AssignPredicate(targetExp, targetPredicate);
         }
 
-        public void StartsEndsWith(Expression targetExp, Expression valueExp, Expression partExp, Expression comparisonExp, bool end)
+        public override void StartsEndsWith(Expression targetExp, Expression valueExp, Expression partExp, Expression comparisonExp, bool end)
         {
             int comparison;
 
@@ -258,9 +199,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 else
                 {
                     if (end)
-                        targetPredicate = operations.EndsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, this);
+                        targetPredicate = IntervalOperations.EndsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, this);
                     else
-                        targetPredicate = operations.StartsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, this);
+                        targetPredicate = IntervalOperations.StartsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, this);
                 }
 
                 AssignPredicate(targetExp, targetPredicate);
@@ -271,51 +212,17 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public void Equals(Expression targetExp, Expression leftExp, Expression rightExp, INullQuery<Variable> nullQuery)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CompareOrdinal(Expression targetExp, Expression leftExp, Expression rightExp, INumericalAbstractDomain<Variable, Expression> numericalDomain, INullQuery<Variable> nullQuery)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GetLength(Expression targetExp, Expression valueExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void IndexOf(Expression indexExp, Expression valueExp, Expression needleExp, Expression offsetExp, Expression countExp, Expression cmpExp, bool last, INumericalAbstractDomain<Variable, Expression> numericalDomain)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void IndexOfChar(Expression indexExp, Expression valueExp, Expression needleExp, Expression offsetExp, Expression countExp, bool last, INumericalAbstractDomain<Variable, Expression> numericalDomain)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GetChar(Expression targetExp, Expression valueExp, Expression indexExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RegexIsMatch(Expression targetExp, Expression valueExp, Expression regexExp)
-        {
-            throw new NotImplementedException();
-        }
         #endregion
 
-        public void Unknown(Expression targetExp)
+        public override void Unknown(Expression targetExp)
         {
             Variable targetVariable = decoder.UnderlyingVariable(targetExp);
 
-            intervals.RemoveElement(targetVariable);
+            strings.RemoveElement(targetVariable);
             upperBounds.RemoveElement(targetVariable);
         }
 
-        public void Mutate(Expression mutatedExp)
+        public override void Mutate(Expression mutatedExp)
         {
             Variable mutatedVariable = decoder.UnderlyingVariable(mutatedExp);
 
@@ -351,19 +258,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public ProofOutcome EvalBool(Variable variable)
-        {
-            IStringPredicate pred;
 
-            if (!predicates.TryGetValue(variable, out pred))
-                return CodeAnalysis.ProofOutcome.Top;
-            return pred.ProofOutcome;
-        }
-
-        public string ToString(Expression exp)
-        {
-            return ExpressionPrinter.ToString(exp, decoder);
-        }
 
         public override string ToString()
         {
@@ -381,13 +276,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 var tempStr = new StringBuilder();
 
-                foreach (var x in intervals.Keys.Union(upperBounds.Keys))
+                foreach (var x in strings.Keys.Union(upperBounds.Keys))
                 {
                     string xAsString = decoder != null ? decoder.NameOf(x) : x.ToString();
                     tempStr.Append(xAsString);
-                    if (intervals.ContainsKey(x))
+                    if (strings.ContainsKey(x))
                     {
-                        tempStr.Append(": " + intervals[x]);
+                        tempStr.Append(": " + strings[x]);
                     }
                     if (upperBounds.ContainsKey(x))
                     {
@@ -421,11 +316,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return result;
         }
 
-        public bool LessEqual(IAbstractDomain a)
+        public override bool LessEqual(IAbstractDomain a)
         {
             var right = (StringPentagons<Variable, Expression, StringAbstraction>)a;
 
-            return intervals.LessEqual(right.intervals) && upperBounds.LessEqual(right.upperBounds) && predicates.LessEqual(right.predicates);
+            return strings.LessEqual(right.strings) && upperBounds.LessEqual(right.upperBounds) && predicates.LessEqual(right.predicates);
         }
 
 
@@ -524,67 +419,61 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
 
-            var joinIntervals = intervals.Join(right.intervals);
+            var joinIntervals = strings.Join(right.strings);
             var joinPredicates = predicates.Join(right.predicates);
 
-            return new StringPentagons<Variable, Expression, StringAbstraction>(decoder, joinIntervals, joinUpperBounds, joinPredicates, operations, testVisitor);
+            return new StringPentagons<Variable, Expression, StringAbstraction>(decoder, IntervalOperations, joinIntervals, joinUpperBounds, joinPredicates, testVisitor);
         }
-        public IAbstractDomain Join(IAbstractDomain a)
+        public override IAbstractDomain Join(IAbstractDomain a)
         {
             return Join((StringPentagons<Variable, Expression, StringAbstraction>)a);
         }
 
-        public IAbstractDomain Meet(IAbstractDomain a)
+        public override IAbstractDomain Meet(IAbstractDomain a)
         {
             var right = (StringPentagons<Variable, Expression, StringAbstraction>)a;
 
+            var meetIntervals = strings.Meet(right.strings);
             var meetUpperBounds = upperBounds.Meet(right.upperBounds);
-            var meetIntervals = intervals.Meet(right.intervals);
             var meetPredicates = predicates.Meet(right.predicates);
 
-            return new StringPentagons<Variable, Expression, StringAbstraction>(decoder, meetIntervals, meetUpperBounds, meetPredicates, operations, testVisitor);
+            return new StringPentagons<Variable, Expression, StringAbstraction>(decoder, IntervalOperations, meetIntervals, meetUpperBounds, meetPredicates, testVisitor);
         }
 
-        public IAbstractDomain Widening(IAbstractDomain prev)
+        public override IAbstractDomain Widening(IAbstractDomain prev)
         {
             var right = (StringPentagons<Variable, Expression, StringAbstraction>)prev;
 
+            var widenIntervals = strings.Widening(right.strings);
             var widenUpperBounds = upperBounds.Widening(right.upperBounds);
-            var widenIntervals = intervals.Widening(right.intervals);
             var widenPredicates = predicates.Widening(right.predicates);
 
-            return new StringPentagons<Variable, Expression, StringAbstraction>(decoder, widenIntervals, widenUpperBounds, widenPredicates, operations, testVisitor);
+            return new StringPentagons<Variable, Expression, StringAbstraction>(decoder, IntervalOperations, widenIntervals, widenUpperBounds, widenPredicates, testVisitor);
         }
 
-        public T To<T>(IFactory<T> factory)
+        public override T To<T>(IFactory<T> factory)
         {
-            var intervalsTo = intervals.To(factory);
             var upperBoundsTo = upperBounds.To(factory);
-            var predicatesTo = predicates.To(factory);
 
-            return factory.And(factory.And(intervalsTo, upperBoundsTo), predicatesTo);
+            return factory.And(base.To(factory), upperBoundsTo);
         }
 
-        public object Clone()
+        public override object Clone()
         {
             return new StringPentagons<Variable, Expression, StringAbstraction>(
               decoder,
-              (SimpleFunctionalAbstractDomain<Variable, StringAbstraction>)intervals.Clone(),
+              IntervalOperations,
+              (SimpleFunctionalAbstractDomain<Variable, StringAbstraction>)strings.Clone(),
               (SimpleFunctionalAbstractDomain<Variable, SetOfConstraints<Variable>>)upperBounds.Clone(),
               (SimpleFunctionalAbstractDomain<Variable, IStringPredicate>)predicates.Clone(),
-              operations, testVisitor
+              testVisitor
               );
-        }
-
-        public void AddVariable(Variable var)
-        {
-            // Do nothing
         }
 
         public void Assign(Expression x, Expression exp)
         {
-            intervals.ResetToNormal();
-            intervals[this.decoder.UnderlyingVariable(x)] = EvalInterval(exp);
+            strings.ResetToNormal();
+            strings[this.decoder.UnderlyingVariable(x)] = EvalInterval(exp);
             upperBounds.ResetToNormal();
             upperBounds[this.decoder.UnderlyingVariable(x)] = EvalConstraints(exp);
             predicates.ResetToNormal();
@@ -598,14 +487,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public void RemoveVariable(Variable var)
         {
-            intervals.RemoveElement(var);
+            strings.RemoveElement(var);
             upperBounds.RemoveElement(var);
             predicates.RemoveElement(var);
         }
 
         public void RenameVariable(Variable OldName, Variable NewName)
         {
-            intervals[NewName] = intervals[OldName];
+            strings[NewName] = strings[OldName];
             upperBounds[NewName] = upperBounds[OldName];
             predicates[NewName] = predicates[OldName];
             RemoveVariable(OldName);
@@ -637,7 +526,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             // We must create a copy of the domain because the test visitor assumes that (see Not-LogicalAnd)
             // If this changes, this method might be simplified to just mutate this
-            StringPentagons<Variable, Expression, StringAbstraction> mutable = new StringPentagons<Variable, Expression, StringAbstraction>(decoder, intervals, upperBounds, predicates, operations, testVisitor);
+            StringPentagons<Variable, Expression, StringAbstraction> mutable = new StringPentagons<Variable, Expression, StringAbstraction>(decoder, IntervalOperations, strings, upperBounds, predicates, testVisitor);
 
             IStringPredicate predicate;
             if (mutable.predicates.TryGetValue(assumedVariable, out predicate))
@@ -646,14 +535,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     var abstractionPredicate = predicate as StringAbstractionPredicate<StringAbstraction, Variable>;
 
-                    if (mutable.intervals.ContainsKey(abstractionPredicate.DependentVariable))
+                    if (mutable.strings.ContainsKey(abstractionPredicate.DependentVariable))
                     {
-                        StringAbstraction old = mutable.intervals[abstractionPredicate.DependentVariable];
-                        mutable.intervals[abstractionPredicate.DependentVariable] = old.Meet(abstractionPredicate.AbstractionIf(holds));
+                        StringAbstraction old = mutable.strings[abstractionPredicate.DependentVariable];
+                        mutable.strings[abstractionPredicate.DependentVariable] = old.Meet(abstractionPredicate.AbstractionIf(holds));
                     }
                     else
                     {
-                        mutable.intervals[abstractionPredicate.DependentVariable] = abstractionPredicate.AbstractionIf(holds);
+                        mutable.strings[abstractionPredicate.DependentVariable] = abstractionPredicate.AbstractionIf(holds);
                     }
                 }
                 else if (predicate is OrderPredicate<Variable>)
@@ -695,12 +584,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             if (leftInterval.TryRefineGreaterEqual(ref rightInterval))
             {
-                intervals[rightVariable] = rightInterval;
+                strings[rightVariable] = rightInterval;
             }
 
             if (rightInterval.TryRefineLessEqual(ref leftInterval))
             {
-                intervals[leftVariable] = leftInterval;
+                strings[leftVariable] = leftInterval;
             }
 
             // Second, upperBounds
@@ -794,7 +683,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public void AssignInParallel(Dictionary<Variable, FList<Variable>> sourcesToTargets, Converter<Variable, Expression> convert)
         {
-            intervals.ResetToNormal();
+            strings.ResetToNormal();
             upperBounds.ResetToNormal();
             predicates.ResetToNormal();
 
@@ -910,7 +799,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
 
-            intervals.SetElements(values);
+            strings.SetElements(values);
 
             var rvalues = new Dictionary<Variable, IStringPredicate>();
 
@@ -948,7 +837,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         private StringAbstraction EvalInterval(Variable v)
         {
             StringAbstraction abs;
-            if (!intervals.TryGetValue(v, out abs))
+            if (!strings.TryGetValue(v, out abs))
             {
                 abs = operations.Top;
             }
@@ -1032,9 +921,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 case ExpressionOperator.Variable:
                     // Variables evaluate according to the abstract elements stored in the left part
                     variable = decoder.UnderlyingVariable(expression);
-                    if (intervals.ContainsKey(variable))
+                    if (strings.ContainsKey(variable))
                     {
-                        return new WithConstants<StringAbstraction>(intervals[variable]);
+                        return new WithConstants<StringAbstraction>(strings[variable]);
                     }
                     else
                     {

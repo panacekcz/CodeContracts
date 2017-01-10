@@ -88,14 +88,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
       where Expression : class
     {
         #region Private state
-        private readonly IExpressionDecoder<Variable, Expression> decoder;
-        private readonly StringSimpleTestVisitor testVisitor;
+        protected readonly IExpressionDecoder<Variable, Expression> decoder;
+        internal readonly StringSimpleTestVisitor testVisitor;
         // Implementation of string operations
-        private readonly IStringOperations<StringAbstraction, Variable> operations;
+        protected readonly IStringOperations<StringAbstraction, Variable> operations;
         // Abstractions of string variables
-        private SimpleFunctionalAbstractDomain<Variable, StringAbstraction> strings;
+        protected SimpleFunctionalAbstractDomain<Variable, StringAbstraction> strings;
         // Abstractions and predicates of boolean variables
-        private SimpleFunctionalAbstractDomain<Variable, IStringPredicate> predicates;
+        protected SimpleFunctionalAbstractDomain<Variable, IStringPredicate> predicates;
         #endregion
 
         #region Constructor
@@ -113,7 +113,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             this.testVisitor = new StringSimpleTestVisitor(decoder);
         }
 
-        private StringAbstractDomain(IExpressionDecoder<Variable, Expression>/*!*/ decoder,
+        internal StringAbstractDomain(IExpressionDecoder<Variable, Expression>/*!*/ decoder,
           IStringOperations<StringAbstraction, Variable> operations,
           SimpleFunctionalAbstractDomain<Variable, StringAbstraction> strings,
           SimpleFunctionalAbstractDomain<Variable, IStringPredicate> predicates,
@@ -152,7 +152,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region IPureExpressionAssignments<Expression> Members
 
-        public List<Variable> Variables
+        public virtual List<Variable> Variables
         {
             get
             {
@@ -189,10 +189,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region IPureExpressionTest<Expression> Members
 
-        
 
 
-        private class StringSimpleTestVisitor : StringDomainTestVisitor<StringAbstractDomain<Variable, Expression, StringAbstraction>, Variable, Expression>
+
+        internal class StringSimpleTestVisitor : StringDomainTestVisitor<StringAbstractDomain<Variable, Expression, StringAbstraction>, Variable, Expression>
         {
             public StringSimpleTestVisitor(IExpressionDecoder<Variable, Expression> decoder)
               : base(decoder)
@@ -346,14 +346,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region String operations
         #region Trivial string operations
-        public void Empty(Expression targetExp)
+        public virtual void Empty(Expression targetExp)
         {
             Debug.Assert(targetExp != null);
 
             AssignLeftTarget(targetExp, operations.Constant(""));
         }
 
-        public void Copy(Expression targetExp, Expression valueExp)
+        public virtual void Copy(Expression targetExp, Expression valueExp)
         {
             Debug.Assert(targetExp != null && valueExp != null);
 
@@ -377,7 +377,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region Concatenation operations
         /// <inheritdoc/>
-        public void Concat(Expression targetExp, Expression leftExp, Expression rightExp)
+        public virtual void Concat(Expression targetExp, Expression leftExp, Expression rightExp)
         {
             Debug.Assert(targetExp != null && leftExp != null && rightExp != null);
 
@@ -399,7 +399,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
 
         /// <inheritdoc/>
-        public void Concat(Expression targetExp, Expression[] argExps)
+        public virtual void Concat(Expression targetExp, Expression[] argExps)
         {
             Debug.Assert(argExps.Length > 0);
 
@@ -432,7 +432,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
         #endregion
         /// <inheritdoc/>
-        public void Insert(Expression targetExp, Expression valueExp, Expression indexExp, Expression partExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        public virtual void Insert(Expression targetExp, Expression valueExp, Expression indexExp, Expression partExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             Debug.Assert(targetExp != null && valueExp != null && indexExp != null && partExp != null);
 
@@ -468,7 +468,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region Replace operations
         /// <inheritdoc/>
-        public void ReplaceChar(Expression targetExp, Expression valueExp, Expression fromExp, Expression toExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        public virtual void ReplaceChar(Expression targetExp, Expression valueExp, Expression fromExp, Expression toExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             Debug.Assert(targetExp != null && valueExp != null && fromExp != null && toExp != null);
 
@@ -495,7 +495,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             AssignLeftTarget(targetExp, targetAbstraction);
         }
         /// <inheritdoc/>
-        public void ReplaceString(Expression targetExp, Expression valueExp, Expression fromExp, Expression toExp)
+        public virtual void ReplaceString(Expression targetExp, Expression valueExp, Expression fromExp, Expression toExp)
         {
             Debug.Assert(targetExp != null && valueExp != null && fromExp != null && toExp != null);
 
@@ -520,7 +520,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #region Substring operations
 
         /// <inheritdoc/>
-        public void SubstringRemove(Expression targetExp, Expression valueExp, Expression indexExp, Expression lengthExp, bool remove,
+        public virtual void SubstringRemove(Expression targetExp, Expression valueExp, Expression indexExp, Expression lengthExp, bool remove,
             INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             Debug.Assert(targetExp != null && valueExp != null && indexExp != null);
@@ -565,7 +565,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #region Padding operations
 
         /// <inheritdoc/>
-        public void PadLeftRight(Expression targetExp, Expression valueExp, Expression lengthExp, Expression fillExp, bool right, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        public virtual void PadLeftRight(Expression targetExp, Expression valueExp, Expression lengthExp, Expression fillExp, bool right, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             Debug.Assert(targetExp != null && valueExp != null && lengthExp != null);
 
@@ -648,18 +648,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
             AssignLeftTarget(targetExp, targetAbstraction);
         }
         /// <inheritdoc/>
-        public void Trim(Expression targetExp, Expression valueExp, Expression trimExp)
+        public virtual void Trim(Expression targetExp, Expression valueExp, Expression trimExp)
         {
             Trim(targetExp, valueExp, trimExp, true, true);
         }
         /// <inheritdoc/>
-        public void TrimStartEnd(Expression targetExp, Expression valueExp, Expression trimExp, bool end)
+        public virtual void TrimStartEnd(Expression targetExp, Expression valueExp, Expression trimExp, bool end)
         {
             Trim(targetExp, valueExp, trimExp, !end, end);
         }
         
         /// <inheritdoc/>
-        public void IsNullOrEmpty(Expression targetExp, Expression valueExp)
+        public virtual void IsNullOrEmpty(Expression targetExp, Expression valueExp)
         {
             Debug.Assert(targetExp != null && valueExp != null);
 
@@ -686,7 +686,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region Containment operations
         /// <inheritdoc/>
-        public void Contains(Expression targetExp, Expression valueExp, Expression partExp)
+        public virtual void Contains(Expression targetExp, Expression valueExp, Expression partExp)
         {
             Debug.Assert(targetExp != null && valueExp != null && partExp != null);
 
@@ -712,7 +712,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             AssignRightTarget(targetExp, targetPredicate);
         }
         /// <inheritdoc/>
-        public void StartsEndsWith(Expression targetExp, Expression valueExp, Expression partExp, Expression comparisonExp, bool ends)
+        public virtual void StartsEndsWith(Expression targetExp, Expression valueExp, Expression partExp, Expression comparisonExp, bool ends)
         {
             int comparison;
 
@@ -792,7 +792,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
         /// <inheritdoc/>
-        public void Equals(Expression targetExp, Expression leftExp, Expression rightExp, INullQuery<Variable> nullQuery)
+        public virtual void Equals(Expression targetExp, Expression leftExp, Expression rightExp, INullQuery<Variable> nullQuery)
         {
             Debug.Assert(targetExp != null && leftExp != null && rightExp != null);
 
@@ -823,7 +823,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             AssignRightTarget(targetExp, targetAbstraction);
         }
         /// <inheritdoc/>
-        public void CompareOrdinal(Expression targetExp, Expression leftExp, Expression rightExp,
+        public virtual void CompareOrdinal(Expression targetExp, Expression leftExp, Expression rightExp,
           INumericalAbstractDomain<Variable, Expression> numericalDomain, INullQuery<Variable> nullQuery)
         {
             Debug.Assert(targetExp != null && leftExp != null && rightExp != null);
@@ -866,7 +866,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
         #endregion
         /// <inheritdoc/>
-        public void GetLength(Expression targetExp, Expression sourceExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        public virtual void GetLength(Expression targetExp, Expression sourceExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             Debug.Assert(targetExp != null && sourceExp != null);
 
@@ -893,7 +893,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
         #region Index operaitons
-        public void IndexOfChar(Expression indexExp, Expression thisExp, Expression needleExp, Expression offsetExp, Expression countExp, bool last, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        public virtual void IndexOfChar(Expression indexExp, Expression thisExp, Expression needleExp, Expression offsetExp, Expression countExp, bool last, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             CharInterval needleInterval = EvalCharInterval(needleExp, numericalDomain);
 
@@ -930,7 +930,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public void IndexOf(Expression indexExp, Expression thisExp, Expression needleExp, Expression offsetExp, Expression countExp, Expression cmpExp, bool last, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        /// <inheritdoc/>
+        public virtual void IndexOf(Expression indexExp, Expression thisExp, Expression needleExp, Expression offsetExp, Expression countExp, Expression cmpExp, bool last, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             int comparison;
             if (TryEvalIntConstant(cmpExp, out comparison) && (StringComparison)comparison == StringComparison.Ordinal)
@@ -943,7 +944,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         #region Array operations
 
-        public void GetChar(Expression targetExp, Expression sourceExp, Expression indexExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        public virtual void GetChar(Expression targetExp, Expression sourceExp, Expression indexExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             Variable targetVariable = VariableFor(targetExp);
 
@@ -981,7 +982,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #endregion
 
         /// <inheritdoc/>
-        public void RegexIsMatch(Expression targetExp, Expression valueExp, Expression regexExp)
+        public virtual void RegexIsMatch(Expression targetExp, Expression valueExp, Expression regexExp)
         {
             Debug.Assert(targetExp != null && valueExp != null && regexExp != null);
 
@@ -1017,13 +1018,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public void Unknown(Expression unknownExp)
+        public virtual void Unknown(Expression unknownExp)
         {
             // Forget about this variable
             UnassignLeftTarget(unknownExp);
         }
 
-        public void Mutate(Expression mutatedExp)
+        public virtual void Mutate(Expression mutatedExp)
         {
             Variable mutatedVariable = VariableFor(mutatedExp);
 
@@ -1090,12 +1091,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #region Boolean expressions
         public CodeAnalysis.ProofOutcome EvalBool(Variable variable)
         {
-            if (!predicates.ContainsKey(variable))
+            IStringPredicate pred;
+
+            if (!predicates.TryGetValue(variable, out pred))
                 return CodeAnalysis.ProofOutcome.Top;
-
-            IStringPredicate predicate = predicates[variable];
-
-            return predicate.ProofOutcome;
+            return pred.ProofOutcome;
         }
 
         private IStringPredicate EvalBoolConstant(Expression exp)
@@ -1378,19 +1378,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public string ToString(Expression exp)
         {
-            if (this.decoder != null)
-            {
-                return ExpressionPrinter.ToString(exp, this.decoder);
-            }
-            else
-            {
-                return "< missing expression decoder >";
-            }
+            return ExpressionPrinter.ToString(exp, this.decoder);
         }
         #endregion
 
         #region IAbstractDomain
-        public bool IsBottom
+        public virtual bool IsBottom
         {
             get
             {
@@ -1398,7 +1391,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public bool IsTop
+        public virtual bool IsTop
         {
             get
             {
@@ -1406,7 +1399,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public IAbstractDomain Bottom
+        public virtual IAbstractDomain Bottom
         {
             get
             {
@@ -1416,7 +1409,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public IAbstractDomain Top
+        public virtual IAbstractDomain Top
         {
             get
             {
@@ -1426,14 +1419,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public bool LessEqual(IAbstractDomain a)
+        public virtual bool LessEqual(IAbstractDomain a)
         {
             var right = (StringAbstractDomain<Variable, Expression, StringAbstraction>)a;
 
             return strings.LessEqual(right.strings) && predicates.LessEqual(right.predicates);
         }
 
-        public IAbstractDomain Join(IAbstractDomain a)
+        public virtual IAbstractDomain Join(IAbstractDomain a)
         {
             var right = (StringAbstractDomain<Variable, Expression, StringAbstraction>)a;
 
@@ -1444,7 +1437,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
 
 
-        public IAbstractDomain Meet(IAbstractDomain a)
+        public virtual IAbstractDomain Meet(IAbstractDomain a)
         {
             var right = (StringAbstractDomain<Variable, Expression, StringAbstraction>)a;
 
@@ -1454,7 +1447,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return new StringAbstractDomain<Variable, Expression, StringAbstraction>(decoder, operations, meetStrings, meetPredicates, testVisitor);
         }
 
-        public IAbstractDomain Widening(IAbstractDomain prev)
+        public virtual IAbstractDomain Widening(IAbstractDomain prev)
         {
             var prevSad = (StringAbstractDomain<Variable, Expression, StringAbstraction>)prev;
             var widenStrings = strings.Widening(prevSad.strings);
@@ -1464,7 +1457,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
 
 
-        public T To<T>(IFactory<T> factory)
+        public virtual T To<T>(IFactory<T> factory)
         {
             var stringsTo = strings.To(factory);
             var predicatesTo = predicates.To(factory);
@@ -1472,7 +1465,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return factory.And(stringsTo, predicatesTo);
         }
 
-        public object Clone()
+        public virtual object Clone()
         {
             return new StringAbstractDomain<Variable, Expression, StringAbstraction>(
               decoder, operations,
