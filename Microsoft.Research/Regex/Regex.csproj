@@ -72,6 +72,14 @@
     <Compile Include="AST\Range.cs" />
     <Compile Include="AST\Reference.cs" />
     <Compile Include="AST\Wildcard.cs" />
+    <Compile Include="Model\Anchor.cs" />
+    <Compile Include="Model\CharRange.cs" />
+    <Compile Include="Model\Concatenation.cs" />
+    <Compile Include="Model\Element.cs" />
+    <Compile Include="Model\Loop.cs" />
+    <Compile Include="Model\ModelVisitor.cs" />
+    <Compile Include="Model\Union.cs" />
+    <Compile Include="Model\Unknown.cs" />
     <Compile Include="OpenClosedRegexVisitor.cs" />
     <Compile Include="ParseException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -84,6 +92,7 @@
     <None Include="App.config" />
     <None Include="Contracts.snk" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

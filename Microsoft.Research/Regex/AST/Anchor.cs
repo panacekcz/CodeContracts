@@ -32,7 +32,8 @@ namespace Microsoft.Research.Regex.AST
     StringEnd, //Z
     LineStart, //^
     LineEnd, //$
-    End //z
+    End, //z
+    PreviousMatchEnd, //G
   }
 
   /// <summary>
@@ -69,6 +70,8 @@ namespace Microsoft.Research.Regex.AST
           return "$";
         case AnchorKind.End:
           return "\\z";
+        case AnchorKind.PreviousMatchEnd:
+          return "\\G";
         default:
           return "(?ANCHOR)";
       }

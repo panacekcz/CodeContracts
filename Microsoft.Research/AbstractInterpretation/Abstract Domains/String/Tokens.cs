@@ -567,6 +567,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return false;
             return Equals(other);
         }
+        public override int GetHashCode()
+        {
+            return PrefixTreeNodeComparer.Comparer.GetHashCode(root);
+        }
 
         public bool LessThanEqual(Tokens other)
         {

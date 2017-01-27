@@ -298,6 +298,7 @@
     <Compile Include="String\IStringAbstractDomain.cs" />
     <Compile Include="String\KMP.cs" />
     <Compile Include="String\PrefixRegex.cs" />
+    <Compile Include="String\Regex\RegexInterpreter.cs" />
     <Compile Include="String\StringAbstractionPredicate.cs" />
     <Compile Include="String\StringBuilderUtils.cs" />
     <Compile Include="String\StringGraph.cs" />
