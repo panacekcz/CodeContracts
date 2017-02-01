@@ -51,6 +51,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="CharactersTest.cs" />
+    <Compile Include="ModelTest.cs" />
     <Compile Include="ParseTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

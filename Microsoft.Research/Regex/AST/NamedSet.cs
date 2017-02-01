@@ -23,41 +23,41 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a named character set (unicode category or character block).
-  /// </summary>
-  public class NamedSet : SingleElement
-  {
-    private readonly string name;
-    private readonly bool negative;
+    /// <summary>
+    /// Represents a named character set (unicode category or character block).
+    /// </summary>
+    public class NamedSet : SingleElement
+    {
+        private readonly string name;
+        private readonly bool negative;
 
-    public NamedSet(string name, bool negative)
-    {
-      this.name = name;
-      this.negative = negative;
-    }
+        public NamedSet(string name, bool negative)
+        {
+            this.name = name;
+            this.negative = negative;
+        }
 
-    public override bool CanMatch(char character)
-    {
-      return true;
-    }
-    public override bool MustMatch(char character)
-    {
-      return false;
-    }
-    public override IEnumerable<Tuple<char, char>> CanMatchIntervals
-    {
-      get { yield return new Tuple<char, char>(char.MinValue, char.MaxValue); }
-    }
-    public override IEnumerable<Tuple<char, char>> MustMatchIntervals
-    {
-      get { yield break; }
-    }
+        public override bool CanMatch(char character)
+        {
+            return true;
+        }
+        public override bool MustMatch(char character)
+        {
+            return false;
+        }
+        public override CharRanges CanMatchRanges
+        {
+            get { return new CharRanges(new CharRange(char.MinValue, char.MaxValue)); }
+        }
+        public override CharRanges MustMatchRanges
+        {
+            get { return new CharRanges(); }
+        }
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append(negative ? "\\P" : "\\p");
-      builder.Append(name);
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append(negative ? "\\P" : "\\p");
+            builder.Append(name);
+        }
     }
-  }
 }

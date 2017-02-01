@@ -72,6 +72,8 @@
     <Compile Include="AST\Range.cs" />
     <Compile Include="AST\Reference.cs" />
     <Compile Include="AST\Wildcard.cs" />
+    <Compile Include="CharRange.cs" />
+    <Compile Include="CreateModelVisitor.cs" />
     <Compile Include="Model\Anchor.cs" />
     <Compile Include="Model\CharRange.cs" />
     <Compile Include="Model\Concatenation.cs" />
@@ -85,6 +87,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegexExtensions.cs" />
     <Compile Include="RegexParser.cs" />
+    <Compile Include="RegexUtil.cs" />
     <Compile Include="RegexVisitor.cs" />
     <Compile Include="SimpleRegexVisitor.cs" />
   </ItemGroup>

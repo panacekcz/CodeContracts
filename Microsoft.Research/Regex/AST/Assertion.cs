@@ -23,43 +23,43 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents zero-width assertions of a regex.
-  /// </summary>
-  public class Assertion : Group
-  {
-    private readonly bool negative;
-    private readonly bool behind;
-
     /// <summary>
-    /// Gets whether the assertion is negative.
+    /// Represents zero-width assertions of a regex.
     /// </summary>
-    /// <remarks>
-    /// If <see langword="true"/>, then the element matches if the content
-    /// does not match.
-    /// </remarks>
-    public bool Negative { get { return negative; } }
-
-    /// <summary>
-    /// Gets whether the assertion looks behind or after the current position.
-    /// </summary>
-    public bool Behind { get { return behind; } }
-
-    public Assertion(bool negative, bool behind, Element content)
-      : base(content)
+    public class Assertion : Group
     {
-      this.negative = negative;
-      this.behind = behind;
-    }
+        private readonly bool negative;
+        private readonly bool behind;
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append("(?");
-      if (behind)
-        builder.Append('<');
-      builder.Append(negative ? '!' : '=');
-      content.GenerateString(builder);
-      builder.Append(')');
+        /// <summary>
+        /// Gets whether the assertion is negative.
+        /// </summary>
+        /// <remarks>
+        /// If <see langword="true"/>, then the element matches if the content
+        /// does not match.
+        /// </remarks>
+        public bool Negative { get { return negative; } }
+
+        /// <summary>
+        /// Gets whether the assertion looks behind or after the current position.
+        /// </summary>
+        public bool Behind { get { return behind; } }
+
+        public Assertion(bool negative, bool behind, Element content)
+          : base(content)
+        {
+            this.negative = negative;
+            this.behind = behind;
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("(?");
+            if (behind)
+                builder.Append('<');
+            builder.Append(negative ? '!' : '=');
+            content.GenerateString(builder);
+            builder.Append(')');
+        }
     }
-  }
 }

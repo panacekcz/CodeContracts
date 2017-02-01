@@ -23,49 +23,49 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a wildcard character.
-  /// </summary>
-  class Wildcard : SingleElement
-  {
-
-    public bool IsMatch(char character)
+    /// <summary>
+    /// Represents a wildcard character.
+    /// </summary>
+    class Wildcard : SingleElement
     {
-      return character != '\n';
-    }
 
-    public override bool CanMatch(char character)
-    {
-      return IsMatch(character);
-    }
+        public bool IsMatch(char character)
+        {
+            return character != '\n';
+        }
 
-    public override bool MustMatch(char character)
-    {
-      return IsMatch(character);
-    }
+        public override bool CanMatch(char character)
+        {
+            return IsMatch(character);
+        }
 
-    public IEnumerable<Tuple<char, char>> IsMatchIntervals
-    {
-      get
-      {
-        yield return new Tuple<char, char>(char.MinValue, (char)('\n' - 1));
-        yield return new Tuple<char, char>((char)('\n' + 1), char.MaxValue);
-      }
-    }
+        public override bool MustMatch(char character)
+        {
+            return IsMatch(character);
+        }
 
-    public override IEnumerable<Tuple<char, char>> CanMatchIntervals
-    {
-      get { return IsMatchIntervals; }
-    }
+        public IEnumerable<CharRange> IsMatchIntervals
+        {
+            get
+            {
+                yield return new CharRange(char.MinValue, (char)('\n' - 1));
+                yield return new CharRange((char)('\n' + 1), char.MaxValue);
+            }
+        }
 
-    public override IEnumerable<Tuple<char, char>> MustMatchIntervals
-    {
-      get { return IsMatchIntervals; }
-    }
+        public override CharRanges CanMatchRanges
+        {
+            get { return new CharRanges(IsMatchIntervals); }
+        }
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append('.');
+        public override CharRanges MustMatchRanges
+        {
+            get { return new CharRanges(IsMatchIntervals); }
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append('.');
+        }
     }
-  }
 }

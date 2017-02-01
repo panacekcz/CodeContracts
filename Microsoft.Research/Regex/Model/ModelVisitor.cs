@@ -10,8 +10,10 @@ namespace Microsoft.Research.Regex.Model
     {
         protected Result VisitElement(Element e, ref Data data)
         {
-            if (e is Anchor)
-                return VisitAnchor((Anchor)e, ref data);
+            if (e is Begin)
+                return VisitAnchor((Begin)e, ref data);
+            else if (e is End)
+                return VisitAnchor((End)e, ref data);
             else if (e is Concatenation)
                 return VisitConcatenation((Concatenation)e, ref data);
             else if (e is Union)
@@ -26,7 +28,8 @@ namespace Microsoft.Research.Regex.Model
                 throw new InvalidOperationException();
         }
 
-        protected abstract Result VisitAnchor(Anchor a, ref Data data);
+        protected abstract Result VisitAnchor(Begin a, ref Data data);
+        protected abstract Result VisitAnchor(End a, ref Data data);
         protected abstract Result VisitConcatenation(Concatenation a, ref Data data);
         protected abstract Result VisitUnion(Union a, ref Data data);
         protected abstract Result VisitCharacter(Character a, ref Data data);

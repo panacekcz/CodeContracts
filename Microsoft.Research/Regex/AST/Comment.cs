@@ -23,27 +23,27 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a regex comment.
-  /// </summary>
-  public class Comment : Element
-  {
-    private readonly string content;
-
     /// <summary>
-    /// Creates a regex comment with the specified content.
+    /// Represents a regex comment.
     /// </summary>
-    /// <param name="content">Text content of the comment.</param>
-    public Comment(string content)
+    public class Comment : Element
     {
-      this.content = content;
-    }
+        private readonly string content;
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append("(?#");
-      builder.Append(content);
-      builder.Append(")");
+        /// <summary>
+        /// Creates a regex comment with the specified content.
+        /// </summary>
+        /// <param name="content">Text content of the comment.</param>
+        public Comment(string content)
+        {
+            this.content = content;
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("(?#");
+            builder.Append(content);
+            builder.Append(")");
+        }
     }
-  }
 }

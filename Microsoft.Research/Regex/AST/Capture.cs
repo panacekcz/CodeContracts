@@ -23,27 +23,28 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a capturing group.
-  /// </summary>
-  public class Capture : Group
-  {
-    private readonly string name;
-
-    public Capture(string name, Element content)
-      : base(content)
+    /// <summary>
+    /// Represents a capturing group.
+    /// </summary>
+    public class Capture : Group
     {
-      this.name = name;
-    }
+        private readonly string name;
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append("(?<");
-      builder.Append(name);
-      builder.Append(">");
-      content.GenerateString(builder);
-      builder.Append(")");
-    }
+        public string Name { get { return name; } }
+        public Capture(string name, Element content)
+          : base(content)
+        {
+            this.name = name;
+        }
 
-  }
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("(?<");
+            builder.Append(name);
+            builder.Append(">");
+            content.GenerateString(builder);
+            builder.Append(")");
+        }
+
+    }
 }

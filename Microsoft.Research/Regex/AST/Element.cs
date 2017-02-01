@@ -23,60 +23,60 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents an element of a regex syntax.
-  /// </summary>
-  public abstract class Element
-  {
-    internal abstract void GenerateString(StringBuilder builder);
-
-    public override string ToString()
+    /// <summary>
+    /// Represents an element of a regex syntax.
+    /// </summary>
+    public abstract class Element
     {
-      StringBuilder builder = new StringBuilder();
-      GenerateString(builder);
-      return builder.ToString();
+        internal abstract void GenerateString(StringBuilder builder);
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            GenerateString(builder);
+            return builder.ToString();
+        }
     }
-  }
-
-  /// <summary>
-  /// Represensts an element which matches exactly one character.
-  /// </summary>
-  public abstract class SingleElement : Element
-  {
-    /// <summary>
-    /// Determines whether the character could match the element.
-    /// </summary>
-    /// <param name="character">The checked character.</param>
-    /// <returns><see langword="true"/>, if <paramref name="character"/> could match the element.</returns>
-    public abstract bool CanMatch(char character);
-    /// <summary>
-    /// Determines whether the character must match the element.
-    /// </summary>
-    /// <param name="character">The checked character.</param>
-    /// <returns><see langword="true"/>, if <paramref name="character"/> must match the element.</returns>
-    public abstract bool MustMatch(char character);
 
     /// <summary>
-    /// Enumerates ranges of characters, that could match the element.
+    /// Represensts an element which matches exactly one character.
     /// </summary>
-    /// <remarks>
-    /// All characters outside the enumerated ranges must not match.
-    /// </remarks>
-    public abstract IEnumerable<Tuple<char, char>> CanMatchIntervals { get; }
-    /// <summary>
-    /// Enumerates ranges of characters, that must match the element.
-    /// </summary>
-    public abstract IEnumerable<Tuple<char, char>> MustMatchIntervals { get; }
-  }
-
-  /// <summary>
-  /// Represents an element which is not supported by this implementation.
-  /// </summary>
-  public class UnsupportedElement : Element
-  {
-    internal override void GenerateString(StringBuilder builder)
+    public abstract class SingleElement : Element
     {
-      builder.Append("(?UNSUPPORTED)");
+        /// <summary>
+        /// Determines whether the character could match the element.
+        /// </summary>
+        /// <param name="character">The checked character.</param>
+        /// <returns><see langword="true"/>, if <paramref name="character"/> could match the element.</returns>
+        public abstract bool CanMatch(char character);
+        /// <summary>
+        /// Determines whether the character must match the element.
+        /// </summary>
+        /// <param name="character">The checked character.</param>
+        /// <returns><see langword="true"/>, if <paramref name="character"/> must match the element.</returns>
+        public abstract bool MustMatch(char character);
+
+        /// <summary>
+        /// Enumerates ranges of characters, that could match the element.
+        /// </summary>
+        /// <remarks>
+        /// All characters outside the enumerated ranges must not match.
+        /// </remarks>
+        public abstract CharRanges CanMatchRanges { get; }
+        /// <summary>
+        /// Enumerates ranges of characters, that must match the element.
+        /// </summary>
+        public abstract CharRanges MustMatchRanges { get; }
     }
-  }
+
+    /// <summary>
+    /// Represents an element which is not supported by this implementation.
+    /// </summary>
+    public class UnsupportedElement : Element
+    {
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("(?UNSUPPORTED)");
+        }
+    }
 }

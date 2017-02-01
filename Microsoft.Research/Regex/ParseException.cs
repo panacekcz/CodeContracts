@@ -23,11 +23,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex
 {
-  public class ParseException : Exception
-  {
-    public ParseException(string message) :
-      base(message)
+    public class ParseException : Exception
     {
+        public ParseException(string message) :
+          base(message)
+        {
+        }
     }
-  }
 }

@@ -6,50 +6,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.Model
 {
-    public struct CharRange
-    {
-        private char low, high;
-
-        public char High
-        {
-            get
-            {
-                return high;
-            }
-        }
-
-        public char Low
-        {
-            get
-            {
-                return low;
-            }
-        }
-
-        public CharRange(char low, char high)
-        {
-            this.low = low;
-            this.high = high;
-        }
-    }
-    public struct CharRanges
-    {
-        private IEnumerable<CharRange> ranges;
-
-        public IEnumerable<CharRange> Ranges
-        {
-            get
-            {
-                return ranges;
-            }
-        }
-
-        public CharRanges(IEnumerable<CharRange> ranges)
-        {
-            this.ranges = ranges;
-        }
-    }
-
     public class Character : Element
     {
         private CharRanges mustMatch, canMatch;
@@ -63,6 +19,25 @@ namespace Microsoft.Research.Regex.Model
             this.canMatch = canMatch;
         }
 
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("char(");
+            bool first = true;
+            foreach(var range in CanMatch.Ranges)
+            {
+                if (first)
+                    first = false;
+                else
+                    builder.Append(",");
+
+                if(range.Low != range.High)
+                    builder.AppendFormat("{0:X}-{1:X}", (int)range.Low, (int)range.High);
+                else
+                    builder.AppendFormat("{0:X}", (int)range.Low);
+            }
+
+            builder.Append(")");
+        }
     }
 
 }

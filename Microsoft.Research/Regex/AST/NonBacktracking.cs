@@ -23,22 +23,22 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a non-backtracking group.
-  /// </summary>
-  public class NonBacktracking : Group
-  {
-    public NonBacktracking(Element content)
-      : base(content)
+    /// <summary>
+    /// Represents a non-backtracking group.
+    /// </summary>
+    public class NonBacktracking : Group
     {
+        public NonBacktracking(Element content)
+          : base(content)
+        {
 
-    }
+        }
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append("(?>");
-      Content.GenerateString(builder);
-      builder.Append(")");
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("(?>");
+            Content.GenerateString(builder);
+            builder.Append(")");
+        }
     }
-  }
 }

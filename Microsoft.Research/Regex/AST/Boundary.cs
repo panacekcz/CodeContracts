@@ -23,26 +23,26 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a word boundary.
-  /// </summary>
-  public class Boundary : Element
-  {
-    private readonly bool negative;
-
     /// <summary>
-    /// Gets whether the element matches on a non-boundary.
+    /// Represents a word boundary.
     /// </summary>
-    public bool Negative { get { return negative; } }
-
-    public Boundary(bool negative)
+    public class Boundary : Element
     {
-      this.negative = negative;
-    }
+        private readonly bool negative;
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append(negative ? "\\B" : "\\b");
+        /// <summary>
+        /// Gets whether the element matches on a non-boundary.
+        /// </summary>
+        public bool Negative { get { return negative; } }
+
+        public Boundary(bool negative)
+        {
+            this.negative = negative;
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append(negative ? "\\B" : "\\b");
+        }
     }
-  }
 }

@@ -6,14 +6,22 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.Model
 {
-    public enum AnchorKind
+    public abstract class Anchor : Element
     {
-        Start, End
+        public static readonly Begin Begin = new Begin();
+        public static readonly End End = new End();
     }
 
-    public class Anchor : Element
-    {
-        public AnchorKind Kind { get; set; }
-
+    public class Begin : Anchor {
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("begin()");
+        }
+    }
+    public class End : Anchor {
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("end()");
+        }
     }
 }

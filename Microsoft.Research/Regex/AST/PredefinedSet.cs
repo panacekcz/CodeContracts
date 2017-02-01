@@ -23,85 +23,85 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a predefined set of characters
-  /// </summary>
-  public class PredefinedSet : SingleElement
-  {
-
-    public enum SetKind
-    {
-      /// <summary>
-      /// Represents word characters (\w).
-      /// </summary>
-      Word,
-      /// <summary>
-      /// Represents decimal digits (\d).
-      /// </summary>
-      DecimalDigit,
-      /// <summary>
-      /// Represents whitespace characters (\s).
-      /// </summary>
-      Whitespace
-    }
-
-    private readonly bool negative;
-    private readonly SetKind kind;
-
     /// <summary>
-    /// Gets whether the set matches the excluded characters.
+    /// Represents a predefined set of characters
     /// </summary>
-    public bool Negative { get { return negative; } }
-    /// <summary>
-    /// Gets the kind of predefined set.
-    /// </summary>
-    public SetKind Kind { get { return kind; } }
+    public class PredefinedSet : SingleElement
+    {
 
-    public PredefinedSet(SetKind kind, bool negative)
-    {
-      this.kind = kind;
-      this.negative = negative;
-    }
+        public enum SetKind
+        {
+            /// <summary>
+            /// Represents word characters (\w).
+            /// </summary>
+            Word,
+            /// <summary>
+            /// Represents decimal digits (\d).
+            /// </summary>
+            DecimalDigit,
+            /// <summary>
+            /// Represents whitespace characters (\s).
+            /// </summary>
+            Whitespace
+        }
 
-    public override bool CanMatch(char character)
-    {
-      return true;
-    }
-    public override bool MustMatch(char character)
-    {
-      return false;
-    }
-    public override IEnumerable<Tuple<char, char>> CanMatchIntervals
-    {
-      get { yield return new Tuple<char, char>(char.MinValue, char.MaxValue); }
-    }
-    public override IEnumerable<Tuple<char, char>> MustMatchIntervals
-    {
-      get { yield break; }
-    }
+        private readonly bool negative;
+        private readonly SetKind kind;
 
-    public override string ToString()
-    {
-      return EscapeSequenceFor(kind, negative);
-    }
-    private static string EscapeSequenceFor(SetKind kind, bool negative)
-    {
-      switch (kind)
-      {
-        case SetKind.Word:
-          return negative ? "\\W" : "\\w";
-        case SetKind.Whitespace:
-          return negative ? "\\S" : "\\s";
-        case SetKind.DecimalDigit:
-          return negative ? "\\D" : "\\d";
-        default:
-          throw new System.ComponentModel.InvalidEnumArgumentException("kind", (int)kind, typeof(SetKind));
-      }
-    }
+        /// <summary>
+        /// Gets whether the set matches the excluded characters.
+        /// </summary>
+        public bool Negative { get { return negative; } }
+        /// <summary>
+        /// Gets the kind of predefined set.
+        /// </summary>
+        public SetKind Kind { get { return kind; } }
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append(ToString());
+        public PredefinedSet(SetKind kind, bool negative)
+        {
+            this.kind = kind;
+            this.negative = negative;
+        }
+
+        public override bool CanMatch(char character)
+        {
+            return true;
+        }
+        public override bool MustMatch(char character)
+        {
+            return false;
+        }
+        public override CharRanges CanMatchRanges
+        {
+            get { return new CharRanges(new CharRange(char.MinValue, char.MaxValue)); }
+        }
+        public override CharRanges MustMatchRanges
+        {
+            get { return new CharRanges(); }
+        }
+
+        public override string ToString()
+        {
+            return EscapeSequenceFor(kind, negative);
+        }
+        private static string EscapeSequenceFor(SetKind kind, bool negative)
+        {
+            switch (kind)
+            {
+                case SetKind.Word:
+                    return negative ? "\\W" : "\\w";
+                case SetKind.Whitespace:
+                    return negative ? "\\S" : "\\s";
+                case SetKind.DecimalDigit:
+                    return negative ? "\\D" : "\\d";
+                default:
+                    throw new System.ComponentModel.InvalidEnumArgumentException("kind", (int)kind, typeof(SetKind));
+            }
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append(ToString());
+        }
     }
-  }
 }

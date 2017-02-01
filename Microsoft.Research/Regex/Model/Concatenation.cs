@@ -17,5 +17,13 @@ namespace Microsoft.Research.Regex.Model
                 return parts;
             }
         }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("concat(");
+            foreach (var part in parts)
+                part.GenerateString(builder);
+            builder.Append(")");
+        }
     }
 }

@@ -23,63 +23,63 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a continuous, inclusive range of character. Used in <see cref="CharacterSet"/>.
-  /// </summary>
-  public class Range : SingleElement
-  {
-    private readonly char low, high;
-
     /// <summary>
-    /// Gets the lower bound character of the range.
+    /// Represents a continuous, inclusive range of character. Used in <see cref="CharacterSet"/>.
     /// </summary>
-    public char Low { get { return low; } }
-    /// <summary>
-    /// Gets the upper bound character of the range.
-    /// </summary>
-    public char High { get { return high; } }
+    public class Range : SingleElement
+    {
+        private readonly char low, high;
 
-    public Range(char low, char high)
-    {
-      this.low = low;
-      this.high = high;
-    }
+        /// <summary>
+        /// Gets the lower bound character of the range.
+        /// </summary>
+        public char Low { get { return low; } }
+        /// <summary>
+        /// Gets the upper bound character of the range.
+        /// </summary>
+        public char High { get { return high; } }
 
-    public bool IsMatch(char character)
-    {
-      return low <= character && character <= high;
+        public Range(char low, char high)
+        {
+            this.low = low;
+            this.high = high;
+        }
+
+        public bool IsMatch(char character)
+        {
+            return low <= character && character <= high;
+        }
+        public override bool CanMatch(char character)
+        {
+            return IsMatch(character);
+        }
+        public override bool MustMatch(char character)
+        {
+            return IsMatch(character);
+        }
+        public IEnumerable<CharRange> IsMatchRanges()
+        {
+            yield return new CharRange(low, high);
+        }
+        public override CharRanges CanMatchRanges
+        {
+            get
+            {
+                return new CharRanges(IsMatchRanges());
+            }
+        }
+        public override CharRanges MustMatchRanges
+        {
+            get
+            {
+                return new CharRanges(IsMatchRanges());
+            }
+        }
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append(low);
+            builder.Append('-');
+            builder.Append(high);
+        }
     }
-    public override bool CanMatch(char character)
-    {
-      return IsMatch(character);
-    }
-    public override bool MustMatch(char character)
-    {
-      return IsMatch(character);
-    }
-    public IEnumerable<Tuple<char, char>> IsMatchRanges()
-    {
-      yield return new Tuple<char, char>(low, high);
-    }
-    public override IEnumerable<Tuple<char, char>> CanMatchIntervals
-    {
-      get
-      {
-        return IsMatchRanges();
-      }
-    }
-    public override IEnumerable<Tuple<char, char>> MustMatchIntervals
-    {
-      get
-      {
-        return IsMatchRanges();
-      }
-    }
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append(low);
-      builder.Append('-');
-      builder.Append(high);
-    }
-  }
 }

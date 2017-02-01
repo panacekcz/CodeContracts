@@ -20,5 +20,13 @@ namespace Microsoft.Research.Regex.Model
                 return patterns;
             }
         }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("union(");
+            foreach (var part in patterns)
+                part.GenerateString(builder);
+            builder.Append(")");
+        }
     }
 }

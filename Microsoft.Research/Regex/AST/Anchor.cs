@@ -23,63 +23,63 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Specifies the kind of Regex anchor.
-  /// </summary>
-  public enum AnchorKind
-  {
-    StringStart, //A
-    StringEnd, //Z
-    LineStart, //^
-    LineEnd, //$
-    End, //z
-    PreviousMatchEnd, //G
-  }
-
-  /// <summary>
-  /// Represents a zero-width anchor.
-  /// </summary>
-  public class Anchor : Element
-  {
-    private readonly AnchorKind kind;
+    /// <summary>
+    /// Specifies the kind of Regex anchor.
+    /// </summary>
+    public enum AnchorKind
+    {
+        StringStart, //A
+        StringEnd, //Z
+        LineStart, //^
+        LineEnd, //$
+        End, //z
+        PreviousMatchEnd, //G
+    }
 
     /// <summary>
-    /// Gets the kind of this anchor.
+    /// Represents a zero-width anchor.
     /// </summary>
-    public AnchorKind Kind
+    public class Anchor : Element
     {
-      get { return kind; }
-    }
+        private readonly AnchorKind kind;
 
-    public Anchor(AnchorKind kind)
-    {
-      this.kind = kind;
-    }
+        /// <summary>
+        /// Gets the kind of this anchor.
+        /// </summary>
+        public AnchorKind Kind
+        {
+            get { return kind; }
+        }
 
-    public override string ToString()
-    {
-      switch (kind)
-      {
-        case AnchorKind.StringStart:
-          return "\\A";
-        case AnchorKind.StringEnd:
-          return "\\Z";
-        case AnchorKind.LineStart:
-          return "^";
-        case AnchorKind.LineEnd:
-          return "$";
-        case AnchorKind.End:
-          return "\\z";
-        case AnchorKind.PreviousMatchEnd:
-          return "\\G";
-        default:
-          return "(?ANCHOR)";
-      }
-    }
+        public Anchor(AnchorKind kind)
+        {
+            this.kind = kind;
+        }
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append(ToString());
+        public override string ToString()
+        {
+            switch (kind)
+            {
+                case AnchorKind.StringStart:
+                    return "\\A";
+                case AnchorKind.StringEnd:
+                    return "\\Z";
+                case AnchorKind.LineStart:
+                    return "^";
+                case AnchorKind.LineEnd:
+                    return "$";
+                case AnchorKind.End:
+                    return "\\z";
+                case AnchorKind.PreviousMatchEnd:
+                    return "\\G";
+                default:
+                    return "(?ANCHOR)";
+            }
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append(ToString());
+        }
     }
-  }
 }

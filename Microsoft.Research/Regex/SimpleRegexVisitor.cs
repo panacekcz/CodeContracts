@@ -25,7 +25,7 @@ using Microsoft.Research.Regex.AST;
 namespace Microsoft.Research.Regex
 {
   internal struct Void { }
-  internal class CheckSupportVisitor : RegexVisitor<bool, Void>
+ /* internal class CheckSupportVisitor : RegexVisitor<bool, Void>
   {
     public bool Check(Element regex)
     {
@@ -219,5 +219,5 @@ namespace Microsoft.Research.Regex
       throw new InvalidOperationException();
     }
     #endregion
-  }
+  }*/
 }

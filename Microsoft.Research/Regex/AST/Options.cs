@@ -24,99 +24,99 @@ using System.Text.RegularExpressions;
 
 namespace Microsoft.Research.Regex.AST
 {
-  using RegexOptions = System.Text.RegularExpressions.RegexOptions;
+    using RegexOptions = System.Text.RegularExpressions.RegexOptions;
 
-  internal class RegexOptionsUtils
-  {
-    private static readonly RegexOptions[] namedOptions =
+    internal class RegexOptionsUtils
     {
+        private static readonly RegexOptions[] namedOptions =
+        {
       RegexOptions.IgnoreCase, RegexOptions.Multiline,
       RegexOptions.Singleline, RegexOptions.ExplicitCapture,
       RegexOptions.IgnorePatternWhitespace
     };
-    private static readonly char[] names = { 'i', 'm', 's', 'n', 'x' };
+        private static readonly char[] names = { 'i', 'm', 's', 'n', 'x' };
 
 
-    public static string OptionsToString(RegexOptions ro)
-    {
-      StringBuilder sb = new StringBuilder();
-      for (int i = 0; i < namedOptions.Length; ++i)
-      {
-        if ((ro & namedOptions[i]) == namedOptions[i])
+        public static string OptionsToString(RegexOptions ro)
         {
-          sb.Append(names[i]);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < namedOptions.Length; ++i)
+            {
+                if ((ro & namedOptions[i]) == namedOptions[i])
+                {
+                    sb.Append(names[i]);
+                }
+            }
+            return sb.ToString();
         }
-      }
-      return sb.ToString();
     }
-  }
 
-  /// <summary>
-  /// Represents a directive that modifies regex options.
-  /// </summary>
-  public class Options : Element
-  {
-    private readonly RegexOptions optionsSet;
-    private readonly RegexOptions optionsClear;
-
-    public Options(RegexOptions optionsSet, RegexOptions optionsClear)
+    /// <summary>
+    /// Represents a directive that modifies regex options.
+    /// </summary>
+    public class Options : Element
     {
-      this.optionsSet = optionsSet;
-      this.optionsClear = optionsClear;
+        private readonly RegexOptions optionsSet;
+        private readonly RegexOptions optionsClear;
+
+        public Options(RegexOptions optionsSet, RegexOptions optionsClear)
+        {
+            this.optionsSet = optionsSet;
+            this.optionsClear = optionsClear;
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("(?");
+            if (optionsSet != RegexOptions.None)
+            {
+                builder.Append(RegexOptionsUtils.OptionsToString(optionsSet));
+            }
+            if (optionsClear != RegexOptions.None)
+            {
+                builder.Append('-');
+                builder.Append(RegexOptionsUtils.OptionsToString(optionsClear));
+            }
+
+            builder.Append(")");
+        }
     }
 
-    internal override void GenerateString(StringBuilder builder)
+
+
+
+    /// <summary>
+    /// Represents a group with modified regex options.
+    /// </summary>
+    public class OptionsGroup : Group
     {
-      builder.Append("(?");
-      if (optionsSet != RegexOptions.None)
-      {
-        builder.Append(RegexOptionsUtils.OptionsToString(optionsSet));
-      }
-      if (optionsClear != RegexOptions.None)
-      {
-        builder.Append('-');
-        builder.Append(RegexOptionsUtils.OptionsToString(optionsClear));
-      }
+        private readonly RegexOptions optionsSet;
+        private readonly RegexOptions optionsClear;
 
-      builder.Append(")");
+        public OptionsGroup(Element content, RegexOptions optionsSet, RegexOptions optionsClear)
+          : base(content)
+        {
+            this.optionsSet = optionsSet;
+            this.optionsClear = optionsClear;
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("(?");
+            if (optionsSet != RegexOptions.None)
+            {
+                builder.Append(RegexOptionsUtils.OptionsToString(optionsSet));
+            }
+            if (optionsClear != RegexOptions.None)
+            {
+                builder.Append('-');
+                builder.Append(RegexOptionsUtils.OptionsToString(optionsClear));
+            }
+            builder.Append(':');
+
+            Content.GenerateString(builder);
+
+            builder.Append(")");
+        }
     }
-  }
-
-
-
-
-  /// <summary>
-  /// Represents a group with modified regex options.
-  /// </summary>
-  public class OptionsGroup : Group
-  {
-    private readonly RegexOptions optionsSet;
-    private readonly RegexOptions optionsClear;
-
-    public OptionsGroup(Element content, RegexOptions optionsSet, RegexOptions optionsClear)
-      : base(content)
-    {
-      this.optionsSet = optionsSet;
-      this.optionsClear = optionsClear;
-    }
-
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append("(?");
-      if (optionsSet != RegexOptions.None)
-      {
-        builder.Append(RegexOptionsUtils.OptionsToString(optionsSet));
-      }
-      if (optionsClear != RegexOptions.None)
-      {
-        builder.Append('-');
-        builder.Append(RegexOptionsUtils.OptionsToString(optionsClear));
-      }
-      builder.Append(':');
-
-      Content.GenerateString(builder);
-
-      builder.Append(")");
-    }
-  }
 }

@@ -79,7 +79,7 @@ namespace Microsoft.Research.Regex
     /// <returns><see langword="true"/>, if <paramref name="singleElement"/> cannot match any character.</returns>
     public static bool IsEmptyCanMatchSet(this AST.SingleElement singleElement)
     {
-      return !singleElement.CanMatchIntervals.Any();
+      return !singleElement.CanMatchRanges.Ranges.Any();
     }
 
     /// <summary>
@@ -91,8 +91,8 @@ namespace Microsoft.Research.Regex
     /// <returns><see langword="true"/>, if <paramref name="singleElement"/> can match one character.</returns>
     public static bool TryCanMatchSingleChar(this AST.SingleElement singleElement, out char singleChar)
     {
-      var intervals = singleElement.CanMatchIntervals;
-      using (var enumerator = intervals.GetEnumerator())
+      var intervals = singleElement.CanMatchRanges;
+      using (var enumerator = intervals.Ranges.GetEnumerator())
       {
         singleChar = '\0';
         if (!enumerator.MoveNext())
@@ -101,9 +101,9 @@ namespace Microsoft.Research.Regex
         }
 
         var interval = enumerator.Current;
-        if (interval.Item1 == interval.Item2)
+        if (interval.Low == interval.High)
         {
-          singleChar = interval.Item1;
+          singleChar = interval.Low;
         }
         else
         {

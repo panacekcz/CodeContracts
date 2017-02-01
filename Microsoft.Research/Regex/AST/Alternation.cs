@@ -23,38 +23,38 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents an alternation of multiple elements.
-  /// </summary>
-  /// <remarks>
-  /// Matches when at least one of the patterns match.
-  /// </remarks>
-  public class Alternation : Element
-  {
-    private readonly List<Element> patterns = new List<Element>();
-
     /// <summary>
-    /// Gets a list of patterns which can match.
+    /// Represents an alternation of multiple elements.
     /// </summary>
-    public List<Element> Patterns
+    /// <remarks>
+    /// Matches when at least one of the patterns match.
+    /// </remarks>
+    public class Alternation : Element
     {
-      get
-      {
-        return patterns;
-      }
-    }
+        private readonly List<Element> patterns = new List<Element>();
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      bool first = true;
-      foreach (Element el in patterns)
-      {
-        if (first)
-          first = false;
-        else
-          builder.Append('|');
-        el.GenerateString(builder);
-      }
+        /// <summary>
+        /// Gets a list of patterns which can match.
+        /// </summary>
+        public List<Element> Patterns
+        {
+            get
+            {
+                return patterns;
+            }
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            bool first = true;
+            foreach (Element el in patterns)
+            {
+                if (first)
+                    first = false;
+                else
+                    builder.Append('|');
+                el.GenerateString(builder);
+            }
+        }
     }
-  }
 }

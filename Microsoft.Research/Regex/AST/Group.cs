@@ -23,36 +23,36 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a group element.
-  /// </summary>
-  public abstract class Group : Element
-  {
-    protected readonly Element content;
-
-    public Element Content { get { return content; } }
-
-    protected Group(Element content)
+    /// <summary>
+    /// Represents a group element.
+    /// </summary>
+    public abstract class Group : Element
     {
-      this.content = content;
-    }
-  }
+        protected readonly Element content;
 
-  /// <summary>
-  /// Represents a group element without any additional semantics.
-  /// </summary>
-  public class SimpleGroup : Group
-  {
-    public SimpleGroup(Element content) :
-      base(content)
-    {
+        public Element Content { get { return content; } }
+
+        protected Group(Element content)
+        {
+            this.content = content;
+        }
     }
 
-    internal override void GenerateString(StringBuilder builder)
+    /// <summary>
+    /// Represents a group element without any additional semantics.
+    /// </summary>
+    public class SimpleGroup : Group
     {
-      builder.Append("(?:");
-      content.GenerateString(builder);
-      builder.Append(")");
+        public SimpleGroup(Element content) :
+          base(content)
+        {
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("(?:");
+            content.GenerateString(builder);
+            builder.Append(")");
+        }
     }
-  }
 }

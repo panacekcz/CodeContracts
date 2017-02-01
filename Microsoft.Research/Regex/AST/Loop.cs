@@ -23,57 +23,57 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  public class Loop : Element
-  {
-    internal const int UNBOUNDED = -1;
-
-    private readonly bool lazy;
-    private readonly int min, max;
-    private readonly Element content;
-
-    public Element Content { get { return content; } }
-    public int Min { get { return min; } }
-    public int Max { get { return max; } }
-    public bool IsUnbounded { get { return max == UNBOUNDED; } }
-    public bool Lazy { get { return lazy; } }
-
-    public Loop(int min, int max, Element content, bool lazy)
+    public class Loop : Element
     {
-      this.min = min;
-      this.max = max;
-      this.content = content;
-      this.lazy = lazy;
-    }
+        internal const int UNBOUNDED = -1;
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      content.GenerateString(builder);
-      if (min == 0 && max == 1)
-        builder.Append('?');
-      else if (min == 0 && max == UNBOUNDED)
-        builder.Append('*');
-      else if (min == 1 && max == UNBOUNDED)
-        builder.Append('+');
-      else
-      {
-        builder.Append('{');
-        builder.Append(min);
-        if (min != max)
+        private readonly bool lazy;
+        private readonly int min, max;
+        private readonly Element content;
+
+        public Element Content { get { return content; } }
+        public int Min { get { return min; } }
+        public int Max { get { return max; } }
+        public bool IsUnbounded { get { return max == UNBOUNDED; } }
+        public bool Lazy { get { return lazy; } }
+
+        public Loop(int min, int max, Element content, bool lazy)
         {
-          builder.Append(',');
-          if (max != -1)
-          {
-            builder.Append(max);
-          }
+            this.min = min;
+            this.max = max;
+            this.content = content;
+            this.lazy = lazy;
         }
-        builder.Append('}');
-      }
 
-      if (lazy)
-      {
-        builder.Append('?');
-      }
+        internal override void GenerateString(StringBuilder builder)
+        {
+            content.GenerateString(builder);
+            if (min == 0 && max == 1)
+                builder.Append('?');
+            else if (min == 0 && max == UNBOUNDED)
+                builder.Append('*');
+            else if (min == 1 && max == UNBOUNDED)
+                builder.Append('+');
+            else
+            {
+                builder.Append('{');
+                builder.Append(min);
+                if (min != max)
+                {
+                    builder.Append(',');
+                    if (max != -1)
+                    {
+                        builder.Append(max);
+                    }
+                }
+                builder.Append('}');
+            }
+
+            if (lazy)
+            {
+                builder.Append('?');
+            }
+        }
+
     }
-
-  }
 }

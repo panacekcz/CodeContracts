@@ -23,62 +23,62 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a single character node in Regex AST.
-  /// </summary>
-  public class Character : SingleElement
-  {
-    private readonly char value;
-
     /// <summary>
-    /// Gets the matched character value.
+    /// Represents a single character node in Regex AST.
     /// </summary>
-    public char Value { get { return value; } }
+    public class Character : SingleElement
+    {
+        private readonly char value;
 
-    /// <summary>
-    /// Constructs a character AST node for the specified character.
-    /// </summary>
-    /// <param name="value">Value of the represented character.</param>
-    public Character(char value)
-    {
-      this.value = value;
-    }
+        /// <summary>
+        /// Gets the matched character value.
+        /// </summary>
+        public char Value { get { return value; } }
 
-    public bool IsMatch(char character)
-    {
-      return character == value;
-    }
+        /// <summary>
+        /// Constructs a character AST node for the specified character.
+        /// </summary>
+        /// <param name="value">Value of the represented character.</param>
+        public Character(char value)
+        {
+            this.value = value;
+        }
 
-    public override bool CanMatch(char character)
-    {
-      return IsMatch(character);
-    }
-    public override bool MustMatch(char character)
-    {
-      return IsMatch(character);
-    }
+        public bool IsMatch(char character)
+        {
+            return character == value;
+        }
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      if (value >= '0' && value <= '9' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z')
-        builder.Append(value);
-      else
-        builder.AppendFormat("\\u{0:X4}", (int)value);
-    }
+        public override bool CanMatch(char character)
+        {
+            return IsMatch(character);
+        }
+        public override bool MustMatch(char character)
+        {
+            return IsMatch(character);
+        }
 
-    public IEnumerable<Tuple<char, char>> IsMatchIntervals
-    {
-      get { yield return new Tuple<char, char>(value, value); }
-    }
+        internal override void GenerateString(StringBuilder builder)
+        {
+            if (value >= '0' && value <= '9' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z')
+                builder.Append(value);
+            else
+                builder.AppendFormat("\\u{0:X4}", (int)value);
+        }
 
-    public override IEnumerable<Tuple<char, char>> CanMatchIntervals
-    {
-      get { return IsMatchIntervals; }
-    }
+        public IEnumerable<CharRange> IsMatchIntervals
+        {
+            get { yield return new CharRange(value, value); }
+        }
 
-    public override IEnumerable<Tuple<char, char>> MustMatchIntervals
-    {
-      get { return IsMatchIntervals; }
+        public override CharRanges CanMatchRanges
+        {
+            get { return new CharRanges(IsMatchIntervals); }
+        }
+
+        public override CharRanges MustMatchRanges
+        {
+            get { return new CharRanges(IsMatchIntervals); }
+        }
     }
-  }
 }

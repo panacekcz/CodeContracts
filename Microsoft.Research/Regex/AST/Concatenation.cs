@@ -23,27 +23,27 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a concatenation of several elements.
-  /// </summary>
-  public class Concatenation : Element
-  {
-    private readonly List<Element> parts = new List<Element>();
-
-    public List<Element> Parts
+    /// <summary>
+    /// Represents a concatenation of several elements.
+    /// </summary>
+    public class Concatenation : Element
     {
-      get
-      {
-        return parts;
-      }
-    }
+        private readonly List<Element> parts = new List<Element>();
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      foreach (Element el in parts)
-      {
-        el.GenerateString(builder);
-      }
+        public List<Element> Parts
+        {
+            get
+            {
+                return parts;
+            }
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            foreach (Element el in parts)
+            {
+                el.GenerateString(builder);
+            }
+        }
     }
-  }
 }

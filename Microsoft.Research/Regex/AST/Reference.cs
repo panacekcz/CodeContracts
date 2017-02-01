@@ -23,23 +23,23 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents a reference to a named capture group.
-  /// </summary>
-  public class Reference : Element
-  {
-    private readonly string name;
-
-    public Reference(string name)
+    /// <summary>
+    /// Represents a reference to a named capture group.
+    /// </summary>
+    public class Reference : Element
     {
-      this.name = name;
-    }
+        private readonly string name;
 
-    internal override void GenerateString(StringBuilder builder)
-    {
-      builder.Append("\\k<");
-      builder.Append(name);
-      builder.Append(">");
+        public Reference(string name)
+        {
+            this.name = name;
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append("\\k<");
+            builder.Append(name);
+            builder.Append(">");
+        }
     }
-  }
 }

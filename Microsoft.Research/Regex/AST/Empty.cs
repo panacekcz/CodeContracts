@@ -23,14 +23,14 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-  /// <summary>
-  /// Represents an element which matches the empty string.
-  /// </summary>
-  public class Empty : Element
-  {
-    internal override void GenerateString(StringBuilder builder)
+    /// <summary>
+    /// Represents an element which matches the empty string.
+    /// </summary>
+    public class Empty : Element
     {
-      //The empty element is empty in the regex
+        internal override void GenerateString(StringBuilder builder)
+        {
+            //The empty element is empty in the regex
+        }
     }
-  }
 }
