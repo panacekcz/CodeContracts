@@ -23,100 +23,100 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex
 {
-  public static class RegexExtensions
-  {
-    /// <summary>
-    /// Determines, whether the Regex element is a constant character.
-    /// If yes, stores the character in an output parameter.
-    /// </summary>
-    /// <param name="element">The regex AST element.</param>
-    /// <param name="character">Destination of the constant character.</param>
-    /// <returns><see langword="true"/>, if the element is a constant character</returns>
-    public static bool IsConstantChar(this AST.Element element, out char character)
+    public static class RegexExtensions
     {
-      if (!(element is AST.Character))
-      {
-        character = default(char);
-        return false;
-      }
-      AST.Character characterNode = (AST.Character)element;
-      character = characterNode.Value;
-      return true;
-    }
-    /// <summary>
-    /// Determnies, whether the regex element is a start-of-string anchor.
-    /// </summary>
-    /// <param name="element">The regex element.</param>
-    /// <returns><see langword="true"/>, if <paramref name="element"/> is a string start anchor</returns>
-    public static bool IsStartAnchor(this AST.Element element)
-    {
-      if (!(element is AST.Anchor))
-      {
-        return false;
-      }
-      var anchor = (AST.Anchor)element;
-      return anchor.Kind == AST.AnchorKind.LineStart || anchor.Kind == AST.AnchorKind.StringStart;
-    }
-    /// <summary>
-    /// Determnies, whether the regex element is an end-of-string anchor.
-    /// </summary>
-    /// <param name="element">The regex element.</param>
-    /// <returns><see langword="true"/>, if <paramref name="element"/> is a string end anchor</returns>
-    public static bool IsEndAnchor(this AST.Element element)
-    {
-      if (!(element is AST.Anchor))
-      {
-        return false;
-      }
-      var anchor = (AST.Anchor)element;
-      return anchor.Kind == AST.AnchorKind.End;
-    }
-    /// <summary>
-    /// Determines whether the single-character regex element has no
-    /// possible matching character.
-    /// </summary>
-    /// <param name="singleElement">A single-character regex element.</param>
-    /// <returns><see langword="true"/>, if <paramref name="singleElement"/> cannot match any character.</returns>
-    public static bool IsEmptyCanMatchSet(this AST.SingleElement singleElement)
-    {
-      return !singleElement.CanMatchRanges.Ranges.Any();
-    }
-
-    /// <summary>
-    /// Determines whether the single-character regex element one possible
-    /// matching character
-    /// </summary>
-    /// <param name="singleElement">A single-character regex element.</param>
-    /// <param name="singleChar">Stores the single character.</param>
-    /// <returns><see langword="true"/>, if <paramref name="singleElement"/> can match one character.</returns>
-    public static bool TryCanMatchSingleChar(this AST.SingleElement singleElement, out char singleChar)
-    {
-      var intervals = singleElement.CanMatchRanges;
-      using (var enumerator = intervals.Ranges.GetEnumerator())
-      {
-        singleChar = '\0';
-        if (!enumerator.MoveNext())
+        /// <summary>
+        /// Determines, whether the Regex element is a constant character.
+        /// If yes, stores the character in an output parameter.
+        /// </summary>
+        /// <param name="element">The regex AST element.</param>
+        /// <param name="character">Destination of the constant character.</param>
+        /// <returns><see langword="true"/>, if the element is a constant character</returns>
+        public static bool IsConstantChar(this AST.Element element, out char character)
         {
-          return false;
+            if (!(element is AST.Character))
+            {
+                character = default(char);
+                return false;
+            }
+            AST.Character characterNode = (AST.Character)element;
+            character = characterNode.Value;
+            return true;
+        }
+        /// <summary>
+        /// Determnies, whether the regex element is a start-of-string anchor.
+        /// </summary>
+        /// <param name="element">The regex element.</param>
+        /// <returns><see langword="true"/>, if <paramref name="element"/> is a string start anchor</returns>
+        public static bool IsStartAnchor(this AST.Element element)
+        {
+            if (!(element is AST.Anchor))
+            {
+                return false;
+            }
+            var anchor = (AST.Anchor)element;
+            return anchor.Kind == AST.AnchorKind.LineStart || anchor.Kind == AST.AnchorKind.StringStart;
+        }
+        /// <summary>
+        /// Determnies, whether the regex element is an end-of-string anchor.
+        /// </summary>
+        /// <param name="element">The regex element.</param>
+        /// <returns><see langword="true"/>, if <paramref name="element"/> is a string end anchor</returns>
+        public static bool IsEndAnchor(this AST.Element element)
+        {
+            if (!(element is AST.Anchor))
+            {
+                return false;
+            }
+            var anchor = (AST.Anchor)element;
+            return anchor.Kind == AST.AnchorKind.End;
+        }
+        /// <summary>
+        /// Determines whether the single-character regex element has no
+        /// possible matching character.
+        /// </summary>
+        /// <param name="singleElement">A single-character regex element.</param>
+        /// <returns><see langword="true"/>, if <paramref name="singleElement"/> cannot match any character.</returns>
+        public static bool IsEmptyCanMatchSet(this AST.SingleElement singleElement)
+        {
+            return !singleElement.CanMatchRanges.Ranges.Any();
         }
 
-        var interval = enumerator.Current;
-        if (interval.Low == interval.High)
+        /// <summary>
+        /// Determines whether the single-character regex element one possible
+        /// matching character
+        /// </summary>
+        /// <param name="singleElement">A single-character regex element.</param>
+        /// <param name="singleChar">Stores the single character.</param>
+        /// <returns><see langword="true"/>, if <paramref name="singleElement"/> can match one character.</returns>
+        public static bool TryCanMatchSingleChar(this AST.SingleElement singleElement, out char singleChar)
         {
-          singleChar = interval.Low;
-        }
-        else
-        {
-          return false;
-        }
+            var intervals = singleElement.CanMatchRanges;
+            using (var enumerator = intervals.Ranges.GetEnumerator())
+            {
+                singleChar = '\0';
+                if (!enumerator.MoveNext())
+                {
+                    return false;
+                }
 
-        if (enumerator.MoveNext())
-        {
-          return false;
-        }
+                var interval = enumerator.Current;
+                if (interval.Low == interval.High)
+                {
+                    singleChar = interval.Low;
+                }
+                else
+                {
+                    return false;
+                }
 
-        return true;
-      }
+                if (enumerator.MoveNext())
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
     }
-  }
 }

@@ -6,35 +6,89 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.Model
 {
+
+    /// <summary>
+    /// Visis regular expression models.
+    /// </summary>
+    /// <typeparam name="Data">Data passed along traversing individual elements.</typeparam>
+    /// <typeparam name="Result">Data returned from each elements.</typeparam>
     public abstract class ModelVisitor<Result, Data>
     {
-        protected Result VisitElement(Element e, ref Data data)
+        /// <summary>
+        /// Visits an element by calling the appropriate Visit method for the actual type of
+        /// the element.
+        /// </summary>
+        /// <param name="element">Element of the regex model.</param>
+        /// <param name="data">Data passed to the Visit method</param>
+        /// <returns>Data returned from the Visit method.</returns>
+        protected Result VisitElement(Element element, ref Data data)
         {
-            if (e is Begin)
-                return VisitAnchor((Begin)e, ref data);
-            else if (e is End)
-                return VisitAnchor((End)e, ref data);
-            else if (e is Concatenation)
-                return VisitConcatenation((Concatenation)e, ref data);
-            else if (e is Union)
-                return VisitUnion((Union)e, ref data);
-            else if (e is Character)
-                return VisitCharacter((Character)e, ref data);
-            else if (e is Unknown)
-                return VisitUnknown((Unknown)e, ref data);
-            else if (e is Loop)
-                return VisitLoop((Loop)e, ref data);
+            if (element is Begin)
+                return VisitAnchor((Begin)element, ref data);
+            else if (element is End)
+                return VisitAnchor((End)element, ref data);
+            else if (element is Concatenation)
+                return VisitConcatenation((Concatenation)element, ref data);
+            else if (element is Union)
+                return VisitUnion((Union)element, ref data);
+            else if (element is Character)
+                return VisitCharacter((Character)element, ref data);
+            else if (element is Unknown)
+                return VisitUnknown((Unknown)element, ref data);
+            else if (element is Loop)
+                return VisitLoop((Loop)element, ref data);
             else
                 throw new InvalidOperationException();
         }
-
-        protected abstract Result VisitAnchor(Begin a, ref Data data);
-        protected abstract Result VisitAnchor(End a, ref Data data);
-        protected abstract Result VisitConcatenation(Concatenation a, ref Data data);
-        protected abstract Result VisitUnion(Union a, ref Data data);
-        protected abstract Result VisitCharacter(Character a, ref Data data);
-        protected abstract Result VisitUnknown(Unknown a, ref Data data);
-        protected abstract Result VisitLoop(Loop a, ref Data data);
+        /// <summary>
+        /// Visits a begin anchor.
+        /// </summary>
+        /// <param name="anchor">The begin anchor element in the regex model.</param>
+        /// <param name="data">Data passed from the caller.</param>
+        /// <returns>Result returned to the caller.</returns>
+        protected abstract Result VisitAnchor(Begin anchor, ref Data data);
+        /// <summary>
+        /// Visits a end anchor.
+        /// </summary>
+        /// <param name="anchor">The end anchor element in the regex model.</param>
+        /// <param name="data">Data passed from the caller.</param>
+        /// <returns>Result returned to the caller.</returns>
+        protected abstract Result VisitAnchor(End anchor, ref Data data);
+        /// <summary>
+        /// Visits a concatenation element.
+        /// </summary>
+        /// <param name="concatenation">The concatenation element in the regex model.</param>
+        /// <param name="data">Data passed from the caller.</param>
+        /// <returns>Result returned to the caller.</returns>
+        protected abstract Result VisitConcatenation(Concatenation concatenation, ref Data data);
+        /// <summary>
+        /// Visits a union element.
+        /// </summary>
+        /// <param name="union">The union element in the regex model.</param>
+        /// <param name="data">Data passed from the caller.</param>
+        /// <returns>Result returned to the caller.</returns>
+        protected abstract Result VisitUnion(Union union, ref Data data);
+        /// <summary>
+        /// Visits a character element.
+        /// </summary>
+        /// <param name="character">The character element in the regex model.</param>
+        /// <param name="data">Data passed from the caller.</param>
+        /// <returns>Result returned to the caller.</returns>
+        protected abstract Result VisitCharacter(Character character, ref Data data);
+        /// <summary>
+        /// Visits an unknown group element.
+        /// </summary>
+        /// <param name="unknown">The unknown group element in the regex model.</param>
+        /// <param name="data">Data passed from the caller.</param>
+        /// <returns>Result returned to the caller.</returns>
+        protected abstract Result VisitUnknown(Unknown unknown, ref Data data);
+        /// <summary>
+        /// Visits a loop model element.
+        /// </summary>
+        /// <param name="loop">The loop element in the regex model.</param>
+        /// <param name="data">Data passed from the caller.</param>
+        /// <returns>Result returned to the caller.</returns>
+        protected abstract Result VisitLoop(Loop loop, ref Data data);
 
     }
 }

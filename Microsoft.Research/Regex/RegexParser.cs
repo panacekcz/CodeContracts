@@ -56,6 +56,10 @@ namespace Microsoft.Research.Regex
         {
             return current < input.Length;
         }
+        private char Current()
+        {
+            return input[current];
+        }
         private char Next()
         {
             return input[current++];
@@ -327,8 +331,17 @@ namespace Microsoft.Research.Regex
                 switch (Next())
                 {
                     case '<':
-                        //TODO: lookbehind; name can contain only word chars
-                        return new AST.Capture(ParseUntil('>'), Parse(true));
+                        if (Current() == '=') {
+                            Next();
+                            return new AST.Assertion(false, true, Parse(true));
+                        }
+                        else if (Current() == '!')
+                        {
+                            Next();
+                            return new AST.Assertion(true, true, Parse(true));
+                        }
+                        else
+                            return new AST.Capture(ParseUntil('>'), Parse(true));
                     case '\'':
                         return new AST.Capture(ParseUntil('\''), Parse(true));
                     case '>':

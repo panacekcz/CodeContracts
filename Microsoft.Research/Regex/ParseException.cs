@@ -23,6 +23,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex
 {
+    /// <summary>
+    /// Indicates that a regex cannot be parsed.
+    /// </summary>
     public class ParseException : Exception
     {
         public ParseException(string message) :

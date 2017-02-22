@@ -75,7 +75,7 @@
     <Compile Include="CharRange.cs" />
     <Compile Include="CreateModelVisitor.cs" />
     <Compile Include="Model\Anchor.cs" />
-    <Compile Include="Model\CharRange.cs" />
+    <Compile Include="Model\Character.cs" />
     <Compile Include="Model\Concatenation.cs" />
     <Compile Include="Model\Element.cs" />
     <Compile Include="Model\Loop.cs" />

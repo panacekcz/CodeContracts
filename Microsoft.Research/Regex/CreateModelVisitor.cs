@@ -8,21 +8,29 @@ using Microsoft.Research.Regex.Model;
 
 namespace Microsoft.Research.Regex
 {
-
+    /// <summary>
+    /// Helpers for building regex AST.
+    /// </summary>
     public static class ASTBuilder
     {
-        public static AST.Alternation Union(AST.Element e, AST.Element f)
+        /// <summary>
+        /// Builds an AST for a union of two regexes, with flattening nested unions.
+        /// </summary>
+        /// <param name="element1"></param>
+        /// <param name="element2"></param>
+        /// <returns></returns>
+        public static AST.Alternation Union(AST.Element element1, AST.Element element2)
         {
             AST.Alternation a = new AST.Alternation();
-            if (e is AST.Alternation)
-                a.Patterns.AddRange(((AST.Alternation)e).Patterns);
+            if (element1 is AST.Alternation)
+                a.Patterns.AddRange(((AST.Alternation)element1).Patterns);
             else
-                a.Patterns.Add(e);
+                a.Patterns.Add(element1);
 
-            if (f is AST.Alternation)
-                a.Patterns.AddRange(((AST.Alternation)f).Patterns);
+            if (element2 is AST.Alternation)
+                a.Patterns.AddRange(((AST.Alternation)element2).Patterns);
             else
-                a.Patterns.Add(f);
+                a.Patterns.Add(element2);
 
             return a;
         }
@@ -136,10 +144,12 @@ namespace Microsoft.Research.Regex
         }
     }
 
+    /// <summary>
+    /// Creates regex model from regex AST.
+    /// </summary>
     internal class CreateModelVisitor : RegexVisitor<Model.Element, Void>
     {
         
-
         public Model.Element CreateModelForAST(AST.Element ast)
         {
             Void data;
@@ -154,7 +164,7 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(Capture element, ref Void data)
         {
-            throw new NotImplementedException();
+            return VisitElement(element.Content, ref data);
         }
 
         protected override Model.Element Visit(AST.Concatenation element, ref Void data)
@@ -185,7 +195,8 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(Options element, ref Void data)
         {
-            throw new NotImplementedException();
+            // This should not happen, because AST with such elements should be rejected
+            throw new InvalidOperationException();
         }
 
         protected override Model.Element Visit(Reference element, ref Void data)
@@ -200,12 +211,14 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(SimpleGroup element, ref Void data)
         {
+            // Simple non-capturing group is transparent.
             return VisitElement(element.Content, ref data);
         }
 
         protected override Model.Element Visit(OptionsGroup element, ref Void data)
         {
-            throw new NotImplementedException();
+            // This should not happen, because AST with such elements should be rejected
+            throw new InvalidOperationException();
         }
 
         protected override Model.Element Visit(NonBacktracking element, ref Void data)
@@ -215,11 +228,13 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(Empty element, ref Void data)
         {
+            // Empty element is modeled by an empty concatenation
             return new Model.Concatenation();
         }
 
         protected override Model.Element Visit(Comment element, ref Void data)
         {
+            // Comment is treated as an empty element and modeled by an empty concatenation
             return new Model.Concatenation();
         }
 
@@ -230,18 +245,27 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(AST.Anchor element, ref Void data)
         {
-            if(element.Kind == AST.AnchorKind.LineStart)
+            // We assume we are not in multiline mode
+            if(element.Kind == AST.AnchorKind.LineStart || element.Kind == AST.AnchorKind.StringStart)
             {
+                // Start of string
                 return Model.Anchor.Begin;
             }
-
             else if (element.Kind == AnchorKind.End)
             {
+                // End of string
                 return Model.Anchor.End;
             }
-
-            throw new NotImplementedException();
+            else if(element.Kind== AnchorKind.LineEnd || element.Kind ==AnchorKind.StringEnd) {
+                // End of string or 
+                return new Model.Union(Model.Anchor.End, new Model.Unknown(new Model.Concatenation()));
+            }
+            else
+            {
+                return new Model.Unknown(new Model.Concatenation());
+            }
         }
+
 
         protected override Model.Element Visit(Alternation element, ref Void data)
         {
