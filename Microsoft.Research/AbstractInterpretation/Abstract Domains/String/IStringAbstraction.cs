@@ -96,8 +96,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// </summary>
     public interface IStringPredicate : IAbstractDomain
     {
+        /// <summary>
+        /// Gets an equivalent predicate with variables renamed in parallel.
+        /// </summary>
+        /// <typeparam name="Variable">Type of variables used in the predicate.</typeparam>
+        /// <param name="sourcesToTargets">Renaming of variables.</param>
+        /// <returns>A predicate equivalent to this with variables renamed by <paramref name="sourcesToTargets"/>.</returns>
         IStringPredicate AssignInParallel<Variable>(Dictionary<Variable, FList<Variable>> sourcesToTargets);
+        /// <summary>
+        /// Checks whether the predicate may evaluate to the specified boolean value.
+        /// </summary>
+        /// <param name="value">Boolean value to check.</param>
+        /// <returns>True if it is possible that the predicate will evaluate to <paramref name="value"/>.</returns>
         bool ContainsValue(bool value);
+        /// <summary>
+        /// Converts the predicate to a ProofOutcome variable using overapproximation.
+        /// </summary>
         ProofOutcome ProofOutcome { get; }
     }
 
@@ -214,25 +228,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
         IStringPredicate Contains(WithConstants<StringAbstraction> self, Variable selfVariable,
           WithConstants<StringAbstraction> other, Variable otherVariable);
         /// <summary>
-        /// Evaluates the <see cref="String.StartsWith"/> method, with an argument of <see cref="StringComparison.Ordinal"/>, in abstract.
+        /// Evaluates the <see cref="String.StartsWith"/> or <see cref="String.EndsWith"/> method, with an argument of <see cref="StringComparison.Ordinal"/>, in abstract.
         /// </summary>
         /// <param name="self">Abstraction or constant value of the this argument.</param>
         /// <param name="selfVariable">Variable containing the value of the this argument, or <see langword="null"/>.</param>
         /// <param name="other">Abstraction or constant value of the contained string argument.</param>
         /// <param name="otherVariable">Variable containing the value of the contained string argument, or <see langword="null"/>.</param>
+        /// <param name="ends">If true, evaluates <see cref="String.EndsWith"/>, if false, evaluates  <see cref="String.StartsWith"/>.</param>
         /// <returns>Abstraction of the return value.</returns>
-        IStringPredicate StartsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable,
-          WithConstants<StringAbstraction> other, Variable otherVariable);
-        /// <summary>
-        /// Evaluates the <see cref="String.EndsWith"/> method, with an argument of <see cref="StringComparison.Ordinal"/>, in abstract.
-        /// </summary>
-        /// <param name="self">Abstraction or constant value of the this argument.</param>
-        /// <param name="selfVariable">Variable containing the value of the this argument, or <see langword="null"/>.</param>
-        /// <param name="other">Abstraction or constant value of the contained string argument.</param>
-        /// <param name="otherVariable">Variable containing the value of the contained string argument, or <see langword="null"/>.</param>
-        /// <returns>Abstraction of the return value.</returns>
-        IStringPredicate EndsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable,
-          WithConstants<StringAbstraction> other, Variable otherVariable);
+        IStringPredicate StartsEndsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable,
+          WithConstants<StringAbstraction> other, Variable otherVariable, bool ends);
 
         /// <summary>
         /// Evaluates the <see cref="String.Equals"/> method in abstract.
@@ -285,20 +290,55 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="selfVariable">Variable containing the value of the left argument, or <see langword="null"/>.</param>
         /// <param name="regex">The AST of the regex.</param>
         /// <returns>Abstraction of the return value.</returns>
-        IStringPredicate RegexIsMatch(StringAbstraction self, Variable selfVariable, Regex.AST.Element regex);
+        IStringPredicate RegexIsMatch(StringAbstraction self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex);
     }
 
+    /// <summary>
+    /// The interface for implementation of abstract string operation semantics with operations
+    /// specific to interval abstractions.
+    /// </summary>
+    /// <typeparam name="StringAbstraction">The type of the interval string abstraction.</typeparam>
+    /// <typeparam name="Variable">The type of variables used in predicates.</typeparam>
     public interface IStringIntervalOperations<StringAbstraction, Variable> : IStringOperations<StringAbstraction, Variable>
     where StringAbstraction : IStringInterval<StringAbstraction>
     where Variable : IEquatable<Variable>
     {
-        IStringPredicate StartsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery);
-        IStringPredicate EndsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery);
+        /// <summary>
+        /// Evaluates the <see cref="String.StartsWith"/> or <see cref="String.EndsWith"/> method, with an argument of <see cref="StringComparison.Ordinal"/>, in abstract.
+        /// </summary>
+        /// <param name="self">Abstraction or constant value of the this argument.</param>
+        /// <param name="selfVariable">Variable containing the value of the this argument, or <see langword="null"/>.</param>
+        /// <param name="other">Abstraction or constant value of the contained string argument.</param>
+        /// <param name="otherVariable">Variable containing the value of the contained string argument, or <see langword="null"/>.</param>
+        /// <param name="ends">If true, evaluates <see cref="String.EndsWith"/>, if false, evaluates  <see cref="String.StartsWith"/>.</param>
+        /// <param name="orderQuery">Provides information about ordering of variables.</param>
+        /// <returns>Abstraction of the return value.</returns>
+        IStringPredicate StartsEndsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, bool ends, IStringOrderQuery<Variable> orderQuery);
 
+        /// <param name="orderQuery">Provides information about ordering of variables.</param>
         IStringPredicate Equals(WithConstants<StringAbstraction> self, Variable selfVariable,
           WithConstants<StringAbstraction> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery);
 
-        IEnumerable<OrderPredicate<Variable>> ConcatOrder(Variable targetVariable, Variable selfVariable, Variable otherVariable);
+        /// <summary>
+        /// Evaluates the <see cref="String.Contains"/> method in abstract.
+        /// </summary>
+        /// <param name="self">Abstraction or constant value of the this argument.</param>
+        /// <param name="selfVariable">Variable containing the value of the this argument, or <see langword="null"/>.</param>
+        /// <param name="other">Abstraction or constant value of the contained string argument.</param>
+        /// <param name="otherVariable">Variable containing the value of the contained string argument, or <see langword="null"/>.</param>
+        /// <param name="orderQuery">Provides information about ordering of variables.</param>
+        /// <returns>Abstraction of the return value.</returns>
+        IStringPredicate Contains(WithConstants<StringAbstraction> self, Variable selfVariable,
+          WithConstants<StringAbstraction> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery);
+
+        /// <summary>
+        /// Gets order predicates determined from the fact that a variable is a result of concatenation of two other variables.
+        /// </summary>
+        /// <param name="targetVariable">The variable of the result.</param>
+        /// <param name="leftVariable">The left argument variable.</param>
+        /// <param name="rightVariable">The right argument variable</param>
+        /// <returns>Collection of order predicates inferred from the call.</returns>
+        IEnumerable<OrderPredicate<Variable>> ConcatOrder(Variable targetVariable, Variable leftVariable, Variable rightVariable);
     }
 
 
@@ -428,8 +468,26 @@ namespace Microsoft.Research.AbstractDomains.Strings
     public interface IStringInterval<Self> : IStringAbstraction<Self, string>
       where Self : IStringAbstraction<Self, string>
     {
+        /// <summary>
+        /// Checks whether it is guaranteed that all values of this interval are less than or equal to
+        /// all values of another interval.
+        /// </summary>
+        /// <param name="greaterEqual">The interval of values to compare.</param>
+        /// <returns>True if all values in this interval are less than or equal to all values in <paramref name="greaterEqual"/>.</returns>
         bool CheckMustBeLessEqualThan(Self greaterEqual);
+        /// <summary>
+        /// Tries to refine an interval by removing some values that are not less than or equal to
+        /// all values in this interval.
+        /// </summary>
+        /// <param name="lessEqual">An interval where only values less than or equal to values in this interval are needed.</param>
+        /// <returns>True if <paramref name="lessEqual"/> has been changed.</returns>
         bool TryRefineLessEqual(ref Self lessEqual);
+        /// <summary>
+        /// Tries to refine an interval by removing some values that are not greater than or equal to
+        /// all values in this interval.
+        /// </summary>
+        /// <param name="greaterEqual">An interval where only values greater than or equal to values in this interval are needed.</param>
+        /// <returns>True if <paramref name="greaterEqual"/> has been changed.</returns>
         bool TryRefineGreaterEqual(ref Self greaterEqual);
     }
 }

@@ -744,14 +744,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
                 else
                 {
-                    if (!ends)
-                    {
-                        targetPredicate = operations.StartsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar);
-                    }
-                    else
-                    {
-                        targetPredicate = operations.EndsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar);
-                    }
+                    targetPredicate = operations.StartsEndsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, ends);
                 }
 
                 AssignRightTarget(targetExp, targetPredicate);
@@ -764,29 +757,39 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #endregion
 
         #region Comparison operations
-
-        private void TestNulls(ref WithConstants<StringAbstraction> abs, Variable var, INullQuery<Variable> query, out bool canBeNull, out bool canBeNonNull)
+        /// <summary>
+        /// Tests whether the argument of an operation can or must be null.
+        /// </summary>
+        /// <param name="operationArgument">The argument to test.</param>
+        /// <param name="var">Variable holding the argument or null.</param>
+        /// <param name="query">Provides information about nullness of variables.</param>
+        /// <param name="canBeNull">Set to true if the argument can be null, set to false if the argument is known to be non-null.</param>
+        /// <param name="canBeNonNull">Set to true if the argument can be non-null, set to false if the argument is known to be null.</param>
+        private void TestNulls(ref WithConstants<StringAbstraction> operationArgument, Variable var, INullQuery<Variable> query, out bool canBeNull, out bool canBeNonNull)
         {
-
-            if (abs.Constant != null)
+            if (operationArgument.Constant != null)
             {
+                // The argument is a non-null string constant.
                 canBeNonNull = true;
                 canBeNull = false;
             }
-            else if (abs.Abstract == null)
+            else if (operationArgument.Abstract == null)
             {
-                abs = new WithConstants<StringAbstraction>("");
+                // The argument is null literal.
+                operationArgument = new WithConstants<StringAbstraction>("");
                 canBeNonNull = false;
                 canBeNull = true;
                 return;
             }
             else if (var != null && query != null)
             {
+                // The argument is a variable.
                 canBeNull = !query.IsNonNull(var);
                 canBeNonNull = !query.IsNull(var);
             }
             else
             {
+                // No information is available.
                 canBeNonNull = true;
                 canBeNull = true;
             }
@@ -943,7 +946,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #endregion
 
         #region Array operations
-
+        /// <inheritdoc/>
         public virtual void GetChar(Expression targetExp, Expression sourceExp, Expression indexExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             Variable targetVariable = VariableFor(targetExp);
@@ -1001,10 +1004,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     try
                     {
-                        Regex.AST.Element regexAST = Regex.RegexParser.Parse(regexString);
-                        targetPredicate = operations.RegexIsMatch(valueAbstraction, valueVar, regexAST);
+                        Microsoft.Research.Regex.Model.Element regexModel = Microsoft.Research.Regex.RegexUtil.ModelForRegex(regexString);
+                        targetPredicate = operations.RegexIsMatch(valueAbstraction, valueVar, regexModel);
                     }
-                    catch (Regex.ParseException)
+                    catch (Microsoft.Research.Regex.ParseException)
                     {
                         targetPredicate = FlatPredicate.Top;
                     }

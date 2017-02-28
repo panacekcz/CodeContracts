@@ -203,10 +203,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return new PrefixInterval(v);
             }
             #endregion
+            public PrefixInterval Bottom
+            {
+                get { return new PrefixInterval(Wrap(""), Wrap(null)); }
+            }
 
             private PrefixInterval ForUpperBound(Prefix upperBound)
             {
                 return new PrefixInterval(upperBound.Bottom, upperBound);
+            }
+            private PrefixInterval For(string lower, string upper)
+            {
+                return new PrefixInterval(Wrap(lower), Wrap(upper));
             }
             private WithConstants<Prefix> GetUpperBoundArg(WithConstants<PrefixInterval> intervalWC)
             {
@@ -227,7 +235,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     return new OrderPredicate<Variable>[]
                     {
-          OrderPredicate.For(targetVariable, selfVariable)
+                        OrderPredicate.For(targetVariable, selfVariable)
                     };
                 }
                 else
@@ -248,7 +256,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     string leftConstant = leftInterval.lowerBound.prefix;
                     // only if there is constant on the left, we can use 
                     // information about the right part
-                    return new PrefixInterval(Wrap(leftConstant + rightInterval.lowerBound.prefix), Wrap(leftConstant + rightInterval.upperBound.prefix));
+                    return For(leftConstant + rightInterval.lowerBound.prefix, leftConstant + rightInterval.upperBound.prefix);
                 }
                 else
                 {
@@ -258,165 +266,50 @@ namespace Microsoft.Research.AbstractDomains.Strings
             ///<inheritdoc/>
             public PrefixInterval Insert(WithConstants<PrefixInterval> self, IndexInterval index, WithConstants<PrefixInterval> other)
             {
-                /*PrefixInterval selfInterval = self.ToAbstract(this);
-                PrefixInterval otherInterval = other.ToAbstract(this);
-
-                if (index.IsFiniteConstant)
-                {
-                  int i = index.LowerBound.AsInt;
-
-                  if (i > selfPrefix.prefix.Length)
-                  {
-                    if (self.IsConstant)
-                    {
-                      return selfPrefix.Bottom;
-                    }
-                    else
-                    {
-                      return selfPrefix;
-                    }
-                  }
-                  else
-                  {
-                    if (other.IsConstant)
-                    {
-                      return new Prefix(selfPrefix.prefix.Insert(i, other.Constant));
-                    }
-                    else
-                    {
-                      return new Prefix(selfPrefix.prefix.Substring(0, i) + otherPrefix.prefix);
-                    }
-                  }
-
-                }
-                else if (index.LowerBound <= selfPrefix.prefix.Length)
-                {
-                  return new Prefix(selfPrefix.prefix.Substring(0, index.LowerBound.AsInt));
-                }
-                else
-                {
-                  return selfPrefix.Top;
-                }*/
-
                 return ForUpperBound(prefixOperations.Insert(GetUpperBoundArg(self), index, GetUpperBoundArg(other)));
             }
             ///<inheritdoc/>
             public PrefixInterval Replace(PrefixInterval self, CharInterval from, CharInterval to)
             {
-                /*
+
                 if (from.IsConstant && to.IsConstant)
-                  return new Prefix(self.prefix.Replace(from.LowerBound, to.LowerBound));
-
-                int l = 0;
-
-                while (l < self.prefix.Length && !from.Contains(self.prefix[l]))
-                {
-                  ++l;
-                }
-
-                return new Prefix(self.prefix.Substring(0, l));*/
-
-                return ForUpperBound(prefixOperations.Replace(self.upperBound, from, to));
+                    return For(self.lowerBound.prefix.Replace(from.LowerBound, to.LowerBound), self.upperBound.prefix.Replace(from.LowerBound, to.LowerBound));
+                else
+                    return ForUpperBound(prefixOperations.Replace(self.upperBound, from, to));
             }
             ///<inheritdoc/>
             public PrefixInterval Replace(WithConstants<PrefixInterval> self, WithConstants<PrefixInterval> from, WithConstants<PrefixInterval> to)
             {
-                /*
-                PrefixInterval selfPrefix = self.ToAbstract(this);
-
-                if (from.IsConstant && to.IsConstant)
-                {
-                  KMP kmp = new KMP(from.Constant);
-                  string repl = kmp.PrefixOfReplace(selfPrefix.prefix, to.Constant);
-                  return new Prefix(repl);
-                }
-                else
-                {
-                  return Top;
-                }
-                */
-
                 return ForUpperBound(prefixOperations.Replace(GetUpperBoundArg(self), GetUpperBoundArg(from), GetUpperBoundArg(to)));
             }
             ///<inheritdoc/>
             public PrefixInterval Substring(PrefixInterval self, IndexInterval index, IndexInterval length)
             {
-                /*if (index.IsFiniteConstant)
-                {
-                  int indexInt = index.LowerBound.AsInt;
-
-                  if (!length.LowerBound.IsInfinite && indexInt + length.LowerBound.AsInt < self.prefix.Length)
-                  {
-                    return new Prefix(self.prefix.Substring(indexInt, length.LowerBound.AsInt));
-                  }
-                  else if (indexInt < self.prefix.Length)
-                  {
-                    return new Prefix(self.prefix.Substring(indexInt));
-                  }
-                  else
-                  {
-                    return self.Top;
-                  }
-                }
-                else
-                {
-                  return self.Top;
-                }*/
-
                 return ForUpperBound(prefixOperations.Substring(self.upperBound, index, length));
             }
             ///<inheritdoc/>
             public PrefixInterval Remove(PrefixInterval self, IndexInterval index, IndexInterval length)
             {
-                /*if (index.LowerBound.AsInt >= self.prefix.Length)
-                {
-                  return self;
-                }
-                else if (index.IsFiniteConstant && length.IsFiniteConstant && length.LowerBound.AsInt + index.LowerBound.AsInt < self.prefix.Length)
-                {
-                  return new Prefix(self.prefix.Remove(index.LowerBound.AsInt, length.LowerBound.AsInt));
-                }
-                else
-                {
-                  return new Prefix(self.prefix.Remove(index.LowerBound.AsInt));
-                }*/
-
                 return ForUpperBound(prefixOperations.Remove(self.upperBound, index, length));
             }
             ///<inheritdoc/>
             public PrefixInterval PadLeftRight(PrefixInterval self, IndexInterval length, CharInterval fill, bool right)
             {
-                /*if (length.UpperBound.AsInt <= self.prefix.Length)
-                  return self;
-                else if (fill.IsConstant)
-                  return new Prefix(StringUtils.LongestConstantPrefix(self.prefix, fill.LowerBound));
-                else
-                  return Top;*/
-                  if(right)
+                if (right)
                     return self;
-                  else
-                return ForUpperBound(prefixOperations.PadLeftRight(self.upperBound, length, fill, false));
+                else
+                    return ForUpperBound(prefixOperations.PadLeftRight(self.upperBound, length, fill, false));
             }
-          
+
             ///<inheritdoc/>
             public PrefixInterval Trim(WithConstants<PrefixInterval> self, WithConstants<PrefixInterval> trimmed)
             {
-                /*if (trimmed.IsConstant && trimmed.Constant != "")
-                {
-                  PrefixInterval selfPrefix = self.ToAbstract(this);
-                  return new Prefix(selfPrefix.prefix.Trim(trimmed.Constant.ToCharArray()));
-                }
-                else
-                {
-                  return Top;
-                }*/
-
                 return ForUpperBound(prefixOperations.Trim(GetUpperBoundArg(self), GetUpperBoundArg(trimmed)));
             }
             ///<inheritdoc/>
             public PrefixInterval TrimStartEnd(WithConstants<PrefixInterval> self, WithConstants<PrefixInterval> trimmed, bool end)
             {
-                if(end)
+                if (end)
                     return ForUpperBound(prefixOperations.TrimStartEnd(GetUpperBoundArg(self), GetUpperBoundArg(trimmed), true));
 
                 if (trimmed.IsConstant && trimmed.Constant != "")
@@ -427,7 +320,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     string trimmedLower = selfInterval.lowerBound.IsBottom ? null : selfInterval.lowerBound.prefix.TrimStart(trimArray);
                     string trimmedUpper = selfInterval.upperBound.prefix.TrimStart(trimArray);
 
-                    return new PrefixInterval(Wrap(trimmedLower), Wrap(trimmedUpper));
+                    return For(trimmedLower,trimmedUpper);
                 }
                 else
                 {
@@ -458,40 +351,38 @@ namespace Microsoft.Research.AbstractDomains.Strings
             ///<inheritdoc/>
             public IndexInterval IndexOf(WithConstants<PrefixInterval> self, WithConstants<PrefixInterval> needle, IndexInterval offset, IndexInterval count, bool last)
             {
-                /*if (!offset.IsFiniteConstant || offset.LowerBound != 0 || !count.IsInfinity)
+                if (!offset.IsFiniteConstant || offset.LowerBound != 0 || !count.IsInfinity)
                 {
-                  // Offset and count are not supported
-                  return IndexInterval.Unknown;
+                    // Offset and count are not supported
+                    return IndexInterval.Unknown;
                 }
 
                 PrefixInterval selfAbstraction = self.ToAbstract(this);
+                PrefixInterval needleAbstraction = needle.ToAbstract(this);
 
-                if (needle.IsConstant)
+                if (needleAbstraction.IsSingleton)
                 {
-                  int knownIndex = selfAbstraction.upperBound.prefix.IndexOf(needle.Constant, StringComparison.Ordinal);
+                    //TODO: when needle not singleton but upper bound known, at least some interval
+                    //TODO: when self lower bound known, can be -1
 
-                  if (knownIndex >= 0)
-                  {
-                    return IndexInterval.For(knownIndex);
-                  }
-                  else if (!selfAbstraction.lowerBound.IsBottom)
-                  {
-                    int possibleIndex = selfAbstraction.prefix.IndexOf(needle.Constant, StringComparison.Ordinal);
-                  }
-                  else
-                  {
-                    //NOTE: would be better with multiple intervals
-                    return IndexInterval.Unknown;
-                  }
+                    int index;
+                    if (last)
+                        index = selfAbstraction.upperBound.prefix.LastIndexOf(needleAbstraction.lowerBound.prefix, StringComparison.Ordinal);
+                    else
+                        index = selfAbstraction.upperBound.prefix.IndexOf(needleAbstraction.lowerBound.prefix, StringComparison.Ordinal);
+
+                    if (index >= 0)
+                    {
+                        if (last)
+                            return IndexInterval.For(IndexInt.ForNonNegative(index), IndexInt.Infinity);
+                        else
+                            return IndexInterval.For(index);
+                    }
                 }
-                else
-                {
-                  return IndexInterval.Unknown;
-                }
-                */
-                return prefixOperations.IndexOf(GetUpperBoundArg(self), GetUpperBoundArg(needle), offset, count, last);
+               
+                return IndexInterval.Unknown;
             }
-     
+
             #endregion
 
             #region Predicate operations
@@ -504,34 +395,59 @@ namespace Microsoft.Research.AbstractDomains.Strings
             ///<inheritdoc/>
             public IStringPredicate Contains(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable)
             {
-                /*Prefix selfPrefix = self.ToAbstract(this);
-                Prefix otherPrefix = other.ToAbstract(this);
-
-                if (other.IsConstant && selfPrefix.prefix.Contains(other.Constant))
-                {
-                  return FlatPredicate.True;
-                }
-                else if (self.IsConstant && !self.Constant.Contains(otherPrefix.prefix))
-                {
-                  return FlatPredicate.False;
-                }
-                else
-                {
-                  return FlatPredicate.Top;
-                }*/
-
-                return prefixOperations.Contains(GetUpperBoundArg(self), selfVariable, GetUpperBoundArg(other), otherVariable);
+                return Contains(self, selfVariable, other, otherVariable, new NoOrderQuery<Variable>());
             }
+
             ///<inheritdoc/>
-            public IStringPredicate StartsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable)
+            public IStringPredicate Contains(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery)
             {
-                return StartsWithOrdinal(self, selfVariable, other, otherVariable, new NoOrderQuery<Variable>());
-            }
-            public IStringPredicate StartsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery)
-            {
+                PrefixInterval selfInterval = self.ToAbstract(this);
+                PrefixInterval otherInterval = other.ToAbstract(this);
 
                 if (selfVariable != null && otherVariable != null && orderQuery.CheckMustBeLessEqualThan(selfVariable, otherVariable))
+                {
+                    // If other is prefix of self, then it is contained
                     return FlatPredicate.True;
+                }
+                else if (!otherInterval.lowerBound.IsBottom && selfInterval.upperBound.prefix.Contains(otherInterval.lowerBound.prefix))
+                {
+                    // The other string is a prefix of something which is in the known prefix.
+                    return FlatPredicate.True;
+                }
+                else if (!selfInterval.lowerBound.IsBottom && !otherInterval.upperBound.IsTop)
+                {
+                    int index = selfInterval.lowerBound.prefix.IndexOf(otherInterval.upperBound.prefix);
+                    int length = otherInterval.upperBound.prefix.Length;
+
+                    if (index == -1)
+                    {
+                        // This string is a prefix of some string, but it does not contain a prefix of the other string
+                        return FlatPredicate.False;
+                    }
+                    else if (selfVariable != null && index + length > self.ToAbstract(this).UpperBound.prefix.Length)
+                    { 
+                        // If this string contains the other, then it must begin with a longer prefix 
+                        return StringAbstractionPredicate.ForTrue(selfVariable, new PrefixInterval(selfInterval.lowerBound, Wrap(selfInterval.lowerBound.prefix.Substring(0, index+length))));
+                    }
+                }
+
+                return FlatPredicate.Top;
+            }
+            ///<inheritdoc/>
+            public IStringPredicate StartsEndsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, bool ends)
+            {
+                return StartsEndsWithOrdinal(self, selfVariable, other, otherVariable, ends, new NoOrderQuery<Variable>());
+            }
+            public IStringPredicate StartsEndsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, bool ends, IStringOrderQuery<Variable> orderQuery)
+            {
+                if (ends)
+                    return prefixOperations.StartsEndsWithOrdinal(GetUpperBoundArg(self), selfVariable, GetUpperBoundArg(other), otherVariable, ends);
+
+
+                if (selfVariable != null && otherVariable != null && orderQuery.CheckMustBeLessEqualThan(selfVariable, otherVariable))
+                {
+                    return FlatPredicate.True;
+                }
 
                 PrefixInterval selfInterval = self.ToAbstract(this);
                 PrefixInterval otherInterval = other.ToAbstract(this);
@@ -563,33 +479,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
 
             }
-            ///<inheritdoc/>
-            public IStringPredicate EndsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery)
-            {
-                return EndsWithOrdinal(self, selfVariable, other, otherVariable);
-            }
-
-            ///<inheritdoc/>
-            public IStringPredicate EndsWithOrdinal(WithConstants<PrefixInterval> self, Variable selfVariable, WithConstants<PrefixInterval> other, Variable otherVariable)
-            {
-                /*Prefix selfPrefix = self.ToAbstract(this);
-                Prefix otherPrefix = other.ToAbstract(this);
-
-                if (other.IsConstant && other.Constant == "")
-                {
-                  return FlatPredicate.True;
-                }
-                else if (self.IsConstant && !self.Constant.Contains(otherPrefix.prefix))
-                {
-                  return FlatPredicate.False;
-                }
-                else
-                {
-                  return FlatPredicate.Top;
-                }*/
-
-                return prefixOperations.EndsWithOrdinal(GetUpperBoundArg(self), selfVariable, GetUpperBoundArg(other), otherVariable);
-            }
+    
             ///<inheritdoc/>
             public IStringPredicate Equals(WithConstants<PrefixInterval> self, Variable selfVariable,
               WithConstants<PrefixInterval> other, Variable otherVariable)
@@ -633,23 +523,21 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     return FlatPredicate.Top;
                 }
-
-
             }
             ///<inheritdoc/>
-            public IStringPredicate RegexIsMatch(PrefixInterval self, Variable selfVariable, Regex.AST.Element regex)
+            public IStringPredicate RegexIsMatch(PrefixInterval self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
                 PrefixRegex prefixRegexConverter = new PrefixRegex(self.upperBound);
                 CodeAnalysis.ProofOutcome outcome = prefixRegexConverter.IsMatch(regex);
 
-                /*if (outcome == CodeAnalysis.ProofOutcome.Top)
+                if (outcome == CodeAnalysis.ProofOutcome.Top)
                 {
-                  Prefix regexPrefix = prefixRegexConverter.PrefixForRegex(regex);
-                  if (!regexPrefix.IsBottom && !regexPrefix.IsTop && selfVariable != null)
-                  {
-                    return StringAbstractionPredicate.ForTrue(selfVariable, regexPrefix);
-                  }
-                }*/
+                    Prefix regexPrefix = prefixRegexConverter.AssumeMatch(regex);
+                    if (!regexPrefix.IsBottom && !regexPrefix.IsTop && selfVariable != null)
+                    {
+                        return StringAbstractionPredicate.ForTrue(selfVariable, ForUpperBound(regexPrefix));
+                    }
+                }
 
                 return FlatPredicate.ForProofOutcome(outcome);
             }
@@ -659,57 +547,54 @@ namespace Microsoft.Research.AbstractDomains.Strings
             ///<inheritdoc/>
             public PrefixInterval SetCharAt(PrefixInterval self, IndexInterval index, CharInterval value)
             {
-                /*if (index.LowerBound > self.prefix.Length)
+                if (index.IsConstant && value.IsConstant && !self.lowerBound.IsBottom)
                 {
-                  // Setting too far
-                  return self;
+                    int indexInt = index.LowerBound.AsInt;
+                    string oldLower = self.lowerBound.prefix;
+
+                    if (indexInt >= oldLower.Length)
+                        // Definitely out of range
+                        return Top.Bottom;
+
+                    string newLower = oldLower.Substring(0, indexInt) + value.LowerBound + oldLower.Substring(indexInt+1);
+                    string newPrefix = newLower.Substring(0, Math.Max(indexInt + 1, self.upperBound.prefix.Length));
+                    return For(newLower, newPrefix);
                 }
                 else
                 {
-                  // Cut before the first possible changed position
-                  string changedPrefix = self.prefix.Substring(0, index.LowerBound.AsInt);
-                  if (index.IsConstant && value.IsConstant)
-                  {
-                    // We know exactly what changed
-                    changedPrefix += value.LowerBound.ToString();
-                    if (index.LowerBound.AsInt < self.prefix.Length - 1)
-                    {
-                      // if there is a part after, it can be preserved
-                      changedPrefix += self.prefix.Substring(index.LowerBound.AsInt + 1);
-                    }
-                  }
-                  return new Prefix(changedPrefix);
+                    return ForUpperBound(prefixOperations.SetCharAt(self.upperBound, index, value));
                 }
-                */
-
-                return ForUpperBound(prefixOperations.SetCharAt(self.upperBound, index, value));
             }
 
             ///<inheritdoc/>
             public CharInterval GetCharAt(PrefixInterval self, IndexInterval index)
             {
-                /*if (index.UpperBound >= self.prefix.Length)
+                if (self.lowerBound.IsBottom)
                 {
-                  return CharInterval.Unknown;
+                    return prefixOperations.GetCharAt(self.upperBound, index);
+                }
+                else if(index.LowerBound >= self.lowerBound.prefix.Length)
+                {
+                    //Lowest index is after the maximum length
+                    return CharInterval.Unreached;
                 }
                 else
                 {
-                  CharInterval interval = CharInterval.Unreached;
+                    CharInterval interval = CharInterval.Unreached;
 
-                  for (int i = IndexInt.Max(index.LowerBound, IndexInt.For(0)).AsInt; i < self.prefix.Length && index.UpperBound >= i; ++i)
-                  {
-                    interval = interval.Join(CharInterval.For(self.prefix[i]));
-                  }
-                  return interval;
-                }*/
-
-                return prefixOperations.GetCharAt(self.upperBound, index);
+                    for (int i = IndexInt.Max(index.LowerBound, IndexInt.For(0)).AsInt; i < self.lowerBound.prefix.Length && index.UpperBound >= i; ++i)
+                    {
+                        interval = interval.Join(CharInterval.For(self.lowerBound.prefix[i]));
+                    }
+                    return interval;
+                }
+                
             }
         }
 
-        #endregion
+#endregion
 
-        #region Object
+#region Object
         public override string ToString()
         {
             if (IsBottom)
@@ -735,7 +620,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             return lowerBound.GetHashCode() + 33 * upperBound.GetHashCode();
         }
-        #endregion
+#endregion
         ///<inheritdoc/>
         public PrefixInterval Constant(string cst)
         {

@@ -26,6 +26,13 @@ using System.Diagnostics;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
+    /// <summary>
+    /// Abstract domain element from the "string pentagons" domain, adapting the idea of Pentagons
+    /// to string values.
+    /// </summary>
+    /// <typeparam name="Variable"></typeparam>
+    /// <typeparam name="Expression"></typeparam>
+    /// <typeparam name="StringAbstraction">Interval abstraction of strings.</typeparam>
     public class StringPentagons<Variable, Expression, StringAbstraction> :
       StringAbstractDomain<Variable, Expression, StringAbstraction>,
       IStringOrderQuery<Variable>
@@ -164,7 +171,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             else
             {
-                targetPredicate = operations.Contains(valueAbstraction, valueVar, partAbstraction, partVar);
+                targetPredicate = IntervalOperations.Contains(valueAbstraction, valueVar, partAbstraction, partVar, this);
             }
 
             AssignPredicate(targetExp, targetPredicate);
@@ -172,8 +179,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public override void StartsEndsWith(Expression targetExp, Expression valueExp, Expression partExp, Expression comparisonExp, bool end)
         {
+            // Check that the comparison type is Ordinal. Otherwise, nothing is known.
             int comparison;
-
             if (TryEvalIntConstant(comparisonExp, out comparison) && (StringComparison)comparison == StringComparison.Ordinal)
             {
                 Variable partVar, valueVar;
@@ -198,10 +205,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
                 else
                 {
-                    if (end)
-                        targetPredicate = IntervalOperations.EndsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, this);
-                    else
-                        targetPredicate = IntervalOperations.StartsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, this);
+                    targetPredicate = IntervalOperations.StartsEndsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, end, this);
                 }
 
                 AssignPredicate(targetExp, targetPredicate);
