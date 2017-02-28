@@ -169,11 +169,16 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(AST.Concatenation element, ref Void data)
         {
+            // For concatenation of 1 element, do not create an element
+            if (element.Parts.Count == 1)
+                return VisitElement(element.Parts[0], ref data);
+
             Model.Concatenation concat = new Model.Concatenation();
 
             foreach(var part in element.Parts)
             {
                 Model.Element partModel = VisitElement(part, ref data);
+                // Flatten nested concatenations
                 if(partModel is Model.Concatenation)
                 {
                     var partConcat = (Model.Concatenation)partModel;
@@ -184,12 +189,27 @@ namespace Microsoft.Research.Regex
                     concat.Parts.Add(partModel);
                 }
             }
+
+            // If due to flattening, the result concatenation has 1 element, use it directly
+            if (concat.Parts.Count == 1)
+                return concat.Parts[0];
+
             return concat;
         }
 
         protected override Model.Element Visit(AST.Loop element, ref Void data)
         {
+            // Max 0 occurences = empty
+            if (element.Max == 0)
+                return new Model.Concatenation();
+
             var inner = VisitElement(element.Content, ref data);
+
+            // Min = max = 1 occurence - use the content directly
+            if (element.Max == 1 && element.Min == 1){
+                return inner;
+            }
+
             return new Model.Loop(inner, element.Min, element.Max);
         }
 
@@ -269,11 +289,16 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(Alternation element, ref Void data)
         {
+            // For union of 1 element, do not create an element
+            if (element.Patterns.Count == 1)
+                return VisitElement(element.Patterns[0], ref data);
+
             Model.Union union = new Model.Union();
 
             foreach (var part in element.Patterns)
             {
                 Model.Element partModel = VisitElement(part, ref data);
+                // Flatten nested unions
                 if (partModel is Model.Union)
                 {
                     var partUnion = (Model.Union)partModel;
@@ -284,6 +309,11 @@ namespace Microsoft.Research.Regex
                     union.Patterns.Add(partModel);
                 }
             }
+
+            // If, due to flattening, the result concatenation has 1 element, use it directly
+            if (union.Patterns.Count == 1)
+                return union.Patterns[0];
+
             return union;
         }
 

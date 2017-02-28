@@ -46,6 +46,16 @@ namespace Microsoft.Research.Regex
             this.low = low;
             this.high = high;
         }
+        /// <summary>
+        /// Checks whether the range contains a specified character.
+        /// </summary>
+        /// <param name="value">A character value to test.</param>
+        /// <returns>True, if <paramref name="value"/> is in the range.</returns>
+        public bool Contains(char value)
+        {
+            return low <= value && value <= high;
+        }
+
         #region IEnumerable<char> implementation
         CharRangeEnumerator GetEnumerator()
         {
@@ -85,6 +95,15 @@ namespace Microsoft.Research.Regex
         public CharRanges(IEnumerable<CharRange> ranges)
         {
             this.ranges = ranges;
+        }
+        /// <summary>
+        /// Checks whether the ranges contain a specified character.
+        /// </summary>
+        /// <param name="value">A character value to test.</param>
+        /// <returns>True, if <paramref name="value"/> is in some of the ranges.</returns>
+        public bool Contains(char value)
+        {
+            return ranges.Any(r => r.Contains(value));
         }
     }
 

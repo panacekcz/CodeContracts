@@ -238,6 +238,7 @@
     <Compile Include="String\CharacterClassification.cs" />
     <Compile Include="String\CharacterInclusion.cs" />
     <Compile Include="String\CharacterInclusionRegex.cs" />
+    <Compile Include="String\CharRangeExtensions.cs" />
     <Compile Include="String\CompareResult.cs" />
     <Compile Include="String\FlatPredicate.cs" />
     <Compile Include="String\Graphs\BottomNode.cs" />
@@ -298,7 +299,12 @@
     <Compile Include="String\IStringAbstractDomain.cs" />
     <Compile Include="String\KMP.cs" />
     <Compile Include="String\PrefixRegex.cs" />
-    <Compile Include="String\Regex\RegexInterpreter.cs" />
+    <Compile Include="String\Regex\BackwardInterpreter.cs" />
+    <Compile Include="String\Regex\ForwardInterpreter.cs" />
+    <Compile Include="String\Regex\Interpreter.cs" />
+    <Compile Include="String\Regex\IStringOperationsForRegex.cs" />
+    <Compile Include="String\Regex\GeneratingInterpretation.cs" />
+    <Compile Include="String\Regex\MatchingInterpretation.cs" />
     <Compile Include="String\StringAbstractionPredicate.cs" />
     <Compile Include="String\StringBuilderUtils.cs" />
     <Compile Include="String\StringGraph.cs" />
