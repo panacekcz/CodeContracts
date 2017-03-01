@@ -36,9 +36,11 @@ namespace StringDomainUnitTests
 
     private Bricks BricksForRegex(string regexString)
     {
-      Element regex = RegexParser.Parse(regexString);
+            //TODO: VD: use interpreter
+            throw new NotImplementedException();
+    /*  Element regex = RegexParser.Parse(regexString);
       BricksRegex br = new BricksRegex(top);
-      return br.BricksForRegex(regex);
+      return br.BricksForRegex(regex);*/
     }
 
     private void AssertBricksForRegex(string testRegexString, string expectedBricksString)
@@ -52,7 +54,7 @@ namespace StringDomainUnitTests
     {
       Bricks bricks = BricksForRegex(bricksRegexString);
 
-      Assert.AreEqual(expectedResult, operations.RegexIsMatch(bricks, null, RegexParser.Parse(patternString)).ProofOutcome);
+      Assert.AreEqual(expectedResult, operations.RegexIsMatch(bricks, null, RegexUtil.ModelForRegex(patternString)).ProofOutcome);
     }
 
     [TestMethod]

@@ -1061,9 +1061,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return FlatPredicate.Top;
             }
             ///<inheritdoc/>
-            public IStringPredicate StartsWithOrdinal(
+            public IStringPredicate StartsEndsWithOrdinal(
               WithConstants<Bricks> self, Variable selfVariable,
-              WithConstants<Bricks> other, Variable otherVariable)
+              WithConstants<Bricks> other, Variable otherVariable, bool ends)
             {
                 Bricks selfBricks = self.ToAbstract(this);
                 Bricks otherBricks = other.ToAbstract(this);
@@ -1072,56 +1072,37 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 if (otherConstant != null)
                 {
-                    string thisPrefix = selfBricks.ToPrefix();
-                    if (thisPrefix.StartsWith(otherConstant, StringComparison.Ordinal))
+                    if (ends)
                     {
-                        return FlatPredicate.True;
+                        string thisSuffix = selfBricks.ToSuffix();
+                        if (thisSuffix.EndsWith(otherConstant, StringComparison.Ordinal))
+                        {
+                            return FlatPredicate.True;
+                        }
+                    }
+                    else
+                    {
+                        string thisPrefix = selfBricks.ToPrefix();
+                        if (thisPrefix.StartsWith(otherConstant, StringComparison.Ordinal))
+                        {
+                            return FlatPredicate.True;
+                        }
                     }
                 }
 
-                if (NonContainmentTest(selfBricks, otherBricks, true, false))
+                if (NonContainmentTest(selfBricks, otherBricks, !ends, ends))
                     return FlatPredicate.False;
 
-                string otherPrefix = otherBricks.ToPrefix();
+                string otherPrefixSuffix = ends ? otherBricks.ToSuffix() : otherBricks.ToPrefix();
 
-                if (selfVariable != null && otherPrefix != "")
+                if (selfVariable != null && otherPrefixSuffix != "")
                 {
-                    return MakeTemplatePredicate(selfVariable, otherPrefix, true, false);
+                    return MakeTemplatePredicate(selfVariable, otherPrefixSuffix, !ends, ends);
                 }
 
                 return FlatPredicate.Top;
             }
-            ///<inheritdoc/>
-            public IStringPredicate EndsWithOrdinal(
-              WithConstants<Bricks> self, Variable selfVariable,
-              WithConstants<Bricks> other, Variable otherVariable)
-            {
-                Bricks selfBricks = self.ToAbstract(this);
-                Bricks otherBricks = other.ToAbstract(this);
-
-                string otherConstant = otherBricks.ToConstant();
-
-                if (otherConstant != null)
-                {
-                    string thisSuffix = selfBricks.ToSuffix();
-                    if (thisSuffix.EndsWith(otherConstant, StringComparison.Ordinal))
-                    {
-                        return FlatPredicate.True;
-                    }
-                }
-
-                if (NonContainmentTest(selfBricks, otherBricks, false, true))
-                    return FlatPredicate.False;
-
-                string otherSuffix = otherBricks.ToSuffix();
-
-                if (selfVariable != null && otherSuffix != "")
-                {
-                    return MakeTemplatePredicate(selfVariable, otherSuffix, false, true);
-                }
-
-                return FlatPredicate.Top;
-            }
+       
             ///<inheritdoc/>
             public IStringPredicate Equals(
               WithConstants<Bricks> self, Variable selfVariable,
@@ -1156,9 +1137,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             #endregion
             ///<inheritdoc/>
-            public IStringPredicate RegexIsMatch(Bricks self, Variable selfVariable, Regex.AST.Element regex)
+            public IStringPredicate RegexIsMatch(Bricks self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
-                BricksRegex brickRegexConverter = new BricksRegex(self);
+                //TODO: use interpreter
+                throw new NotImplementedException();
+                /*BricksRegex brickRegexConverter = new BricksRegex(self);
 
                 ProofOutcome matchOutcome = brickRegexConverter.IsMatch(regex);
 
@@ -1170,7 +1153,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     Bricks regexBricks = brickRegexConverter.BricksForRegex(regex).Normalize(BrickNormalizationLocation.Conversion);
                     return StringAbstractionPredicate.ForTrue(selfVariable, regexBricks);
-                }
+                }*/
             }
             ///<inheritdoc/>
             public CharInterval GetCharAt(Bricks self, IndexInterval index)

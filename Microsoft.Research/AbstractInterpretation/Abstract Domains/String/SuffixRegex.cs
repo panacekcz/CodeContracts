@@ -23,77 +23,85 @@ using System.Threading.Tasks;
 
 using Microsoft.Research.CodeAnalysis;
 using Microsoft.Research.Regex;
-using Microsoft.Research.Regex.AST;
+using Microsoft.Research.Regex.Model;
+using Microsoft.Research.AbstractDomains.Strings.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  internal class SuffixRegex
-  {
-    private Suffix self;
-
-    public SuffixRegex(Suffix suffix)
-    {
-      self = suffix;
-    }
-
-    // 
     /// <summary>
-    /// Computes a prefix which overapproximates all strings matching a regex.
+    /// Generates suffix from the front
     /// </summary>
-    /// <param name="regex">The AST of the regex.</param>
-    /// <returns>The prefix overapproximating <paramref name="regex"/>.</returns>
-    public Suffix SuffixForRegex(Element regex)
+    public class SuffixOperationsForRegex : LinearGeneratingOperations<Suffix>
     {
-      AnchoredExtractVisitor visitor = new AnchoredExtractVisitor(AnchorKind.End, true);
-      IndexInt index = IndexUtils.Before;
-      visitor.VisitSimpleRegex(regex, ref index);
-      string suffix = visitor.GetString();
-      if (suffix == null)
-      {
-        return self.Bottom;
-      }
-      else
-      {
-        return new Suffix(suffix);
-      }
-    }
-    #region IsMatch
-
-    private class IsMatchVisitor : AnchoredIsMatchVisitor
-    {
-      private readonly string suffix;
-
-      public IsMatchVisitor(string suffix) :
-        base(Regex.AST.AnchorKind.End, true)
-      {
-        this.suffix = suffix;
-      }
-
-      protected override ProofOutcome IsMatchCharacterAt(SingleElement element, IndexInt index)
-      {
-        if (index.AsInt < suffix.Length)
+        protected override Suffix Extend(Suffix prev, char single)
         {
-          char character = suffix[suffix.Length - 1 - index.AsInt];
-          return ProofOutcomeUtils.Build(element.CanMatch(character), !element.MustMatch(character));
+            return new Suffix(prev.suffix + single);
         }
-        else
-          return ProofOutcome.Top;
-      }
     }
 
-
-    /// <summary>
-    /// Verifies whether the suffix matches the specified regex expression.
-    /// </summary>
-    /// <param name="regex">AST of the regex.</param>
-    /// <returns>Proven result of the match.</returns>
-    public ProofOutcome IsMatch(Regex.AST.Element regex)
+    public class SuffixMatchingOperations : LinearMatchingOperations<Suffix>
     {
-      IndexInt data = IndexUtils.Before;
-      IsMatchVisitor visitor = new IsMatchVisitor(self.suffix);
-      return visitor.VisitSimpleRegex(regex, ref data);
+        protected override Suffix Extend(Suffix prev, char single)
+        {
+            return new Suffix(single + prev.suffix);
+        }
+        protected override int GetLength(Suffix element)
+        {
+            return element.suffix.Length;
+        }
+        protected override bool IsCompatible(Suffix element, int index, CharRanges ranges)
+        {
+            return ranges.Contains(element.suffix[element.suffix.Length - index - 1]);
+        }
+    }
+
+
+
+    public class SuffixRegex
+    {
+        private Suffix self;
+
+        public SuffixRegex(Suffix suffix)
+        {
+            self = suffix;
+        }
+
+        // 
+        /// <summary>
+        /// Computes a suffix which overapproximates all strings matching a regex.
+        /// </summary>
+        /// <param name="regex">The model of the regex.</param>
+        /// <returns>The suffix overapproximating <paramref name="regex"/>.</returns>
+        public Suffix AssumeMatch(Element regex)
+        {
+            SuffixMatchingOperations operations = new SuffixMatchingOperations();
+            MatchingInterpretation<LinearMatchingState<Suffix>, Suffix> interpretation = new MatchingInterpretation<LinearMatchingState<Suffix>, Suffix>(operations, this.self);
+            BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>> interpreter = new BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>>(interpretation);
+
+            var result = interpreter.Interpret(regex);
+            return result.Over.currentElement;
+
+        }
+
+        /// <summary>
+        /// Verifies whether the suffix matches the specified regex expression.
+        /// </summary>
+        /// <param name="regex">The model of the regex.</param>
+        /// <returns>Proven result of the match.</returns>
+        public ProofOutcome IsMatch(Element regex)
+        {
+            var operations = new SuffixMatchingOperations();
+            MatchingInterpretation<LinearMatchingState<Suffix>, Suffix> interpretation = new MatchingInterpretation<LinearMatchingState<Suffix>, Suffix>(operations, this.self);
+            BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>> interpreter = new BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>>(interpretation);
+
+            var result = interpreter.Interpret(regex);
+
+            bool canMatch = !result.Over.currentElement.IsBottom;
+            bool mustMatch = self.LessThanEqual(result.Under.currentElement);
+
+            return ProofOutcomeUtils.Build(canMatch, !mustMatch);
+
+        }
 
     }
-    #endregion
-  }
 }

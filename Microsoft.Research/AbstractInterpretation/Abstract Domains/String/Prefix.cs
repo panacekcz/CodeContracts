@@ -454,52 +454,53 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
             ///<inheritdoc/>
-            public IStringPredicate StartsWithOrdinal(WithConstants<Prefix> self, Variable selfVariable, WithConstants<Prefix> other, Variable otherVariable)
+            public IStringPredicate StartsEndsWithOrdinal(WithConstants<Prefix> self, Variable selfVariable, WithConstants<Prefix> other, Variable otherVariable, bool ends)
             {
                 Prefix selfPrefix = self.ToAbstract(this);
                 Prefix otherPrefix = other.ToAbstract(this);
 
-                if (selfPrefix.prefix.StartsWith(otherPrefix.prefix, StringComparison.Ordinal))
+                if (ends)
                 {
-                    if (other.IsConstant)
+                    if (other.IsConstant && other.Constant == "")
                     {
+                        // All strings end with an empty string
                         return FlatPredicate.True;
                     }
-                }
-                else if (self.IsConstant || !otherPrefix.prefix.StartsWith(selfPrefix.prefix, StringComparison.Ordinal))
-                {
-                    return FlatPredicate.False;
-                }
-
-                if (selfVariable != null)
-                {
-                    return StringAbstractionPredicate.ForTrue(selfVariable, otherPrefix);
-                }
-                else
-                {
-                    return FlatPredicate.Top;
-                }
-
-            }
-            ///<inheritdoc/>
-            public IStringPredicate EndsWithOrdinal(WithConstants<Prefix> self, Variable selfVariable, WithConstants<Prefix> other, Variable otherVariable)
-            {
-                Prefix selfPrefix = self.ToAbstract(this);
-                Prefix otherPrefix = other.ToAbstract(this);
-
-                if (other.IsConstant && other.Constant == "")
-                {
-                    return FlatPredicate.True;
-                }
-                else if (self.IsConstant && !self.Constant.Contains(otherPrefix.prefix))
-                {
-                    return FlatPredicate.False;
+                    else if (self.IsConstant && !self.Constant.Contains(otherPrefix.prefix))
+                    {
+                        // A constant must contain all prefixes of a suffix.
+                        return FlatPredicate.False;
+                    }
+                    else
+                    {
+                        return FlatPredicate.Top;
+                    }
                 }
                 else
                 {
-                    return FlatPredicate.Top;
+                    if (selfPrefix.prefix.StartsWith(otherPrefix.prefix, StringComparison.Ordinal))
+                    {
+                        if (other.IsConstant)
+                        {
+                            return FlatPredicate.True;
+                        }
+                    }
+                    else if (self.IsConstant || !otherPrefix.prefix.StartsWith(selfPrefix.prefix, StringComparison.Ordinal))
+                    {
+                        return FlatPredicate.False;
+                    }
+
+                    if (selfVariable != null)
+                    {
+                        return StringAbstractionPredicate.ForTrue(selfVariable, otherPrefix);
+                    }
+                    else
+                    {
+                        return FlatPredicate.Top;
+                    }
                 }
             }
+
             ///<inheritdoc/>
             public IStringPredicate Equals(WithConstants<Prefix> self, Variable selfVariable,
               WithConstants<Prefix> other, Variable otherVariable)
@@ -523,14 +524,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
             ///<inheritdoc/>
-            public IStringPredicate RegexIsMatch(Prefix self, Variable selfVariable, Regex.AST.Element regex)
+            public IStringPredicate RegexIsMatch(Prefix self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
+                
                 PrefixRegex prefixRegexConverter = new PrefixRegex(self);
                 CodeAnalysis.ProofOutcome outcome = prefixRegexConverter.IsMatch(regex);
 
                 if (outcome == CodeAnalysis.ProofOutcome.Top)
                 {
-                    Prefix regexPrefix = prefixRegexConverter.PrefixForRegex(regex);
+                    Prefix regexPrefix = prefixRegexConverter.AssumeMatch(regex);
                     if (!regexPrefix.IsBottom && !regexPrefix.IsTop && selfVariable != null)
                     {
                         return StringAbstractionPredicate.ForTrue(selfVariable, regexPrefix);

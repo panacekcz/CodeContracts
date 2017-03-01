@@ -551,45 +551,47 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
             ///<inheritdoc/>
-            public IStringPredicate StartsWithOrdinal(WithConstants<StringGraph> self, Variable selfVariable, WithConstants<StringGraph> other, Variable otherVariable)
+            public IStringPredicate StartsEndsWithOrdinal(WithConstants<StringGraph> self, Variable selfVariable, WithConstants<StringGraph> other, Variable otherVariable, bool ends)
             {
                 string otherConstant = ArgumentToConstant(other);
                 if (otherConstant != null)
                 {
-                    Prefix selfPrefix = ArgumentToPrefix(self);
-                    if (selfPrefix.prefix.StartsWith(otherConstant, StringComparison.Ordinal))
+                    if (ends)
                     {
-                        return FlatPredicate.True;
+                        Suffix selfSuffix = ArgumentToSuffix(self);
+
+                        if (selfSuffix.suffix.EndsWith(otherConstant, StringComparison.Ordinal))
+                        {
+                            return FlatPredicate.True;
+                        }
+                        else if (!selfSuffix.ContainsValue(otherConstant))
+                        {
+                            return FlatPredicate.False;
+                        }
                     }
-                    else if (!selfPrefix.ContainsValue(otherConstant))
+                    else
                     {
-                        return FlatPredicate.False;
+                        Prefix selfPrefix = ArgumentToPrefix(self);
+                        if (selfPrefix.prefix.StartsWith(otherConstant, StringComparison.Ordinal))
+                        {
+                            return FlatPredicate.True;
+                        }
+                        else if (!selfPrefix.ContainsValue(otherConstant))
+                        {
+                            return FlatPredicate.False;
+                        }
                     }
                 }
 
-                StringGraph template = ForConcat(other.ToAbstract(this).root, new MaxNode());
-
-                return IsMatchTemplate(self, selfVariable, template);
-            }
-            ///<inheritdoc/>
-            public IStringPredicate EndsWithOrdinal(WithConstants<StringGraph> self, Variable selfVariable, WithConstants<StringGraph> other, Variable otherVariable)
-            {
-                string otherConstant = ArgumentToConstant(other);
-                if (otherConstant != null)
+                StringGraph template;
+                if (ends)
                 {
-                    Suffix selfSuffix = ArgumentToSuffix(self);
-
-                    if (selfSuffix.suffix.EndsWith(otherConstant, StringComparison.Ordinal))
-                    {
-                        return FlatPredicate.True;
-                    }
-                    else if (!selfSuffix.ContainsValue(otherConstant))
-                    {
-                        return FlatPredicate.False;
-                    }
+                    template = ForConcat(new MaxNode(), other.ToAbstract(this).root);
                 }
-
-                StringGraph template = ForConcat(new MaxNode(), other.ToAbstract(this).root);
+                else
+                {
+                    template = ForConcat(other.ToAbstract(this).root, new MaxNode());
+                }
 
                 return IsMatchTemplate(self, selfVariable, template);
             }
@@ -683,8 +685,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             #endregion
             ///<inheritdoc/>
-            public IStringPredicate RegexIsMatch(StringGraph self, Variable selfVariable, Regex.AST.Element regex)
+            public IStringPredicate RegexIsMatch(StringGraph self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
+                throw new NotImplementedException();
+                /*
                 StringGraphRegex stringGraphRegexConverter = new StringGraphRegex(self);
 
                 ProofOutcome isMatchOutcome = stringGraphRegexConverter.IsMatch(regex);
@@ -698,7 +702,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     StringGraph graph = stringGraphRegexConverter.StringGraphForRegex(regex);
 
                     return StringAbstractionPredicate.ForTrue(selfVariable, graph);
-                }
+                }*/
             }
 
             #region Factory methods

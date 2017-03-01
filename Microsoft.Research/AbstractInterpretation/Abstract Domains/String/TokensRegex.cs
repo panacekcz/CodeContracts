@@ -26,6 +26,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
+
+
+#if vdfalse
     /// <summary>
     /// Visitis a regular expression AST and builds a prefix tree.
     /// </summary>
@@ -85,13 +88,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         protected override InnerNode Visit(SingleElement element, ref InnerNode data)
         {
-            IEnumerable<Tuple<char,char>> ci;
+            CharRanges ci;
             if (underapproximate)
-                ci = element.MustMatchIntervals;
+                ci = element.MustMatchRanges;
             else
-                ci = element.CanMatchIntervals;
+                ci = element.CanMatchRanges;
 
-            return data = PrefixTreeBuilder.CharIntervalsNode(ci.Select(t => CharInterval.For(t.Item1, t.Item2)), data);
+            return data = PrefixTreeBuilder.CharIntervalsNode(ci.ToIntervals(), data);
         }
 
         protected override InnerNode Visit(Empty element, ref InnerNode data)
@@ -177,4 +180,5 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return new Tokens(tfr.Build(regex));
         }
     }
+#endif
 }

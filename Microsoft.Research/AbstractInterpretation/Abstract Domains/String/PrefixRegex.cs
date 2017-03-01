@@ -24,83 +24,84 @@ using System.Threading.Tasks;
 using Microsoft.Research.CodeAnalysis;
 using Microsoft.Research.Regex;
 using Microsoft.Research.Regex.AST;
+using Microsoft.Research.AbstractDomains.Strings.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  /// <summary>
-  /// Converts between <see cref="Prefix"/> and regexes.
-  /// </summary>
-  public class PrefixRegex
-  {
-    #region Private state
-    private readonly Prefix self;
-    #endregion
-
-    public PrefixRegex(Prefix self)
-    {
-      this.self = self;
-    }
-
-
-    // 
     /// <summary>
-    /// Computes a prefix which overapproximates all strings matching a regex.
+    /// Generates prefix from the back
     /// </summary>
-    /// <param name="regex">The AST of the regex.</param>
-    /// <returns>The prefix overapproximating <paramref name="regex"/>.</returns>
-    public Prefix PrefixForRegex(Element regex)
+    public class PrefixGeneratingOperations : LinearGeneratingOperations<Prefix>
     {
-      AnchoredExtractVisitor visitor = new AnchoredExtractVisitor(AnchorKind.LineStart, false);
-      IndexInt index = IndexUtils.Before;
-      visitor.VisitSimpleRegex(regex, ref index);
-      string prefix = visitor.GetString();
-      if (prefix == null)
-      {
-        return self.Bottom;
-      }
-      else
-      {
-        return new Prefix(prefix);
-      }
+        protected override Prefix Extend(Prefix prev, char single)
+        {
+            return new Prefix(single + prev.prefix);
+        }
     }
 
-    #region Match regex against prefix
-
-    private class IsMatchVisitor : AnchoredIsMatchVisitor
+    public class PrefixMatchingOperations : LinearMatchingOperations<Prefix>
     {
-      private readonly string prefix;
-
-      public IsMatchVisitor(string prefix) :
-        base(Regex.AST.AnchorKind.LineStart, false)
-      {
-        this.prefix = prefix;
-      }
-
-      protected override ProofOutcome IsMatchCharacterAt(SingleElement element, IndexInt index)
-      {
-        if (index.AsInt < prefix.Length)
+        protected override Prefix Extend(Prefix prev, char single)
         {
-          char character = prefix[index.AsInt];
-          return ProofOutcomeUtils.Build(element.CanMatch(character), !element.MustMatch(character));
+            return new Prefix(prev.prefix + single);
         }
-        else
+        protected override int GetLength(Prefix element)
         {
-          return ProofOutcome.Top;
+            return element.prefix.Length;
         }
-      }
+        protected override bool IsCompatible(Prefix element, int index, CharRanges ranges)
+        {
+            return ranges.Contains(element.prefix[index]);
+        }
     }
+
+
 
     /// <summary>
-    /// Verifies whether the prefix matches the specified regex expression.
+    /// Converts between <see cref="Prefix"/> and regexes.
     /// </summary>
-    /// <param name="regex">AST of the regex.</param>
-    /// <returns>Proven result of the match.</returns>
-    public ProofOutcome IsMatch(Regex.AST.Element regex)
+    public class PrefixRegex
     {
-      IndexInt data = IndexUtils.Before;
-      IsMatchVisitor visitor = new IsMatchVisitor(self.prefix);
-      return visitor.VisitSimpleRegex(regex, ref data);
+
+        #region Private state
+        private readonly Prefix self;
+        #endregion
+
+        public PrefixRegex(Prefix self)
+        {
+            this.self = self;
+        }
+
+        public Prefix AssumeMatch(Microsoft.Research.Regex.Model.Element regex)
+        {
+            PrefixMatchingOperations operations = new PrefixMatchingOperations();
+            MatchingInterpretation<LinearMatchingState<Prefix>, Prefix> interpretation = new MatchingInterpretation<LinearMatchingState<Prefix>, Prefix>(operations, this.self);
+            ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>> interpreter = new ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>>(interpretation);
+
+            var result = interpreter.Interpret(regex);
+            return result.Over.currentElement;
+
+        }
+
+        /// <summary>
+        /// Verifies whether the prefix matches the specified regex expression.
+        /// </summary>
+        /// <param name="regex">AST of the regex.</param>
+        /// <returns>Proven result of the match.</returns>
+        public ProofOutcome IsMatch(Microsoft.Research.Regex.Model.Element regex)
+        {
+            var operations = new PrefixMatchingOperations();
+            MatchingInterpretation<LinearMatchingState<Prefix>, Prefix> interpretation = new MatchingInterpretation<LinearMatchingState<Prefix>, Prefix>(operations, this.self);
+            ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>> interpreter = new ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>>(interpretation);
+
+            var result = interpreter.Interpret(regex);
+
+            bool canMatch = !result.Over.currentElement.IsBottom;
+            bool mustMatch = self.LessThanEqual(result.Under.currentElement);
+
+            return ProofOutcomeUtils.Build(canMatch, !mustMatch);
+
+        }
     }
-    #endregion
-  }
-}
+
+    }

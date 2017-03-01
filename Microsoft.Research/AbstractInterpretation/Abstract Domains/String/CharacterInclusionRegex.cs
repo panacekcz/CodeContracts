@@ -25,25 +25,246 @@ using Microsoft.Research.Regex;
 using Microsoft.Research.Regex.AST;
 using Microsoft.Research.CodeAnalysis;
 using System.Collections;
+using Microsoft.Research.AbstractDomains.Strings.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  /// <summary>
-  /// Converts between Character Inclusion abstract domain
-  /// and regexes.
-  /// </summary>
-  class CharacterInclusionRegex
-  {
+#if vdfalse
     /// <summary>
-    /// The reference abstract element.
+    /// Operations for generating a non-matching CharacterInclusion for a regex.
+    /// (CharacterInclusion that over-approximates the set of non-matching strings.)
     /// </summary>
-    private readonly CharacterInclusion value;
-
-    public CharacterInclusionRegex(CharacterInclusion value)
+    class CharacterInclusionComplementGeneratingOperations<CharacterSet> : IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>>
+        where CharacterSet : ICharacterSet<CharacterSet>
     {
-      this.value = value;
+        private readonly CharacterInclusion<CharacterSet> factory;
+        public CharacterInclusion<CharacterSet> Bottom
+        {
+            get
+            {
+                //No matching means all are non-matching
+                return factory.Top;
+            }
+        }
+
+        public CharacterInclusion<CharacterSet> Top
+        {
+            get
+            {
+                //All matching means no non-matching
+                return factory.Bottom;
+            }
+        }
+
+        public CharacterInclusion<CharacterSet> Empty
+        {
+            get
+            {
+                // returns top
+                return Bottom;
+            }
+        }
+
+        public CharacterInclusionComplementGeneratingOperations(CharacterInclusion<CharacterSet> factory)
+        {
+            this.factory = factory;
+        }
+
+        public CharacterInclusion<CharacterSet> AddChar(CharacterInclusion<CharacterSet> prev, CharRanges next, bool closed)
+        {
+            if (!closed && prev.IsBottom)
+            {
+                IEnumerable<CharInterval> allowed = next.ToIntervals();
+                return prev.Character(allowed, true);
+            }
+            else
+                return prev.Top;
+        }
+
+        public bool CanBeEmpty(CharacterInclusion<CharacterSet> prev)
+        {
+            //TODO: verify:
+            // Here the meaning is "the non-matching MUST be empty"
+            return prev.MustBeEmpty;
+        }
+
+        public CharacterInclusion<CharacterSet> Join(CharacterInclusion<CharacterSet> left, CharacterInclusion<CharacterSet> right, bool widen)
+        {
+            return left.Meet(right);
+        }
+        public bool IsUnderapproximating
+        {
+            get
+            {
+                return true;
+            }
+        }
     }
 
+
+    /// <summary>
+    /// Operations for generating a matching CharacterInclusion for a regex.
+    /// (CharacterInclusion that over-approximates the set of matching strings.)
+    /// </summary>
+    internal class CharacterInclusionGeneratingOperations<CharacterSet> : IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>>
+        where CharacterSet : ICharacterSet<CharacterSet>
+    {
+        private readonly CharacterInclusion<CharacterSet> factory;
+
+        public CharacterInclusion<CharacterSet> Bottom
+        {
+            get
+            {
+                return factory.Bottom;
+            }
+        }
+
+        public CharacterInclusion<CharacterSet> Top
+        {
+            get
+            {
+                return factory.Top;
+            }
+        }
+        public CharacterInclusion<CharacterSet> Empty
+        {
+            get
+            {
+                return Top;
+            }
+        }
+
+        public bool IsUnderapproximating
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        public CharacterInclusionGeneratingOperations(CharacterInclusion<CharacterSet> factory)
+        {
+            this.factory = factory;
+        }
+
+        public CharacterInclusion<CharacterSet> AddChar(CharacterInclusion<CharacterSet> prev, CharRanges next, bool closed)
+        {
+            IEnumerable<CharInterval> allowed = next.ToIntervals();
+            //Closed - Adds char to mandatory and allowed
+            //Open - Adds char to mandatory and sets allowed to all chars
+            CharacterInclusion<CharacterSet> ci = prev.Character(allowed, closed);
+            return prev.Combine(ci);
+        }
+
+        public bool CanBeEmpty(CharacterInclusion<CharacterSet> prev)
+        {
+            return !prev.MustBeNonEmpty;
+        }
+
+        public CharacterInclusion<CharacterSet> Join(CharacterInclusion<CharacterSet> left, CharacterInclusion<CharacterSet> right, bool widen)
+        {
+            return widen ? (CharacterInclusion<CharacterSet>)left.Widening(right) : left.Join(right);
+        }
+    }
+
+
+    /// <summary>
+    /// Abstract state for CharacterInclusion regex matching.
+    /// </summary>
+    internal struct CharacterInclusionMatchingState<CharacterSet>
+        where CharacterSet : ICharacterSet<CharacterSet>
+    {
+        public CharacterSet encountered;
+        //TODO: VD: Closed start can be represented by setting encountered to full
+        public bool closedStart;
+        public bool fail;
+
+        public CharacterInclusionMatchingState(CharacterSet encountered, bool fail, bool closedStart)
+        {
+            this.encountered = encountered;
+            this.fail = fail;
+            this.closedStart = closedStart;
+        }
+    }
+
+    /// <summary>
+    /// Abstract state for CharacterInclusion regex matching.
+    /// </summary>
+    internal class CharacterInclusionMatchingOperations<CharacterSet> : IMatchingOperationsForRegex<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>
+        where CharacterSet : ICharacterSet<CharacterSet>
+    {
+        ICharacterSetFactory<CharacterSet> setFactory;
+        ICharacterClassification classification;
+
+        public CharacterInclusionMatchingState<CharacterSet> AssumeEnd(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
+        {
+            if (prev.closedStart) {
+                //Test encountered against input
+                if (!input.mandatory.IsSubset(prev.encountered))
+                    return GetBottom(input);
+            }
+
+            return prev;
+        }
+
+        public CharacterInclusionMatchingState<CharacterSet> AssumeStart(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
+        {
+            if (prev.fail)
+                return prev;
+
+            return new CharacterInclusionMatchingState<CharacterSet>(setFactory.Create(false, classification.Buckets), false, true);
+        }
+
+        public CharacterInclusionMatchingState<CharacterSet> GetBottom(CharacterInclusion<CharacterSet> input)
+        {
+            return new CharacterInclusionMatchingState<CharacterSet>(setFactory.Create(false, classification.Buckets), true, false);
+        }
+
+        public CharacterInclusionMatchingState<CharacterSet> GetTop(CharacterInclusion<CharacterSet> input)
+        {
+            return new CharacterInclusionMatchingState<CharacterSet>(setFactory.Create(false, classification.Buckets), false, false);
+        }
+
+        public CharacterInclusionMatchingState<CharacterSet> Join(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> left, CharacterInclusionMatchingState<CharacterSet> right, bool under, bool widen)
+        {
+            if (left.fail)
+                return right;
+            if (right.fail)
+                return left;
+
+            return new CharacterInclusionMatchingState<CharacterSet>(left.encountered.Union(right.encountered), false, left.closedStart && right.closedStart);
+        }
+
+        public CharacterInclusionMatchingState<CharacterSet> MatchChar(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, CharRanges next, bool under)
+        {
+            CharacterSet cs;
+
+            //Test against input
+            if (!input.allowed.Intersects(cs))
+                return GetBottom(input);
+            //Add to encountered
+            return new CharacterInclusionMatchingState<CharacterSet>(prev.encountered.Union(cs), false, prev.closedStart);
+        }
+    }
+#endif
+    /// <summary>
+    /// Converts between Character Inclusion abstract domain
+    /// and regexes.
+    /// </summary>
+    public class CharacterInclusionRegex<CharacterSet>
+        where CharacterSet : ICharacterSet<CharacterSet>
+    {
+
+        /// <summary>
+        /// The reference abstract element.
+        /// </summary>
+        private readonly CharacterInclusion<CharacterSet> value;
+
+        public CharacterInclusionRegex(CharacterInclusion<CharacterSet> value)
+        {
+            this.value = value;
+        }
+#if vdfalse
     private class IsMatchVisitor : OpenClosedRegexVisitor<ProofOutcome, bool>
     {
       private readonly CharacterInclusionRegex converter;
@@ -108,8 +329,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
       {
         bool canMatch, canNotMatch;
 
-        BitArray canMatchArray = converter.value.CreateBitArrayFor(element.CanMatchIntervals.Select(t => CharInterval.For(t.Item1, t.Item2)));
-        BitArray mustMatchArray = converter.value.CreateBitArrayFor(element.MustMatchIntervals.Select(t => CharInterval.For(t.Item1, t.Item2)));
+        BitArray canMatchArray = converter.value.CreateBitArrayFor(element.CanMatchRanges.ToIntervals());
+        BitArray mustMatchArray = converter.value.CreateBitArrayFor(element.MustMatchRanges.ToIntervals());
 
         bool allowedIntersect = CharacterInclusion.Intersects(converter.value.allowed, canMatchArray);
 
@@ -186,28 +407,19 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
 
 
-    public ProofOutcome IsMatch(Regex.AST.Element element)
+    public ProofOutcome IsMatch(Microsoft.Research.Regex.Model.Element element)
     {
       IsMatchVisitor visitor = new IsMatchVisitor(this);
       bool closed = false;
       return visitor.VisitSimpleRegex(element, ref closed);
     }
 
-    private static bool IsClosedConcatenation(Concatenation concat)
-    {
-      if (concat.Parts.Count >= 2)
-      {
-        return concat.Parts[0].IsStartAnchor() && concat.Parts[concat.Parts.Count - 1].IsEndAnchor();
-      }
-      else
-      {
-        return false;
-      }
-    }
 
-    #region Convert matched regex to CharacterSet
+#endif
+#if false
+        #region Convert matched regex to CharacterSet
 
-    private class FromRegexVisitor : SimpleRegexVisitor<CharacterInclusion, bool>
+        private class FromRegexVisitor : SimpleRegexVisitor<CharacterInclusion, bool>
     {
       private readonly CharacterInclusion factoryValue;
 
@@ -219,7 +431,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
       protected override CharacterInclusion Visit(SingleElement single, ref bool closed)
       {
-        IEnumerable<CharInterval> allowed = single.CanMatchIntervals.Select(t => CharInterval.For(t.Item1, t.Item2));
+        IEnumerable<CharInterval> allowed = single.CanMatchRanges.ToIntervals();
 
         return factoryValue.Character(allowed, closed);
       }
@@ -288,8 +500,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
       FromRegexVisitor visitor = new FromRegexVisitor(value);
       return visitor.VisitSimpleRegex(element, ref closed);
     }
-    #endregion
-    #region Convert negative regex to CharacterSet
+        #endregion
+        #region Convert negative regex to CharacterSet
 
     private class FromNegativeRegexVisitor : SimpleRegexVisitor<CharacterInclusion, Void>
     {
@@ -302,7 +514,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
       protected override CharacterInclusion Visit(SingleElement single, ref Void data)
       {
-        return factoryValue.FromDisallowed(single.MustMatchIntervals.Select(t => CharInterval.For(t.Item1, t.Item2)));
+        return factoryValue.FromDisallowed(single.MustMatchRanges.ToIntervals());
       }
 
       protected override CharacterInclusion Visit(Concatenation concat, ref Void data)
@@ -375,19 +587,60 @@ namespace Microsoft.Research.AbstractDomains.Strings
       Void unusedData = new Void();
       return visitor.VisitSimpleRegex(element, ref unusedData);
     }
-    #endregion
+        #endregion
+
+#endif
+
+        public ProofOutcome IsMatch(Microsoft.Research.Regex.Model.Element regex)
+        {
+#if vdfalse
+            var operations = new CharacterInclusionMatchingOperations<CharacterSet>();
+            MatchingInterpretation<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>> interpretation = new MatchingInterpretation<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>(operations, this.value);
+            ForwardRegexInterpreter<MatchingState<CharacterInclusionMatchingState<CharacterSet>>> interpreter = new ForwardRegexInterpreter<MatchingState<CharacterInclusionMatchingState<CharacterSet>>>(interpretation);
+
+            var result = interpreter.Interpret(regex);
 
 
+            bool canMatch = !result.Over.fail;
+            bool mustMatch = false;//TODO: value.LessThanEqual(result.Under.currentElement);
 
-    public IStringPredicate PredicateFromRegex<Variable>(Regex.AST.Element regex, Variable thisVar)
-     where Variable : class, IEquatable<Variable>
-    {
-      System.Diagnostics.Contracts.Contract.Requires(thisVar != null);
+            return ProofOutcomeUtils.Build(canMatch, !mustMatch);
+#endif
+        return ProofOutcome.Top;
+        }
+    
+        public CharacterInclusion<CharacterSet> Assume(Microsoft.Research.Regex.Model.Element regex, bool match)
+        {
+            /*    
+                    IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>> operations;
+                    if(match)
+                        operations = new CharacterInclusionGeneratingOperations<CharacterSet>(value);
+                    else
+                        operations = new CharacterInclusionComplementGeneratingOperations<CharacterSet>(value);
 
-      CharacterInclusion trueSet = FromRegex(regex, false);
-      CharacterInclusion falseSet = FromNegativeRegex(regex);
+                    GeneratingInterpretation<CharacterInclusion<CharacterSet>> interpretation = new GeneratingInterpretation<CharacterInclusion<CharacterSet>>(operations);
+                    ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>> interpreter = new ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>>(interpretation);
 
-      return StringAbstractionPredicate.For(thisVar, trueSet, falseSet);
+                    var result = interpreter.Interpret(regex);
+                    return result.Open;
+                 */
+            return value.Top;  
+        }
+
+
+    public IStringPredicate PredicateFromRegex<Variable>(Microsoft.Research.Regex.Model.Element regex, Variable thisVar)
+            where Variable : class, IEquatable<Variable>
+        {
+        /*
+            System.Diagnostics.Contracts.Contract.Requires(thisVar != null);
+
+            CharacterInclusion<CharacterSet> matchSet = Assume(regex, true);
+            CharacterInclusion<CharacterSet> nonMatchSet = Assume(regex, false);
+
+            return StringAbstractionPredicate.For(thisVar, matchSet, nonMatchSet);
+            */
+        return FlatPredicate.Top;
+        }
     }
-  }
+
 }

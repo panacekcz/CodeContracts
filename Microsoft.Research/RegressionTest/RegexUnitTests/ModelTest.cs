@@ -36,23 +36,23 @@ namespace RegexUnitTests
         public void ParseChars()
         {
             Test("", "concat()");
-            Test("abcdefgh", "concat(char(61),char(62),char(63),char(64),char(65),char(66),char(67),char(68))");
+            Test("abcdefgh", "concat(char(61)char(62)char(63)char(64)char(65)char(66)char(67)char(68))");
             Test("a", "char(61)");
         }
 
         [TestMethod]
         public void ParseNamed()
         {
-            Test("(?<name>inner)\\k<name>", "unknown");
+            Test("(?<name>inner)\\k<name>", "unknown()");
         }
 
         [TestMethod]
         public void ParseAnchors()
         {
-            Test("^abc$", "concat(begin()char(61)char(62)char(63)end())");
-            Test("^^$", "begin()begin()end())");
+            Test("^abc$", "concat(begin()char(61)char(62)char(63)union(end()unknown(concat())))");
+            Test("^^$", "concat(begin()begin()union(end()unknown(concat())))");
             Test("^abc\\z", "concat(begin()char(61)char(62)char(63)end())");
-            Test("^^\\z", "begin()begin()end())");
+            Test("^^\\z", "concat(begin()begin()end())");
         }
         [TestMethod]
         public void ParseQuantifiers()
@@ -71,7 +71,7 @@ namespace RegexUnitTests
         [TestMethod]
         public void ParseBackslashB()
         {
-            Test("\\b[\\b]", "concat(unknown(),char())");
+            Test("\\b[\\b]", "concat(unknown(concat())char(8))");
         }
 
         [TestMethod]
@@ -121,14 +121,14 @@ namespace RegexUnitTests
             Test("[^]]", "char(0-5C,5E-FFFF)");
             Test("[-]", "char(2D)");
             Test("[^-]", "char(0-2C,2E-FFFF)");
-            Test("[0-]]", "concat(char(30,2D)char(5D))");//not a range
+            Test("[0-]]", "concat(char(2D,30)char(5D))");//not a range
         }
         [TestMethod]
         public void ParseRange()
         {
             Test("[a-z]", "char(61-7A)");
-            Test("[a-zA-Z0-9_]", "char(61-7A)");
-            Test("[a-zA-Z0-9\\u005F]", "char(61-7A)");
+            Test("[a-zA-Z0-9_]", "char(30-39,41-5A,5F,61-7A)");
+            Test("[a-zA-Z0-9\\u005F]", "char(30-39,41-5A,5F,61-7A)");
 
         }
         [TestMethod]

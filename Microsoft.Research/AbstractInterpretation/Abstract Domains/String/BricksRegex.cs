@@ -27,10 +27,11 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  /// <summary>
-  /// Converts regexes to bricks.
-  /// </summary>
-  public class BricksRegex
+#if vdfalse
+    /// <summary>
+    /// Converts regexes to bricks.
+    /// </summary>
+    public class BricksRegex
   {
     private readonly Bricks element;
 
@@ -198,13 +199,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
       {
         HashSet<string> chars = new HashSet<string>();
 
-        var intervals = overapproximate ? element.CanMatchIntervals : element.MustMatchIntervals;
+        var intervals = overapproximate ? element.CanMatchRanges : element.MustMatchRanges;
 
-        foreach (Tuple<char, char> interval in intervals)
+        foreach (var range in intervals.Ranges)
         {
-          for (int character = interval.Item1; character <= interval.Item2; ++character)
+          foreach (char character in range)
           {
-            chars.Add(((char)character).ToString());
+            chars.Add(character.ToString());
           }
         }
 
@@ -251,4 +252,5 @@ namespace Microsoft.Research.AbstractDomains.Strings
       return ProofOutcomeUtils.Build(!canMatchBricks.IsBottom, !mustMatch);
     }
   }
+#endif
 }

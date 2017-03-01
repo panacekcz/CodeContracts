@@ -28,171 +28,173 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  class StringGraphRegex
-  {
-    private StringGraph element;
-
-    public StringGraphRegex(StringGraph element)
+#if vdfalse
+    class StringGraphRegex
     {
-      this.element = element;
+        private StringGraph element;
+
+        public StringGraphRegex(StringGraph element)
+        {
+            this.element = element;
+        }
+
+        private class StringGraphRegexVisitor : OpenClosedRegexVisitor<Node, RegexEndsData>
+        {
+            private bool overapproximate;
+
+            public StringGraphRegexVisitor(bool overapproximate)
+            {
+                this.overapproximate = overapproximate;
+            }
+
+            private Node Wrap(Node inner, RegexEndsData endsData)
+            {
+                if (endsData.LeftClosed && endsData.RightClosed)
+                {
+                    return inner;
+                }
+                else
+                {
+                    ConcatNode concat = new ConcatNode();
+                    if (!endsData.LeftClosed)
+                    {
+                        concat.children.Add(new MaxNode());
+                    }
+                    concat.children.Add(inner);
+                    if (!endsData.RightClosed)
+                    {
+                        concat.children.Add(new MaxNode());
+                    }
+                    return concat;
+                }
+            }
+
+
+            protected override Node VisitConcatenation(Concatenation element,
+              int startIndex, int endIndex, RegexEndsData ends,
+              ref RegexEndsData data)
+            {
+                ConcatNode concatNode = new ConcatNode();
+
+                for (int index = startIndex; index < endIndex; ++index)
+                {
+                    RegexEndsData childEnds = ConcatChildEnds(ends, data, startIndex, endIndex, index);
+                    concatNode.children.Add(VisitElement(element.Parts[index], ref childEnds));
+                }
+
+                return concatNode;
+            }
+
+            protected override Node Visit(Alternation element, ref RegexEndsData data)
+            {
+                OrNode orNode = new OrNode();
+
+                foreach (Element child in element.Patterns)
+                {
+                    orNode.children.Add(VisitElement(child, ref data));
+                }
+
+                return orNode;
+            }
+
+            protected override Node Visit(SingleElement element, ref RegexEndsData data)
+            {
+                var intervals = overapproximate ? element.CanMatchRanges : element.MustMatchRanges;
+                var charIntervals = intervals.ToIntervals();
+                Node closedNode = NodeBuilder.CreateNodeForIntervals(charIntervals);
+                return Wrap(closedNode, data);
+            }
+
+            protected override Node Visit(Loop element, ref RegexEndsData data)
+            {
+                if (element.Max == 1)
+                {
+                    if (element.Min == 1)
+                    {
+                        return VisitElement(element.Content, ref data);
+                    }
+                    else if (element.Min == 0)
+                    {
+                        OrNode orNode = new OrNode();
+                        orNode.children.Add(VisitElement(element.Content, ref data));
+                        orNode.children.Add(ForEmpty(data));
+                        return orNode;
+                    }
+                }
+
+                if (overapproximate)
+                {
+                    RegexEndsData closedEnds = new RegexEndsData(true, true);
+                    Node contentNode = VisitElement(element.Content, ref closedEnds);
+                    return Wrap(NodeBuilder.CreateLoop(contentNode), data);
+                }
+                else if (element.Min == 0)
+                {
+                    return ForEmpty(data);
+                }
+                else if (element.Min == 1 && element.Max >= 1)
+                {
+                    return VisitElement(element.Content, ref data);
+                }
+                else
+                {
+                    return new BottomNode();
+                }
+            }
+
+            private Node ForEmpty(RegexEndsData ends)
+            {
+                if (ends.LeftClosed && ends.RightClosed)
+                {
+                    return new ConcatNode();
+                }
+                else
+                {
+                    return new MaxNode();
+                }
+            }
+
+            protected override Node Visit(Empty element, ref RegexEndsData data)
+            {
+                return ForEmpty(data);
+            }
+
+            protected override Node Unsupported(Element regex, ref RegexEndsData data)
+            {
+                return overapproximate ? (Node)new MaxNode() : (Node)new BottomNode();
+            }
+        }
+
+        public StringGraph StringGraphForRegex(Element regex)
+        {
+            StringGraphRegexVisitor visitor = new StringGraphRegexVisitor(true);
+
+            RegexEndsData ends = new RegexEndsData();
+
+            Node node = visitor.VisitSimpleRegex(regex, ref ends);
+
+            return new StringGraph(node);
+        }
+
+        /// <summary>
+        /// Verifies whether the string graph matches the specified regex expression.
+        /// </summary>
+        /// <param name="regex">AST of the regex.</param>
+        /// <returns>Proven result of the match.</returns>
+        public ProofOutcome IsMatch(Element regex)
+        {
+            StringGraph overapproximation = StringGraphForRegex(regex);
+            StringGraph canMatchGraph = element.Meet(overapproximation);
+
+            StringGraphRegexVisitor visitor = new StringGraphRegexVisitor(false);
+
+            RegexEndsData ends = new RegexEndsData();
+            StringGraph underapproximation = new StringGraph(visitor.VisitSimpleRegex(regex, ref ends));
+
+            bool mustMatch = element.LessThanEqual(underapproximation);
+
+            return ProofOutcomeUtils.Build(!canMatchGraph.IsBottom, !mustMatch);
+        }
     }
-
-    private class StringGraphRegexVisitor : OpenClosedRegexVisitor<Node, RegexEndsData>
-    {
-      private bool overapproximate;
-
-      public StringGraphRegexVisitor(bool overapproximate)
-      {
-        this.overapproximate = overapproximate;
-      }
-
-      private Node Wrap(Node inner, RegexEndsData endsData)
-      {
-        if (endsData.LeftClosed && endsData.RightClosed)
-        {
-          return inner;
-        }
-        else
-        {
-          ConcatNode concat = new ConcatNode();
-          if (!endsData.LeftClosed)
-          {
-            concat.children.Add(new MaxNode());
-          }
-          concat.children.Add(inner);
-          if (!endsData.RightClosed)
-          {
-            concat.children.Add(new MaxNode());
-          }
-          return concat;
-        }
-      }
-
-
-      protected override Node VisitConcatenation(Concatenation element,
-        int startIndex, int endIndex, RegexEndsData ends,
-        ref RegexEndsData data)
-      {
-        ConcatNode concatNode = new ConcatNode();
-
-        for (int index = startIndex; index < endIndex; ++index)
-        {
-          RegexEndsData childEnds = ConcatChildEnds(ends, data, startIndex, endIndex, index);
-          concatNode.children.Add(VisitElement(element.Parts[index], ref childEnds));
-        }
-
-        return concatNode;
-      }
-
-      protected override Node Visit(Alternation element, ref RegexEndsData data)
-      {
-        OrNode orNode = new OrNode();
-
-        foreach (Element child in element.Patterns)
-        {
-          orNode.children.Add(VisitElement(child, ref data));
-        }
-
-        return orNode;
-      }
-
-      protected override Node Visit(SingleElement element, ref RegexEndsData data)
-      {
-        var intervals = overapproximate ? element.CanMatchIntervals : element.MustMatchIntervals;
-        var charIntervals = intervals.Select(t => CharInterval.For(t.Item1, t.Item2));
-        Node closedNode = NodeBuilder.CreateNodeForIntervals(charIntervals);
-        return Wrap(closedNode, data);
-      }
-
-      protected override Node Visit(Loop element, ref RegexEndsData data)
-      {
-        if (element.Max == 1)
-        {
-          if (element.Min == 1)
-          {
-            return VisitElement(element.Content, ref data);
-          }
-          else if (element.Min == 0)
-          {
-            OrNode orNode = new OrNode();
-            orNode.children.Add(VisitElement(element.Content, ref data));
-            orNode.children.Add(ForEmpty(data));
-            return orNode;
-          }
-        }
-
-        if (overapproximate)
-        {
-          RegexEndsData closedEnds = new RegexEndsData(true, true);
-          Node contentNode = VisitElement(element.Content, ref closedEnds);
-          return Wrap(NodeBuilder.CreateLoop(contentNode), data);
-        }
-        else if (element.Min == 0)
-        {
-          return ForEmpty(data);
-        }
-        else if (element.Min == 1 && element.Max >= 1)
-        {
-          return VisitElement(element.Content, ref data);
-        }
-        else
-        {
-          return new BottomNode();
-        }
-      }
-
-      private Node ForEmpty(RegexEndsData ends)
-      {
-        if (ends.LeftClosed && ends.RightClosed)
-        {
-          return new ConcatNode();
-        }
-        else
-        {
-          return new MaxNode();
-        }
-      }
-
-      protected override Node Visit(Empty element, ref RegexEndsData data)
-      {
-        return ForEmpty(data);
-      }
-
-      protected override Node Unsupported(Element regex, ref RegexEndsData data)
-      {
-        return overapproximate ? (Node)new MaxNode() : (Node)new BottomNode();
-      }
-    }
-
-    public StringGraph StringGraphForRegex(Element regex)
-    {
-      StringGraphRegexVisitor visitor = new StringGraphRegexVisitor(true);
-
-      RegexEndsData ends = new RegexEndsData();
-
-      Node node = visitor.VisitSimpleRegex(regex, ref ends);
-
-      return new StringGraph(node);
-    }
-
-    /// <summary>
-    /// Verifies whether the string graph matches the specified regex expression.
-    /// </summary>
-    /// <param name="regex">AST of the regex.</param>
-    /// <returns>Proven result of the match.</returns>
-    public ProofOutcome IsMatch(Element regex)
-    {
-      StringGraph overapproximation = StringGraphForRegex(regex);
-      StringGraph canMatchGraph = element.Meet(overapproximation);
-
-      StringGraphRegexVisitor visitor = new StringGraphRegexVisitor(false);
-
-      RegexEndsData ends = new RegexEndsData();
-      StringGraph underapproximation = new StringGraph(visitor.VisitSimpleRegex(regex, ref ends));
-
-      bool mustMatch = element.LessThanEqual(underapproximation);
-
-      return ProofOutcomeUtils.Build(!canMatchGraph.IsBottom, !mustMatch);
-    }
-  }
+#endif
 }

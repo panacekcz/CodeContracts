@@ -429,51 +429,45 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
             ///<inheritdoc/>
-            public IStringPredicate StartsWithOrdinal(WithConstants<Suffix> self, Variable selfVariable, WithConstants<Suffix> other, Variable otherVariable)
+            public IStringPredicate StartsEndsWithOrdinal(WithConstants<Suffix> self, Variable selfVariable, WithConstants<Suffix> other, Variable otherVariable, bool ends)
             {
                 Suffix selfSuffix = self.ToAbstract(this);
                 Suffix otherSuffix = other.ToAbstract(this);
 
+                if (ends)
+                {
+                    if (other.IsConstant && selfSuffix.suffix.EndsWith(other.Constant, StringComparison.Ordinal))
+                    {
+                        return FlatPredicate.True;
+                    }
 
-                if (other.IsConstant && other.Constant == "")
-                {
-                    return FlatPredicate.True;
-                }
-                else if (self.IsConstant && !self.Constant.Contains(otherSuffix.suffix))
-                {
-                    return FlatPredicate.False;
+                    if (!self.IsConstant && otherSuffix.suffix.EndsWith(selfSuffix.suffix, StringComparison.Ordinal))
+                    {
+                        if (selfVariable != null)
+                        {
+                            return StringAbstractionPredicate.ForTrue(selfVariable, otherSuffix);
+                        }
+                        else
+                        {
+                            return FlatPredicate.Top;
+                        }
+                    }
+
+                    if (other.IsConstant || !selfSuffix.suffix.EndsWith(otherSuffix.suffix, StringComparison.Ordinal))
+                    {
+                        return FlatPredicate.False;
+                    }
                 }
                 else
                 {
-                    return FlatPredicate.Top;
-                }
-            }
-            ///<inheritdoc/>
-            public IStringPredicate EndsWithOrdinal(WithConstants<Suffix> self, Variable selfVariable, WithConstants<Suffix> other, Variable otherVariable)
-            {
-                Suffix selfSuffix = self.ToAbstract(this);
-                Suffix otherSuffix = other.ToAbstract(this);
-
-                if (other.IsConstant && selfSuffix.suffix.EndsWith(other.Constant, StringComparison.Ordinal))
-                {
-                    return FlatPredicate.True;
-                }
-
-                if (!self.IsConstant && otherSuffix.suffix.EndsWith(selfSuffix.suffix, StringComparison.Ordinal))
-                {
-                    if (selfVariable != null)
+                    if (other.IsConstant && other.Constant == "")
                     {
-                        return StringAbstractionPredicate.ForTrue(selfVariable, otherSuffix);
+                        return FlatPredicate.True;
                     }
-                    else
+                    else if (self.IsConstant && !self.Constant.Contains(otherSuffix.suffix))
                     {
-                        return FlatPredicate.Top;
+                        return FlatPredicate.False;
                     }
-                }
-
-                if (other.IsConstant || !selfSuffix.suffix.EndsWith(otherSuffix.suffix, StringComparison.Ordinal))
-                {
-                    return FlatPredicate.False;
                 }
 
                 return FlatPredicate.Top;
@@ -543,7 +537,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             #endregion
             ///<inheritdoc/>
-            public IStringPredicate RegexIsMatch(Suffix self, Variable selfVariable, Regex.AST.Element regex)
+            public IStringPredicate RegexIsMatch(Suffix self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
                 SuffixRegex suffixRegexConverter = new SuffixRegex(self);
 
@@ -551,7 +545,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 if (outcome == CodeAnalysis.ProofOutcome.Top)
                 {
-                    Suffix regexSuffix = suffixRegexConverter.SuffixForRegex(regex);
+                    Suffix regexSuffix = suffixRegexConverter.AssumeMatch(regex);
                     if (!regexSuffix.IsBottom && !regexSuffix.IsTop)
                     {
                         return StringAbstractionPredicate.ForTrue(selfVariable, regexSuffix);

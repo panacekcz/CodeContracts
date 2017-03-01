@@ -23,16 +23,21 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  internal static class StringBuilderUtils
-  {
-    public static string BuildStringFromReverseList(List<string> parts)
+    internal static class StringBuilderUtils
     {
-      StringBuilder builder = new StringBuilder();
-      foreach (string part in Enumerable.Reverse(parts))
-      {
-        builder.Append(part);
-      }
-      return builder.ToString();
+        /// <summary>
+        /// Builds a string formed by concatenating a list of strings in reverse order.
+        /// </summary>
+        /// <param name="parts">A list of parts.</param>
+        /// <returns>Concatenation of parts in reverse order.</returns>
+        public static string BuildStringFromReverseList(List<string> parts)
+        {
+            StringBuilder builder = new StringBuilder();
+            foreach (string part in Enumerable.Reverse(parts))
+            {
+                builder.Append(part);
+            }
+            return builder.ToString();
+        }
     }
-  }
 }

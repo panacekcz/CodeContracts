@@ -27,20 +27,30 @@ using Microsoft.Research.AbstractDomains.Strings;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class SuffixRegexTest
-  {
-    Suffix.Operations<TestVariable> operations = new Suffix.Operations<TestVariable>();
-
-    [TestMethod]
-    public void Match()
+    [TestClass]
+    public class SuffixRegexTest
     {
-      Suffix p = new Suffix("suffix");
+        private Suffix.Operations<TestVariable> operations = new Suffix.Operations<TestVariable>();
 
-      Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexParser.Parse("^suffix")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexParser.Parse("suffix\\z")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexParser.Parse("other")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexParser.Parse("other\\z")).ProofOutcome);
+        [TestMethod]
+        public void Match()
+        {
+            Suffix p = new Suffix("suffix");
+
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^suffix")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("suffix\\z")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("other")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("other\\z")).ProofOutcome);
+        }
+        [TestMethod]
+        public void Assume()
+        {
+            Suffix suffix = new Suffix("suffix");
+            SuffixRegex pr = new SuffixRegex(suffix);
+            Assert.AreEqual(suffix, pr.AssumeMatch(RegexUtil.ModelForRegex("x\\z")));
+            Assert.AreEqual(new Suffix("longersuffix"), pr.AssumeMatch(RegexUtil.ModelForRegex("longersuffix\\z")));
+            Assert.AreEqual(new Suffix("longersuffix"), pr.AssumeMatch(RegexUtil.ModelForRegex("longersuffix\\z|other\\z")));
+            Assert.IsTrue(pr.AssumeMatch(RegexUtil.ModelForRegex("other\\z")).IsBottom);
+        }
     }
-  }
 }

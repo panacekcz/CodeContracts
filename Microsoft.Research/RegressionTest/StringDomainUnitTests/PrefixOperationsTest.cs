@@ -40,8 +40,8 @@ namespace StringDomainUnitTests
     [TestMethod]
     public void TestPrefixStartsWith()
     {
-      Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(Arg(somePrefix), null, Arg(something), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(Arg(somePrefix), null, Arg(some), null).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(somePrefix), null, Arg(something), null, false).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(Arg(somePrefix), null, Arg(some), null, false).ProofOutcome);
     }
     [TestMethod]
     public void TestPrefixReplaceChar()

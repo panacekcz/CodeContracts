@@ -46,11 +46,11 @@ namespace StringDomainUnitTests
       StringGraph abc = StringGraph.ForString("abcdefgh");
       StringGraph d = StringGraph.ForString("d");
 
-      Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(Arg(abc), null, Arg("abc"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.True, operations.EndsWithOrdinal(Arg(abc), null, Arg("fgh"), null).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("abc"), null, false).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("fgh"), null, true).ProofOutcome);
 
-      Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(Arg(abc), null, Arg("fgh"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.EndsWithOrdinal(Arg(abc), null, Arg("abc"), null).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("fgh"), null, false).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("abc"), null, true).ProofOutcome);
     }
 
     [TestMethod]

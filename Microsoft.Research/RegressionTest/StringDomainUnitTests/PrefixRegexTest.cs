@@ -27,41 +27,63 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class PrefixRegexTest
-  {
-    Prefix.Operations<TestVariable> operations = new Prefix.Operations<TestVariable>();
-
-    [TestMethod]
-    public void MatchConstant()
+    [TestClass]
+    public class PrefixRegexTest
     {
-      Prefix p = new Prefix("prefix");
+        Prefix.Operations<TestVariable> operations = new Prefix.Operations<TestVariable>();
 
-      Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexParser.Parse("^prefix")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexParser.Parse("prefix$")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexParser.Parse("other")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexParser.Parse("^other")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexParser.Parse("^other$")).ProofOutcome);
+        [TestMethod]
+        public void MatchEmpty()
+        {
+            Prefix p = new Prefix("prefix");
+
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("\\z")).ProofOutcome);
+        }
+
+
+        [TestMethod]
+        public void MatchConstant()
+        {
+            Prefix p = new Prefix("prefix");
+
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^prefix")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^prefix|^other")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^(?:prefix|other)")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("prefix$")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("other")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^other")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^other$")).ProofOutcome);
+        }
+        [TestMethod]
+        public void MatchSet()
+        {
+            Prefix p = new Prefix("prefix");
+
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^[pst][ur][ef]fix")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^[p-z][e-r][a-z]fix")).ProofOutcome);
+
+            Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^pr[f-z]fix")).ProofOutcome);
+        }
+        [TestMethod]
+        public void MatchQuantifiers()
+        {
+            Prefix prefix = new Prefix("prefix");
+            Prefix pp = new Prefix("pp");
+
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(pp, null, RegexUtil.ModelForRegex("^p*$")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(pp, null, RegexUtil.ModelForRegex("^p+$")).ProofOutcome);
+        }
+        [TestMethod]
+        public void Assume()
+        {
+            Prefix prefix = new Prefix("prefix");
+            PrefixRegex pr = new PrefixRegex(prefix);
+            Assert.AreEqual(prefix, pr.AssumeMatch(RegexUtil.ModelForRegex("^p")));
+            Assert.AreEqual(new Prefix("prefixlonger"), pr.AssumeMatch(RegexUtil.ModelForRegex("^prefixlonger")));
+            Assert.AreEqual(new Prefix("prefixlonger"), pr.AssumeMatch(RegexUtil.ModelForRegex("^prefixlonger|^other")));
+            Assert.IsTrue(pr.AssumeMatch(RegexUtil.ModelForRegex("^other")).IsBottom);
+        }
     }
-    [TestMethod]
-    public void MatchSet()
-    {
-      Prefix p = new Prefix("prefix");
-
-      Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexParser.Parse("^[pst][ur][ef]fix")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexParser.Parse("^[p-z][e-r][a-z]fix")).ProofOutcome);
-
-      Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexParser.Parse("^pr[f-z]fix")).ProofOutcome);
-    }
-    [TestMethod]
-    public void MatchQuantifiers()
-    {
-      Prefix prefix = new Prefix("prefix");
-      Prefix pp = new Prefix("pp");
-
-
-      Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(pp, null, RegexParser.Parse("^p*$")).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(pp, null, RegexParser.Parse("^p+$")).ProofOutcome);
-    }
-  }
 }

@@ -107,7 +107,7 @@ namespace StringDomainUnitTests
       Bricks strings = MakeBricks("string", "strong");
       Bricks prefix = MakeBricks("str");
 
-      Assert.AreEqual(FlatPredicate.True, operations.StartsWithOrdinal(Arg(strings), null, Arg(prefix), null));
+      Assert.AreEqual(FlatPredicate.True, operations.StartsEndsWithOrdinal(Arg(strings), null, Arg(prefix), null, false));
     }
 
     [TestMethod]
@@ -116,7 +116,7 @@ namespace StringDomainUnitTests
       Bricks strings = MakeBricks("string", "strong");
       Bricks suffix = MakeBricks("ng");
 
-      Assert.AreEqual(FlatPredicate.True, operations.EndsWithOrdinal(Arg(strings), null, Arg(suffix), null));
+      Assert.AreEqual(FlatPredicate.True, operations.StartsEndsWithOrdinal(Arg(strings), null, Arg(suffix), null, true));
     }
   }
 }

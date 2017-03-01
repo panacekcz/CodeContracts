@@ -15,6 +15,7 @@
 // Created by Vlastimil Dort (2015-2016)
 // Master thesis String Analysis for Code Contracts
 
+using Microsoft.Research.AbstractDomains.Strings.Regex;
 using Microsoft.Research.CodeAnalysis;
 using Microsoft.Research.Regex;
 using Microsoft.Research.Regex.AST;
@@ -26,10 +27,267 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  /// <summary>
-  /// Regex visitor evaluating a match from an anchor element.
-  /// </summary>
-  internal abstract class AnchoredIsMatchVisitor : SimpleRegexVisitor<ProofOutcome, IndexInt>
+    public abstract class LinearGeneratingOperations<D> : IGeneratingOperationsForRegex<D>
+    where D : IStringAbstraction<D, string>
+    {
+        private const bool under = false;
+        D factoryElement;
+
+        protected abstract D Extend(D prev, char single);
+
+        public bool IsUnderapproximating
+        {
+            get
+            {
+                return under;
+            }
+        }
+        public D Bottom
+        {
+            get
+            {
+                return factoryElement.Bottom;
+            }
+        }
+
+        public D Top
+        {
+            get
+            {
+                return factoryElement.Top;
+            }
+        }
+
+        public D AddChar(D prev, CharRanges next, bool closed)
+        {
+            if (closed && (under || prev.IsBottom))
+                return prev.Bottom;
+            else if (prev.IsBottom)
+                return prev;
+
+            char single;
+            if (next.TryGetSingleton(out single))
+            {
+                return Extend(prev, single);
+            }
+            else
+            {
+                return (!closed && under) ? prev.Bottom : prev;
+            }
+        }
+
+        public D AssumeStart(D prev)
+        {
+            if (under || !prev.IsTop)
+                return prev.Bottom;
+            else
+                return prev;
+        }
+
+        public D Empty
+        {
+            get
+            {
+                if (under)
+                    return factoryElement.Bottom;
+                else
+                    return factoryElement.Top;
+            }
+        }
+        public bool CanBeEmpty(D p)
+        {
+            return p.IsTop;
+        }
+
+        public D Join(D left, D right, bool widen)
+        {
+            return left.Join(right);
+        }
+    }
+
+
+    /// <summary>
+    /// Utility methods for working with <see cref="IndeInt"/>.
+    /// </summary>
+    internal static class IndexUtils
+    {
+        public static IndexInt JoinIndices(IndexInt a, IndexInt b)
+        {
+            if (a.IsNegative || b.IsInfinite)
+                return b;
+            if (b.IsNegative || a.IsInfinite)
+                return a;
+
+            if (a == b)
+                return a;
+            else
+                return IndexInt.Infinity;
+        }
+        public static IndexInt MeetIndices(IndexInt a, IndexInt b)
+        {
+            if (a.IsNegative || b.IsInfinite)
+                return a;
+            if (b.IsNegative || a.IsInfinite)
+                return b;
+
+            if (a == b)
+                return a;
+            else
+                return IndexInt.Negative;
+        }
+    }
+
+    public struct LinearMatchingState<D>
+    {
+        internal D currentElement;
+        internal IndexInt currentIndex;
+
+        public LinearMatchingState(D element, IndexInt index)
+        {
+            currentElement = element;
+            currentIndex = index;
+        }
+    }
+
+
+    /// <summary>
+    /// Matches prefix against regex
+    /// </summary>
+    public abstract class LinearMatchingOperations<D> : IMatchingOperationsForRegex<LinearMatchingState<D>, D>
+        where D : IStringAbstraction<D, string>
+    {
+        public LinearMatchingState<D> GetBottom(D input)
+        {
+            // In over, We guarantee no match
+            return new LinearMatchingState<D>(input.Bottom, IndexInt.Negative);
+
+        }
+
+        public LinearMatchingState<D> GetTop(D input)
+        {
+            // In under, We guarantee match on all inputs on all indices
+            return new LinearMatchingState<D>(input, IndexInt.Infinity);
+        }
+
+        protected abstract D Extend(D prev, char single);
+        protected abstract int GetLength(D element);
+        protected abstract bool IsCompatible(D element, int index, CharRanges ranges);
+
+
+        public LinearMatchingState<D> MatchChar(D input, LinearMatchingState<D> data, CharRanges range, bool under)
+        {
+            if (data.currentIndex.IsInfinite)
+            {
+                if (under)
+                {
+                    // Garanteed match at all indices -> fix the index to the first matching character
+
+                    //TODO: VD: should use input or currentprefix?
+                    for (int i = 0; i < GetLength(input); ++i)
+                    {
+                        if (IsCompatible(input, i, range))
+                        {
+                            return new LinearMatchingState<D> (data.currentElement, IndexInt.For(i));
+                        }
+                    }
+
+                    // Character not found -> match not guaranteed
+                    return GetBottom(input);
+                }
+                else
+                {
+                    return data;
+                }
+            }
+            else if (data.currentIndex.IsNegative)
+            {
+                if (under)
+                {
+                    // Match at an unknown index ->can only guarantee match if all chars guaranteed to match AND we know we are not beyond the end
+                    return GetBottom(input);
+                }
+                else
+                {
+                    return data;
+                }
+            }
+
+            // Guaranteed match at a specific index
+            int index = data.currentIndex.AsInt;
+            char singleton = default(char);
+
+            if (index < GetLength(input))
+            {
+                if (!IsCompatible(input, index, range))
+                {
+                    // Matching character that is not there.
+                    return GetBottom(input);
+                }
+                else
+                {
+                    return new LinearMatchingState<D>(data.currentElement, data.currentIndex.Add(1));
+                }
+            }
+            else if (GetLength(data.currentElement) == index && (under ? range.TryGetFirst(out singleton) : range.TryGetSingleton(out singleton)))
+            {
+                // We cannot gurantee match for the prefix, but we can guarantee it if the input has a longer prefix
+                // If there are more chars guaranteed to match, we can select any of them
+                return new LinearMatchingState<D>(Extend(data.currentElement, singleton), data.currentIndex.Add(1));
+            }
+            else
+            {
+                // Again - we cannot guarantee match because we do not know whether there are more characters and which ones.
+                return under ? GetBottom(input) : new LinearMatchingState<D>(data.currentElement, data.currentIndex.Add(1));
+            }
+        }
+
+        public LinearMatchingState<D> AssumeEnd(D input, LinearMatchingState<D> data, bool under)
+        {
+            if (under)
+            {
+                // If match is guaranteed on all indices, it is guaranteed on some index
+                if (data.currentIndex.IsInfinite)
+                    return new LinearMatchingState<D>(data.currentElement, IndexInt.Negative);
+                else
+                    // No guarantee
+                    return GetBottom(input);
+            }
+            else
+            {
+                //over
+                return data;
+            }
+        }
+
+        public LinearMatchingState<D> AssumeStart(D input, LinearMatchingState<D> data, bool under)
+        {
+            // In under: If guranteed on all indices, it is guranteed at the start
+            if (data.currentIndex.IsInfinite || data.currentIndex == 0)
+                return new LinearMatchingState<D>(data.currentElement, IndexInt.For(0));
+            else
+                return GetBottom(input);
+        }
+
+        public LinearMatchingState<D> Join(D input, LinearMatchingState<D> prev, LinearMatchingState<D> next, bool widen, bool under)
+        {
+            // In under:
+            // If one of them is infinite index, then we return JOIN of strings and the other index
+            // If both indexes are the same int, then we JOIN the string and use the index
+            // If both indexes are different ints, then we JOIN the string and use bottom index
+
+            var index = under ? IndexUtils.MeetIndices(prev.currentIndex, next.currentIndex) :
+                IndexUtils.JoinIndices(prev.currentIndex, next.currentIndex);
+
+            return new LinearMatchingState<D>(prev.currentElement.Join(next.currentElement), index);
+        }
+    }
+
+
+#if vdfalse
+    /// <summary>
+    /// Regex visitor evaluating a match from an anchor element.
+    /// </summary>
+    internal abstract class AnchoredIsMatchVisitor : SimpleRegexVisitor<ProofOutcome, IndexInt>
   {
     private readonly AnchorKind anchorKind;
     private bool reverse;
@@ -166,149 +424,5 @@ namespace Microsoft.Research.AbstractDomains.Strings
       }
     }
   }
-
-  internal class AnchoredExtractVisitor : SimpleRegexVisitor<Void, IndexInt>
-  {
-    private List<char> builder = new List<char>();
-    private readonly Void unusedReturnValue = new Void();
-    private readonly AnchorKind anchorKind;
-    private bool reverse;
-
-    public AnchoredExtractVisitor(AnchorKind anchorKind, bool reverse)
-    {
-      this.anchorKind = anchorKind;
-      this.reverse = reverse;
-    }
-
-    public string GetString()
-    {
-      if (builder == null)
-      {
-        return null;
-      }
-      else
-      {
-        if (reverse)
-        {
-          builder.Reverse();
-        }
-
-        return new string(builder.ToArray());
-      }
-    }
-
-
-    protected override Void Unsupported(Element regex, ref IndexInt data)
-    {
-      data = IndexUtils.After;
-      return unusedReturnValue;
-    }
-
-    protected override Void Visit(Alternation element, ref IndexInt data)
-    {
-      data = IndexUtils.After;
-      return unusedReturnValue;
-    }
-
-    protected override Void Visit(Anchor element, ref IndexInt data)
-    {
-      if (element.Kind == anchorKind)
-      {
-        if (data.IsNegative)
-        {
-          data = IndexInt.For(0);
-        }
-        else if (!data.IsInfinite && data.AsInt > 0)
-        {
-          builder = null;
-          data = IndexUtils.After;
-        }
-        return unusedReturnValue;
-      }
-      else
-      {
-        return Unsupported(element, ref data);
-      }
-    }
-
-    protected override Void Visit(Concatenation element, ref IndexInt data)
-    {
-      IEnumerable<Element> parts = element.Parts;
-      if (reverse)
-      {
-        parts = Enumerable.Reverse(parts);
-      }
-
-      foreach (var part in parts)
-      {
-        VisitElement(part, ref data);
-      }
-
-      return unusedReturnValue;
-    }
-
-    protected override Void Visit(Empty element, ref IndexInt data)
-    {
-      return unusedReturnValue;
-    }
-
-    protected override Void Visit(Loop element, ref IndexInt data)
-    {
-      if (!(element.Min < 1 || data.IsInfinite || data.IsNegative))
-      {
-        VisitElement(element.Content, ref data);
-      }
-      data = IndexUtils.After;
-      return unusedReturnValue;
-    }
-
-    protected override Void Visit(SingleElement element, ref IndexInt data)
-    {
-      if (data.IsNegative || data.IsInfinite)
-      {
-        data = IndexUtils.After;
-        return unusedReturnValue;
-      }
-
-      char singleChar;
-      if (element.TryCanMatchSingleChar(out singleChar))
-      {
-        builder.Add(singleChar);
-        data = data + IndexInt.For(1);
-      }
-      else if (element.IsEmptyCanMatchSet())
-      {
-        builder = null;
-        data = IndexUtils.After;
-      }
-      else
-      {
-        data = IndexUtils.After;
-      }
-      return unusedReturnValue;
-    }
-  }
-
-  /// <summary>
-  /// Utility methods for working with <see cref="IndeInt"/>.
-  /// </summary>
-  internal static class IndexUtils
-  {
-    public static readonly IndexInt Before = IndexInt.Negative;
-    public static readonly IndexInt After = IndexInt.Infinity;
-
-    public static IndexInt JoinIndices(IndexInt a, IndexInt b)
-    {
-      if (a.IsNegative || b.IsInfinite)
-        return b;
-      if (b.IsNegative || a.IsInfinite)
-        return a;
-
-      if (a == b)
-        return a;
-      else
-        return IndexInt.Infinity;
-    }
-  }
-
+#endif
 }

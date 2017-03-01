@@ -44,6 +44,7 @@ namespace RegexUnitTests
         public void ParseNamed()
         {
             Test("(?<name>inner)\\k<name>");
+            Test("(?<4>inner)\\k<4>");
         }
 
         [TestMethod]
@@ -51,7 +52,10 @@ namespace RegexUnitTests
         {
             Test("^abc$");
             Test("^^$");
+            Test("\\z");
         }
+
+
         [TestMethod]
         public void ParseQuantifiers()
         {
@@ -82,6 +86,11 @@ namespace RegexUnitTests
         public void ParseAssertions()
         {
             Test("(?!)");
+            // Lookarounds
+            Test("(?=abc)");
+            Test("(?!abc)");
+            Test("(?<=abc)");
+            Test("(?<!abc)");
         }
 
         [TestMethod]

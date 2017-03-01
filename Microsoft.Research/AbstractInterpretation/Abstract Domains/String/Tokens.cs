@@ -377,6 +377,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     return FlatPredicate.False;
             }
 
+            public IStringPredicate StartsEndsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable, bool ends)
+            {
+                if (ends)
+                    return EndsWithOrdinal(self, selfVariable, other, otherVariable);
+                else
+                    return StartsWithOrdinal(self, selfVariable, other, otherVariable);
+            }
+
             public IStringPredicate StartsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
             {
                 Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
@@ -529,8 +537,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return cav.CharAt(index, self.root);
             }
 
-            public IStringPredicate RegexIsMatch(Tokens self, Variable selfVariable, Element regex)
-            {
+            public IStringPredicate RegexIsMatch(Tokens self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
+            {/*
                 //regex underapprox less equal self -> return true
                 //self meet regex overapprox is bottom -> return false
                 // else return overapprox predicate.
@@ -547,7 +555,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 if (self.Meet(regexOver).IsBottom || self.LessThanEqual(negRegexUnder))
                     return FlatPredicate.False;
 
-                return StringAbstractionPredicate.For(selfVariable, regexOver, negRegexOver);
+                return StringAbstractionPredicate.For(selfVariable, regexOver, negRegexOver);*/
+                throw new NotImplementedException();
             }
 
             public Tokens Constant(string constant)

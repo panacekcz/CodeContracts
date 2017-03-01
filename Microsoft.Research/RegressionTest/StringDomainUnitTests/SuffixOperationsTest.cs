@@ -38,20 +38,25 @@ namespace StringDomainUnitTests
     private Suffix bottom = new Suffix((string)null);
     private Suffix top = new Suffix("");
 
+    
+        private IStringPredicate CallEndsWith(WithConstants<Suffix> self, WithConstants<Suffix> other)
+        {
+            return operations.StartsEndsWithOrdinal(self, null, other, null, true);
+        }
 
     [TestMethod]
     public void TestEndsWith()
     {
-      Assert.AreEqual(ProofOutcome.True, operations.EndsWithOrdinal(Arg(someSuffix), null, Arg("Suffix"), null).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.True, CallEndsWith(Arg(someSuffix), Arg("Suffix")).ProofOutcome);
 
-      Assert.AreEqual(ProofOutcome.False, operations.EndsWithOrdinal(Arg(someSuffix), null, Arg(otherSuffix), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.EndsWithOrdinal(Arg(someSuffix), null, Arg("other"), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.EndsWithOrdinal(Arg("other"), null, Arg(someSuffix), null).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.False, CallEndsWith(Arg(someSuffix), Arg(otherSuffix)).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.False, CallEndsWith(Arg(someSuffix), Arg("other")).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.False, CallEndsWith(Arg("other"), Arg(someSuffix)).ProofOutcome);
 
-      Assert.AreEqual(ProofOutcome.Top, operations.EndsWithOrdinal(Arg(someSuffix), null, Arg(suffix), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.EndsWithOrdinal(Arg("Suffix"), null, Arg(someSuffix), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.EndsWithOrdinal(Arg(suffix), null, Arg(someSuffix), null).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.Top, operations.EndsWithOrdinal(Arg(suffix), null, Arg("someSuffix"), null).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.Top, CallEndsWith(Arg(someSuffix), Arg(suffix)).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.False, CallEndsWith(Arg("Suffix"), Arg(someSuffix)).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.Top, CallEndsWith(Arg(suffix), Arg(someSuffix)).ProofOutcome);
+      Assert.AreEqual(ProofOutcome.Top, CallEndsWith(Arg(suffix), Arg("someSuffix")).ProofOutcome);
     }
 
     [TestMethod]
