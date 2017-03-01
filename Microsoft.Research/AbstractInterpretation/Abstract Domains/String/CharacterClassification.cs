@@ -49,6 +49,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
         bool IsSingleton(int bucket);
 
         string ToString(int bucket);
+
+        /// <summary>
+        /// Gets an interval that contains all characters from some class.
+        /// </summary>
+        /// <param name="bucket">Index of the character class.</param>
+        /// <returns>Interval containing all characters from the class. May contain some characters outside of the class.</returns>
+        CharInterval ToInterval(int bucket);
     }
 
     /// <summary>
@@ -91,6 +98,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public string ToString(int bucket)
         {
             return ((char)bucket).ToString();
+        }
+
+        public CharInterval ToInterval(int bucket)
+        {
+            return CharInterval.For((char)bucket);
         }
     }
 
@@ -148,6 +160,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
             else
                 return "(non-ascii)";
         }
+
+        public CharInterval ToInterval(int bucket)
+        {
+            if (bucket < 128)
+                return CharInterval.For((char)bucket);
+            else
+                return CharInterval.For((char)128, char.MaxValue);
+        }
     }
 
     /// <summary>
@@ -183,6 +203,26 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public string ToString(int bucket)
         {
             return ((System.Globalization.UnicodeCategory)bucket).ToString();
+        }
+
+
+        public CharInterval ToInterval(int bucket)
+        {
+            if (bucket == (int)System.Globalization.UnicodeCategory.Surrogate)
+            {
+                // surrogates are exactly U+D800 to U+DFFF
+                return CharInterval.For((char)0xd800, (char)0xdfff);
+            }
+            else if (bucket == (int)System.Globalization.UnicodeCategory.Control)
+            {
+                //Controls are U+0000 to U+001F and U+007F to U+009F
+                return CharInterval.For((char)0x0000, (char)0x009f);
+            }
+            else
+            {
+                //Otherwise, return all characters from the first non-control character
+                return CharInterval.For((char)0x0020, (char)0xffff);
+            }
         }
     }
 }

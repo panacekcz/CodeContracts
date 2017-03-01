@@ -807,10 +807,31 @@ namespace Microsoft.Research.AbstractDomains.Strings
             #endregion
             #region String operations returning integers
 
+            private char Max(CharacterSet cs)
+            {
+                for(int i = char.MaxValue; i >= char.MinValue; --i)
+                {
+                    if (cs.Contains(classification[(char)i]))
+                    {
+                        return (char)i;
+                    }
+                }
+                throw new InvalidOperationException();
+            }
+            private char Min(CharacterSet cs)
+            {
+                for (int i = char.MinValue; i <= char.MaxValue; ++i)
+                {
+                    if (cs.Contains(classification[(char)i]))
+                    {
+                        return (char)i;
+                    }
+                }
+                throw new InvalidOperationException();
+            }
+
             private bool CanBeLess(CharacterInclusion<CharacterSet> self, CharacterInclusion<CharacterSet> other)
             {
-                //TODO: VD: use interval approximations of character classes
-#if vdfalse
                 // If other must be empty, self cannot ever be less
                 if (other.MustBeEmpty)
                 {
@@ -822,7 +843,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     return true;
                 }
 
-                // Now we know that self.mandatory and other.allowed are non-empty
+                // Now we know that self.mandatory, self.allowed and other.allowed are non-empty
 
                 char maxOther = Max(other.allowed);
                 char minSelf = Min(self.allowed);
@@ -844,8 +865,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
 
                 return false;
-#endif
-                return true;
             }
             ///<inheritdoc/>
             public CompareResult CompareOrdinal(WithConstants<CharacterInclusion<CharacterSet>> self, WithConstants<CharacterInclusion<CharacterSet>> other)
