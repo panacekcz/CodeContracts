@@ -104,9 +104,9 @@ namespace Microsoft.Research.CodeAnalysis
           case Analyzers.Strings.StringDomainKind.Suffix:
             return CreateFactoryForAbstraction(new AbstractDomains.Strings.Suffix.Operations<BoxedVariable<Variable>>());
           case Analyzers.Strings.StringDomainKind.CharacterInclusionASCII:
-            return CreateFactoryForAbstraction(new AbstractDomains.Strings.CharacterInclusion.Operations<BoxedVariable<Variable>>(new ASCIIClassification()));
+            return CreateFactoryForAbstraction(new AbstractDomains.Strings.CharacterInclusion<BitArrayCharacterSet>.Operations<BoxedVariable<Variable>>(new ASCIIClassification(), new BitArrayCharacterSetFactory()));
           case Analyzers.Strings.StringDomainKind.CharacterInclusionFull:
-            return CreateFactoryForAbstraction(new AbstractDomains.Strings.CharacterInclusion.Operations<BoxedVariable<Variable>>(new CompleteClassification()));
+            return CreateFactoryForAbstraction(new AbstractDomains.Strings.CharacterInclusion<BitArrayCharacterSet>.Operations<BoxedVariable<Variable>>(new CompleteClassification(), new BitArrayCharacterSetFactory()));
           case Analyzers.Strings.StringDomainKind.Bricks:
             IBricksPolicy policy = new DefaultBricksPolicy { MergeConstantSets = true, ExpandConstantRepetitions = false };
             return CreateFactoryForAbstraction(new AbstractDomains.Strings.Bricks.Operations<BoxedVariable<Variable>>(policy));

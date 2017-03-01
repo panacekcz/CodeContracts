@@ -24,9 +24,11 @@ using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using Microsoft.Research.CodeAnalysis;
+using Microsoft.Research.DataStructures;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
+  
     /// <summary>
     /// Represents an element of Character Inclusion abstract domain.
     /// </summary>
@@ -35,11 +37,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// The set of mandatory characters is a subset of the set of allowed characters,
     /// the only exception is the bottom element.
     /// </remarks>
-    public class CharacterInclusion : IStringAbstraction<CharacterInclusion, string>
+    public class CharacterInclusion<CharacterSet> : IStringInterval<CharacterInclusion<CharacterSet>>
+        where CharacterSet : ICharacterSet<CharacterSet>
     {
         #region Internal state
         internal readonly ICharacterClassification classification;
-        internal readonly BitArray mandatory, allowed;
+        internal readonly CharacterSet mandatory, allowed;
         #endregion
 
         #region Internal helper methods
@@ -48,9 +51,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="value">The value to which all elments of the array are initialized.</param>
         /// <returns>A new instance of <see cref="BitArray"/>.</returns>
-        internal BitArray CreateBitArrayFor(bool value)
+        internal CharacterSet CreateCharacterSetFor(bool value)
         {
-            return new BitArray(classification.Buckets, value);
+            return allowed.Create(value, classification.Buckets);
         }
         /// <summary>
         /// Creates a <see cref="BitArray"/> initialized using a string constant.
@@ -58,178 +61,59 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="constant">String constant containing characters that should be set in the array.</param>
         /// <returns>A new instance of <see cref="BitArray"/> where the elements corresponding to characters in
         /// <paramref name="constant"/> are set.</returns>
-        internal BitArray CreateBitArrayFor(string constant)
+        internal CharacterSet CreateCharacterSetFor(string constant)
         {
             Contract.Requires(constant != null);
 
-            BitArray array = new System.Collections.BitArray(classification.Buckets);
-            foreach (char character in constant)
-            {
-                array[classification[character]] = true;
-            }
+            CharacterSet array = allowed.Empty();
+            AddCharactersFrom(array, constant);
             return array;
         }
+        internal CharacterSet CreateCharacterSetFor(string constant, ICharacterSetFactory<CharacterSet> setFactory)
+        {
+            Contract.Requires(constant != null);
+            Contract.Requires(setFactory != null);
 
-        internal BitArray CreateBitArrayFor(IEnumerable<CharInterval> intervals)
+            CharacterSet characterSet = setFactory.Create(false, classification.Buckets);
+            AddCharactersFrom(characterSet, constant);
+            return characterSet;
+        }
+        internal void AddCharactersFrom(CharacterSet array, string constant)
+        {
+            foreach (char character in constant)
+            {
+                array.Add(classification[character]);
+            }
+        }
+        internal CharacterSet CreateCharacterSetFor(IEnumerable<CharInterval> intervals)
         {
             Contract.Requires(intervals != null);
 
-            BitArray array = new System.Collections.BitArray(classification.Buckets);
+            CharacterSet array = allowed.Empty();
             foreach (CharInterval interval in intervals)
             {
                 for (int character = interval.LowerBound; character <= interval.UpperBound; ++character)
-                    array[classification[(char)character]] = true;
+                    array.Add(classification[(char)character]);
+            }
+            return array;
+        }
+        private CharacterSet CreateCharacterSetFor(CharInterval interval)
+        {
+            CharacterSet array = allowed.Empty();
+            for (int character = interval.LowerBound; character <= interval.UpperBound; ++character)
+            {
+                array.Add(classification[(char)character]);
             }
             return array;
         }
 
-        /// <summary>
-        /// Compares two bit arrays of equal length.
-        /// </summary>
-        /// <param name="arrayA">The first bit array.</param>
-        /// <param name="arrayB">The second bit array.</param>
-        /// <returns><see langword="true"/>, if the array have the same bits set.</returns>
-        internal static bool Equal(BitArray arrayA, BitArray arrayB)
+        internal static bool AllowedIntersects(CharacterInclusion<CharacterSet> setA, CharacterInclusion<CharacterSet> setB)
         {
-            Contract.Requires(arrayA != null && arrayB != null);
-            Contract.Requires(arrayA.Length == arrayB.Length);
-
-            for (int i = 0; i < arrayA.Length; ++i)
-            {
-                if (arrayA[i] != arrayB[i])
-                    return false;
-            }
-            return true;
+            return setA.allowed.Intersects(setB.allowed);
         }
-
-        /// <summary>
-        /// Determines whether a bit array represents a subset
-        /// of another bit array with the same length.
-        /// </summary>
-        /// <param name="arrayA">The first bit array.</param>
-        /// <param name="arrayB">The second bit array.</param>
-        /// <returns><see langword="true"/>, if all bits in <paramref name="arrayA"/>
-        /// are also set in <paramref name="arrayB"/>.</returns>
-        internal static bool Subset(BitArray arrayA, BitArray arrayB)
+        internal static bool MandatorySubsetAllowed(CharacterInclusion<CharacterSet> setMandatory, CharacterInclusion<CharacterSet> setAllowed)
         {
-            Contract.Requires(arrayA.Length == arrayB.Length);
-
-            for (int i = 0; i < arrayA.Length; ++i)
-            {
-                if (arrayA[i] && !arrayB[i])
-                    return false;
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Determines whether two bit array intersect.
-        /// </summary>
-        /// <param name="arrayA">The first bit array.</param>
-        /// <param name="arrayB">The second bit array.</param>
-        /// <returns><see langword="true"/> if there exists a bit
-        /// that is set both in
-        /// <paramref name="arrayA"/> and <paramref name="arrayB"/>.</returns>
-        internal static bool Intersects(BitArray arrayA, BitArray arrayB)
-        {
-            Contract.Requires(arrayA.Length == arrayB.Length);
-
-            for (int i = 0; i < arrayA.Length; ++i)
-            {
-                if (arrayA[i] && arrayB[i])
-                    return true;
-            }
-            return false;
-        }
-        /// <summary>
-        /// Counts the number of bits set in the array.
-        /// </summary>
-        /// <param name="array">An array of bits.</param>
-        /// <returns>Number of set bits in <paramref name="array"/>.</returns>
-        internal static int CountBits(BitArray array)
-        {
-            int bits = 0;
-            for (int i = 0; i < array.Length; ++i)
-            {
-                if (array[i])
-                {
-                    bits++;
-                }
-            }
-            return bits;
-        }
-        /// <summary>
-        /// Finds the index of the first bit set in an array.
-        /// </summary>
-        /// <param name="array">An array of bits.</param>
-        /// <returns>The lowest index of a bit set in <paramref name="array"/>,
-        /// or -1 if no bit is set.</returns>
-        internal static int Min(BitArray array)
-        {
-            Contract.Requires(array != null);
-
-            for (int i = 0; i < array.Length; ++i)
-            {
-                if (array[i])
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
-        /// <summary>
-        /// Finds the index of the last bit set in an array.
-        /// </summary>
-        /// <param name="array">An array of bits.</param>
-        /// <returns>The highest index of a bit set in <paramref name="array"/>,
-        /// or -1 if no bit is set.</returns>
-        internal static int Max(BitArray array)
-        {
-            Contract.Requires(array != null);
-
-            for (int i = array.Length - 1; i >= 0; --i)
-            {
-                if (array[i])
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
-        /// <summary>
-        /// Creates a new bit array by AND operation of two arrays.
-        /// </summary>
-        /// <param name="arrayA">The first bit array.</param>
-        /// <param name="arrayB">The second bit array.</param>
-        /// <returns>A new instance of bit array representing the conjunction of 
-        /// <paramref name="arrayA"/> and <paramref name="arrayB"/>.
-        /// </returns>
-        internal static BitArray And(BitArray arrayA, BitArray arrayB)
-        {
-            BitArray newArray = new BitArray(arrayA);
-            return newArray.And(arrayB);
-        }
-        /// <summary>
-        /// Creates a new bit array by OR operation of two arrays.
-        /// </summary>
-        /// <param name="arrayA">The first bit array.</param>
-        /// <param name="arrayB">The second bit array.</param>
-        /// <returns>A new instance of bit array representing the disjunction of 
-        /// <paramref name="arrayA"/> and <paramref name="arrayB"/>.
-        /// </returns>
-        internal static BitArray Or(BitArray arrayA, BitArray arrayB)
-        {
-            BitArray newArray = new BitArray(arrayA);
-            return newArray.Or(arrayB);
-        }
-
-        internal static bool AllowedIntersects(CharacterInclusion setA, CharacterInclusion setB)
-        {
-            return Intersects(setA.allowed, setB.allowed);
-        }
-        internal static bool MandatorySubsetAllowed(CharacterInclusion setMandatory, CharacterInclusion setAllowed)
-        {
-            return Subset(setMandatory.mandatory, setAllowed.allowed);
+            return setMandatory.mandatory.IsSubset(setAllowed.allowed);
         }
 
         #endregion
@@ -240,84 +124,87 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="top">Whether the element should be top (<see langword="true"/>) or bottom (<see langword="false"/>).</param>
         /// <param name="classification">The character classification used in the abstract domain.</param>
-        public CharacterInclusion(bool top, ICharacterClassification classification)
+        public CharacterInclusion(bool top, ICharacterClassification classification, ICharacterSetFactory<CharacterSet> setFactory)
         {
             Contract.Requires(classification != null);
 
             this.classification = classification;
-            mandatory = CreateBitArrayFor(!top);
-            allowed = CreateBitArrayFor(top);
+            mandatory = setFactory.Create(!top, classification.Buckets);
+            allowed = setFactory.Create(top, classification.Buckets);
         }
         /// <summary>
         /// Contsturcts an abstract element for the specified string constant.
         /// </summary>
         /// <param name="constant">The concrete constant string.</param>
         /// <param name="classification">The character classification used in the abstract domain.</param>
-        public CharacterInclusion(string constant, ICharacterClassification classification)
+        public CharacterInclusion(string constant, ICharacterClassification classification, ICharacterSetFactory<CharacterSet> setFactory)
         {
             this.classification = classification;
-            allowed = mandatory = CreateBitArrayFor(constant);
+            
+            allowed = mandatory = CreateCharacterSetFor(constant, setFactory);
         }
 
-        public CharacterInclusion(string mandatoryCharacters, string allowedCharacters, ICharacterClassification classification)
+        public CharacterInclusion(string mandatoryCharacters, string allowedCharacters, ICharacterClassification classification, ICharacterSetFactory<CharacterSet> setFactory)
         {
             this.classification = classification;
-            this.mandatory = CreateBitArrayFor(mandatoryCharacters);
-            this.allowed = CreateBitArrayFor(allowedCharacters);
+            this.mandatory = CreateCharacterSetFor(mandatoryCharacters, setFactory);
+            this.allowed = CreateCharacterSetFor(allowedCharacters, setFactory);
         }
 
-        private CharacterInclusion(IEnumerable<CharInterval> mandatory, IEnumerable<CharInterval> allowed, ICharacterClassification classification)
-        {
-            this.classification = classification;
-            this.mandatory = CreateBitArrayFor(mandatory);
-            this.allowed = CreateBitArrayFor(allowed);
-        }
-
-
-        private CharacterInclusion(BitArray mandatory, BitArray allowed, ICharacterClassification classification)
+        private CharacterInclusion(CharacterSet mandatory, CharacterSet allowed, ICharacterClassification classification)
         {
             this.classification = classification;
             this.mandatory = mandatory;
             this.allowed = allowed;
         }
 
-        public CharacterInclusion Constant(string c)
+        public CharacterInclusion<CharacterSet> Empty
         {
-            return new CharacterInclusion(c, classification);
+            get
+            {
+                CharacterSet empty = CreateCharacterSetFor(false);
+                return new CharacterInclusion<CharacterSet>(empty, empty, classification);
+            }
         }
-        public CharacterInclusion FromDisallowed(IEnumerable<CharInterval> intervals)
+        public CharacterInclusion<CharacterSet> Constant(string c)
+        {
+            CharacterSet characterSet = CreateCharacterSetFor(c);
+            return new CharacterInclusion<CharacterSet>(characterSet, characterSet, classification);
+        }
+        public CharacterInclusion<CharacterSet> FromDisallowed(IEnumerable<CharInterval> intervals)
         {
             //overapproximate all strings that do not contain a character from the intervals
-            BitArray disallowed = CreateBitArrayFor(intervals);
+            CharacterSet disallowed = CreateCharacterSetFor(intervals);
             for (int i = 0; i < classification.Buckets; ++i)
             {
-                if (disallowed[i] && !classification.IsSingleton(i))
+                if (disallowed.Contains(i) && !classification.IsSingleton(i))
                 {
                     // we allow non-singleton classes, because we do not know
                     // that all characters from the class were disallowed
-                    disallowed[i] = false;
+                    disallowed.Remove(i);
                 }
             }
+            disallowed.Invert(classification.Buckets);
 
-            return new CharacterInclusion(CreateBitArrayFor(false), disallowed.Not(), classification);
+            return new CharacterInclusion<CharacterSet>(CreateCharacterSetFor(false), disallowed, classification);
         }
-        public CharacterInclusion Character(IEnumerable<CharInterval> intervals, bool closed)
+        public CharacterInclusion<CharacterSet> Character(IEnumerable<CharInterval> intervals, bool closed)
         {
-            BitArray allowed = CreateBitArrayFor(intervals);
-            BitArray mandatory;
-            if (CountBits(allowed) == 1)
+            CharacterSet allowed = CreateCharacterSetFor(intervals);
+            CharacterSet mandatory;
+            if (allowed.IsSingleton)
             {
                 mandatory = allowed;
             }
             else
             {
-                mandatory = CreateBitArrayFor(false);
+                mandatory = CreateCharacterSetFor(false);
             }
             if (!closed)
             {
-                allowed = CreateBitArrayFor(true);
+                allowed = CreateCharacterSetFor(true);
             }
-            return new CharacterInclusion(mandatory, allowed, classification);
+            return new CharacterInclusion<CharacterSet>(mandatory, allowed, classification);
         }
 
         #endregion
@@ -326,21 +213,21 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <summary>
         /// Gets the top element of the Character Inclusion domain.
         /// </summary>
-        public CharacterInclusion Top
+        public CharacterInclusion<CharacterSet> Top
         {
             get
             {
-                return new CharacterInclusion(true, classification);
+                return new CharacterInclusion<CharacterSet>(CreateCharacterSetFor(false), CreateCharacterSetFor(true), classification);
             }
         }
         /// <summary>
         /// Gets the top element of the Character Inclusion domain.
         /// </summary>
-        public CharacterInclusion Bottom
+        public CharacterInclusion<CharacterSet> Bottom
         {
             get
             {
-                return new CharacterInclusion(false, classification);
+                return new CharacterInclusion<CharacterSet>(CreateCharacterSetFor(true), CreateCharacterSetFor(false), classification);
             }
         }
         ///<inheritdoc/>
@@ -348,12 +235,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                for (int i = 0; i < allowed.Length; ++i)
-                {
-                    if (mandatory[i] || !allowed[i])
-                        return false;
-                }
-                return true;
+                return mandatory.IsEmpty && allowed.IsFull(classification.Buckets);
             }
         }
         ///<inheritdoc/>
@@ -361,38 +243,33 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return !Subset(mandatory, allowed);
+                return !mandatory.IsSubset(allowed);
             }
         }
         ///<inheritdoc/>
         public bool ContainsValue(string value)
         {
-            BitArray notFound = new BitArray(mandatory);
+            CharacterSet notFound = mandatory.MutableClone();
             // Check that all characters of value are allowed
             foreach (char character in value)
             {
-                if (!allowed[classification[character]])
+                if (!allowed.Contains(classification[character]))
                     return false;
-                notFound[classification[character]] = false;
+                notFound.Remove(classification[character]);
             }
-            // Check that all mandatory characters are found in value
-            for (int i = 0; i < notFound.Length; ++i)
-            {
-                if (notFound[i])
-                    return false;
-            }
-            return true;
+            
+            return notFound.IsEmpty;
         }
 
         ///<inheritdoc/>
-        public bool Equals(CharacterInclusion other)
+        public bool Equals(CharacterInclusion<CharacterSet> other)
         {
-            return Equal(mandatory, other.mandatory) && Equal(allowed, other.allowed);
+            return mandatory.Equals(other.mandatory) && allowed.Equals(other.allowed);
         }
         ///<inheritdoc/>
-        public bool LessThanEqual(CharacterInclusion other)
+        public bool LessThanEqual(CharacterInclusion<CharacterSet> other)
         {
-            return Subset(other.mandatory, mandatory) && Subset(allowed, other.allowed);
+            return other.mandatory.IsSubset(mandatory) && allowed.IsSubset(other.allowed);
         }
         #endregion
 
@@ -404,7 +281,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return CountBits(allowed) == 0;
+                return allowed.IsEmpty;
             }
         }
         /// <summary>
@@ -414,12 +291,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                for (int i = 0; i < mandatory.Length; ++i)
-                {
-                    if (mandatory[i])
-                        return true;
-                }
-                return false;
+                return !mandatory.IsEmpty;
             }
         }
         /// <summary>
@@ -432,7 +304,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public bool MustContain(char character)
         {
             int bucket = classification[character];
-            return mandatory[bucket] && classification.IsSingleton(bucket);
+            return mandatory.Contains(bucket) && classification.IsSingleton(bucket);
         }
         /// <summary>
         /// Determines whether some of the concrete strings can contain a specified
@@ -442,30 +314,30 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <returns>Whether any of the concrete strings can contain <paramref name="character"/></returns>
         public bool CanContain(char character)
         {
-            return allowed[classification[character]];
+            return allowed.Contains(classification[character]);
         }
         #endregion
 
         #region Domain operations
         ///<inheritdoc/>
-        public CharacterInclusion Join(CharacterInclusion other)
+        public CharacterInclusion<CharacterSet> Join(CharacterInclusion<CharacterSet> other)
         {
             Contract.Requires(classification == other.classification);
 
-            BitArray newMandatory = And(this.mandatory, other.mandatory);
-            BitArray newAllowed = Or(this.allowed, other.allowed);
+            CharacterSet newMandatory = mandatory.Intersection(other.mandatory);
+            CharacterSet newAllowed = allowed.Union(other.allowed);
 
-            return new CharacterInclusion(newMandatory, newAllowed, classification);
+            return new CharacterInclusion<CharacterSet>(newMandatory, newAllowed, classification);
         }
         ///<inheritdoc/>
-        public CharacterInclusion Meet(CharacterInclusion other)
+        public CharacterInclusion<CharacterSet> Meet(CharacterInclusion<CharacterSet> other)
         {
             Contract.Requires(classification == other.classification);
 
-            BitArray newMandatory = Or(this.mandatory, other.mandatory);
-            BitArray newAllowed = And(this.allowed, other.allowed);
+            CharacterSet newMandatory = mandatory.Union(other.mandatory);
+            CharacterSet newAllowed = allowed.Intersection(other.allowed);
 
-            return new CharacterInclusion(newMandatory, newAllowed, classification);
+            return new CharacterInclusion<CharacterSet>(newMandatory, newAllowed, classification);
         }
         #endregion
 
@@ -476,7 +348,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="other">Abstraction of the other string.</param>
         /// <returns>Abstraction for combinations of this string and <paramref name="other"/>.</returns>
-        public CharacterInclusion Combine(CharacterInclusion other)
+        public CharacterInclusion<CharacterSet> Combine(CharacterInclusion<CharacterSet> other)
         {
             Contract.Requires(classification == other.classification);
 
@@ -485,10 +357,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
             if (other.IsBottom)
                 return other;
 
-            BitArray newMandatory = Or(mandatory, other.mandatory);
-            BitArray newAllowed = Or(allowed, other.allowed);
+            CharacterSet newMandatory = mandatory.Union(other.mandatory);
+            CharacterSet newAllowed = allowed.Union(other.allowed);
 
-            return new CharacterInclusion(newMandatory, newAllowed, classification);
+            return new CharacterInclusion<CharacterSet>(newMandatory, newAllowed, classification);
         }
         #endregion
 
@@ -496,41 +368,48 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// Implements string operations for the Character Inclusion abstract domain.
         /// </summary>
         /// <typeparam name="Variable">The type representing variables.</typeparam>
-        public class Operations<Variable> : IStringOperations<CharacterInclusion, Variable>
+        public class Operations<Variable> : IStringOperations<CharacterInclusion<CharacterSet>, Variable>
           where Variable : class, IEquatable<Variable>
         {
             private readonly ICharacterClassification classification;
+            private readonly ICharacterSetFactory<CharacterSet> setFactory;
 
             /// <summary>
             /// Construct operations for <see cref="CharacterInclusion"/> elements 
             /// with the specified character classification.
             /// </summary>
             /// <param name="classification">The character classifcation used by the elements.</param>
-            public Operations(ICharacterClassification classification)
+            public Operations(ICharacterClassification classification, ICharacterSetFactory<CharacterSet> setFactory)
             {
                 this.classification = classification;
+                this.setFactory = setFactory;
             }
             #region Factory
             ///<inheritdoc/>
-            public CharacterInclusion Top
+            public CharacterInclusion<CharacterSet> Top
             {
-                get { return new CharacterInclusion(true, classification); }
+                get { return new CharacterInclusion<CharacterSet>(true, classification, setFactory); }
             }
             ///<inheritdoc/>
-            public CharacterInclusion Constant(string constant)
+            public CharacterInclusion<CharacterSet> Constant(string constant)
             {
-                return new CharacterInclusion(constant, classification);
+                return new CharacterInclusion<CharacterSet>(constant, classification, setFactory);
             }
             #endregion
 
+            private CharacterInclusion<CharacterSet> For(CharacterSet required, CharacterSet allowed)
+            {
+                return new CharacterInclusion<CharacterSet>(required, allowed, classification);
+            }
+
             #region Operations returning strings
             ///<inheritdoc/>
-            public CharacterInclusion Concat(WithConstants<CharacterInclusion> left, WithConstants<CharacterInclusion> right)
+            public CharacterInclusion<CharacterSet> Concat(WithConstants<CharacterInclusion<CharacterSet>> left, WithConstants<CharacterInclusion<CharacterSet>> right)
             {
                 return left.ToAbstract(this).Combine(right.ToAbstract(this));
             }
             ///<inheritdoc/>
-            public CharacterInclusion Insert(WithConstants<CharacterInclusion> self, IndexInterval index, WithConstants<CharacterInclusion> other)
+            public CharacterInclusion<CharacterSet> Insert(WithConstants<CharacterInclusion<CharacterSet>> self, IndexInterval index, WithConstants<CharacterInclusion<CharacterSet>> other)
             {
                 IndexInt lowestIndex = index.LowerBound;
 
@@ -538,13 +417,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     // If the string is constant, index must be at most its length
                     if (lowestIndex > self.Constant.Length)
-                        return new CharacterInclusion(false, classification);
+                        return new CharacterInclusion<CharacterSet>(false, classification, setFactory);
                 }
                 else
                 {
                     // If the string is empty, index must be 0
                     if (self.Abstract.MustBeEmpty && lowestIndex > 0)
-                        return new CharacterInclusion(false, classification);
+                        return new CharacterInclusion<CharacterSet>(false, classification, setFactory);
                 }
 
                 return self.ToAbstract(this).Combine(other.ToAbstract(this));
@@ -566,42 +445,34 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 return interval.IsConstant && classification.IsSingleton(classification[interval.LowerBound]);
             }
-            private BitArray CreateBitArrayFor(CharInterval interval)
-            {
-                BitArray array = new System.Collections.BitArray(classification.Buckets);
-                for (int character = interval.LowerBound; character <= interval.UpperBound; ++character)
-                {
-                    array[classification[(char)character]] = true;
-                }
-                return array;
-            }
+
             ///<inheritdoc/>
-            public CharacterInclusion Replace(CharacterInclusion self, CharInterval from, CharInterval to)
+            public CharacterInclusion<CharacterSet> Replace(CharacterInclusion<CharacterSet> self, CharInterval from, CharInterval to)
             {
-                BitArray fromArray = CreateBitArrayFor(from);
-                BitArray toArray = CreateBitArrayFor(to);
+                CharacterSet fromArray = self.CreateCharacterSetFor(from);
+                CharacterSet toArray = self.CreateCharacterSetFor(to);
 
-                BitArray newAllowed = self.allowed;
+                CharacterSet newAllowed = self.allowed;
 
-                if (Intersects(newAllowed, fromArray))
+                if (newAllowed.Intersects(fromArray))
                 {
                     // Copy the array so that it can be modified
-                    newAllowed = new BitArray(newAllowed);
+                    newAllowed = newAllowed.MutableClone();
 
                     // Some character may be replaced
                     if (IsSingleCharInterval(from))
                     {
                         // We know exactly which one it is,
                         // so we can remove it
-                        newAllowed[classification[from.LowerBound]] = false;
+                        newAllowed.Remove(classification[from.LowerBound]);
                     }
 
                     // We must add the possible replacements
-                    newAllowed.Or(toArray);
+                    newAllowed.UnionWith(toArray);
                 }
 
                 // Copy the array so that it can be modified
-                BitArray newMandatory = new BitArray(self.mandatory);
+                CharacterSet newMandatory = self.mandatory.MutableClone();
 
                 // If all of the possible replaced characters are mandatory,
                 // and do not have equivalents, replacement must take place.
@@ -616,41 +487,41 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
 
                 // Invert the from array (mutable)
-                BitArray notFromArray = fromArray.Not();
-                newMandatory.And(fromArray);
+                fromArray.Invert(classification.Buckets);
+                newMandatory.IntersectWith(fromArray);
 
                 if (mustReplace && to.IsConstant)
                 {
                     // Replacement must take place and we know what
                     // the replacement is
-                    newMandatory[classification[to.LowerBound]] = true;
+                    newMandatory.Add(classification[to.LowerBound]);
                 }
 
-                return new CharacterInclusion(newMandatory, newAllowed, classification);
+                return new CharacterInclusion<CharacterSet>(newMandatory, newAllowed, classification);
             }
             ///<inheritdoc/>
-            public CharacterInclusion Replace(WithConstants<CharacterInclusion> self,
-              WithConstants<CharacterInclusion> from,
-              WithConstants<CharacterInclusion> to)
+            public CharacterInclusion<CharacterSet> Replace(
+              WithConstants<CharacterInclusion<CharacterSet>> self,
+              WithConstants<CharacterInclusion<CharacterSet>> from,
+              WithConstants<CharacterInclusion<CharacterSet>> to)
             {
-                CharacterInclusion selfSet = self.ToAbstract(this);
-                CharacterInclusion fromSet = from.ToAbstract(this);
-                CharacterInclusion toSet = to.ToAbstract(this);
+                CharacterInclusion<CharacterSet> selfSet = self.ToAbstract(this);
+                CharacterInclusion<CharacterSet> fromSet = from.ToAbstract(this);
+                CharacterInclusion<CharacterSet> toSet = to.ToAbstract(this);
 
                 if (!CanContain(selfSet, fromSet))
                 {
                     return selfSet;
                 }
 
-                BitArray newAllowed = Or(selfSet.allowed, toSet.allowed);
-                BitArray newMandatory = new BitArray(fromSet.allowed).Not();
-                newMandatory.And(selfSet.mandatory);
+                CharacterSet newAllowed = selfSet.allowed.Union(toSet.allowed);
+                CharacterSet newMandatory = selfSet.mandatory.Except(fromSet.allowed);
 
-                return new CharacterInclusion(newMandatory, newAllowed, classification);
+                return new CharacterInclusion<CharacterSet>(newMandatory, newAllowed, classification);
             }
 
             ///<inheritdoc/>
-            public CharacterInclusion Substring(CharacterInclusion self, IndexInterval index, IndexInterval length)
+            public CharacterInclusion<CharacterSet> Substring(CharacterInclusion<CharacterSet> self, IndexInterval index, IndexInterval length)
             {
                 bool lengthSpecified = !length.LowerBound.IsInfinite;
 
@@ -662,11 +533,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 bool full = !lengthSpecified && index.IsFiniteConstant && index.UpperBound == 0;
                 bool willNotBeEmpty = lengthSpecified && length.LowerBound > 0;
 
-                return self.Part(mustNotBeEmpty, empty, willNotBeEmpty, full);
+                return Part(self, mustNotBeEmpty, empty, willNotBeEmpty, full);
             }
 
             ///<inheritdoc/>
-            public CharacterInclusion Remove(CharacterInclusion self, IndexInterval index, IndexInterval length)
+            public CharacterInclusion<CharacterSet> Remove(CharacterInclusion<CharacterSet> self, IndexInterval index, IndexInterval length)
             {
                 bool lengthSpecified = !length.LowerBound.IsInfinite;
 
@@ -678,27 +549,27 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 bool full = length.IsFiniteConstant && length.UpperBound == 0;
                 bool willNotBeEmpty = index.LowerBound > 0;
 
-                return self.Part(mustNotBeEmpty, empty, willNotBeEmpty, full);
+                return Part(self, mustNotBeEmpty, empty, willNotBeEmpty, full);
             }
 
             ///<inheritdoc/>
-            public CharacterInclusion PadLeftRight(CharacterInclusion self, IndexInterval length, CharInterval fill, bool right)
+            public CharacterInclusion<CharacterSet> PadLeftRight(CharacterInclusion<CharacterSet> self, IndexInterval length, CharInterval fill, bool right)
             {
-                return self.Pad(length, fill);
+                return Pad(self, length, fill);
             }
 
             /// <summary>
             /// Determines whether the bit array represents exactly one character.
             /// </summary>
-            /// <param name="array">A bit array of character classes.</param>
-            /// <returns>Whether the bit array allows exactly one character class with
+            /// <param name="set">A set of character classes.</param>
+            /// <returns>Whether the character set allows exactly one character class with
             /// exactly one character.</returns>
-            private bool IsSingletonSet(BitArray array)
+            private bool IsSingletonSet(CharacterSet set)
             {
                 bool found = false;
-                for (int i = 0; i < array.Count; ++i)
+                for (int i = 0; i < classification.Buckets; ++i)
                 {
-                    if (array[i])
+                    if (set.Contains(i))
                     {
                         if (found)
                         {
@@ -721,28 +592,26 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
 
             ///<inheritdoc/>
-            public CharacterInclusion Trim(WithConstants<CharacterInclusion> self, WithConstants<CharacterInclusion> trimmed)
+            public CharacterInclusion<CharacterSet> Trim(WithConstants<CharacterInclusion<CharacterSet>> self, WithConstants<CharacterInclusion<CharacterSet>> trimmed)
             {
-                CharacterInclusion selfSet = self.ToAbstract(this);
-                CharacterInclusion trimmedSet = trimmed.ToAbstract(this);
+                CharacterInclusion<CharacterSet> selfSet = self.ToAbstract(this);
+                CharacterInclusion<CharacterSet> trimmedSet = trimmed.ToAbstract(this);
 
-                if (Subset(selfSet.allowed, trimmedSet.mandatory) && IsSingletonSet(selfSet.allowed))
+                if (selfSet.allowed.IsSubset(trimmedSet.mandatory) && IsSingletonSet(selfSet.allowed))
                 {
                     // If all allowed characters are provably trimmed, the result is empty string
-                    return new CharacterInclusion("", classification);
+                    return selfSet.Empty;
                 }
                 else
                 {
                     // Otherwise, keep in mandatory set those, which are not allowed in the trimmed set
-                    BitArray newMandatory = new BitArray(trimmedSet.allowed);
-                    newMandatory.Not();
-                    newMandatory.And(selfSet.mandatory);
+                    CharacterSet newMandatory = selfSet.mandatory.Except(trimmedSet.allowed);
 
-                    return new CharacterInclusion(newMandatory, selfSet.allowed, classification);
+                    return new CharacterInclusion<CharacterSet>(newMandatory, selfSet.allowed, classification);
                 }
             }
             ///<inheritdoc/>
-            public CharacterInclusion TrimStartEnd(WithConstants<CharacterInclusion> self, WithConstants<CharacterInclusion> trimmed, bool end)
+            public CharacterInclusion<CharacterSet> TrimStartEnd(WithConstants<CharacterInclusion<CharacterSet>> self, WithConstants<CharacterInclusion<CharacterSet>> trimmed, bool end)
             {
                 return Trim(self, trimmed);
             }
@@ -750,7 +619,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             #region Predicate operations
             ///<inheritdoc/>
-            public IStringPredicate IsEmpty(CharacterInclusion self, Variable selfVariable)
+            public IStringPredicate IsEmpty(CharacterInclusion<CharacterSet> self, Variable selfVariable)
             {
                 if (self.MustBeEmpty)
                 {
@@ -774,22 +643,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
 
             private IStringPredicate ContainCommon(
-              WithConstants<CharacterInclusion> self, Variable selfVariable,
-              WithConstants<CharacterInclusion> other, Variable otherVariable, bool any)
+              WithConstants<CharacterInclusion<CharacterSet>> self, Variable selfVariable,
+              WithConstants<CharacterInclusion<CharacterSet>> other, Variable otherVariable, bool any)
             {
                 // any = containment is true if other is anywhere
 
-                CharacterInclusion selfSet = self.ToAbstract(this);
+                CharacterInclusion<CharacterSet> selfSet = self.ToAbstract(this);
 
                 if (!other.IsConstant)
                 {
-                    CharacterInclusion otherSet = other.Abstract;
+                    CharacterInclusion<CharacterSet> otherSet = other.Abstract;
 
                     if (otherSet.MustBeEmpty)
                     {
                         return FlatPredicate.True;
                     }
-                    if (!Subset(otherSet.mandatory, selfSet.allowed))
+                    if (!otherSet.mandatory.IsSubset(selfSet.allowed))
                     {
                         return FlatPredicate.False;
                     }
@@ -799,13 +668,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     if (selfVariable != null)
                     {
                         //if we assume the predicate, then we must contain all mandatory chars from the substring
-                        CharacterInclusion trueAbstraction = otherSet.Extend();
+                        CharacterInclusion<CharacterSet> trueAbstraction = Extend(otherSet);
                         return StringAbstractionPredicate.ForTrue(selfVariable, trueAbstraction);
                     }
                     else if (otherVariable != null)
                     {
                         // if we assume the predicate, then the var must only contain allowed chars from here
-                        CharacterInclusion trueAbstraction = selfSet.Part(false, false, false, false);
+                        CharacterInclusion<CharacterSet> trueAbstraction = Part(selfSet, false, false, false, false);
                         return StringAbstractionPredicate.ForTrue(otherVariable, trueAbstraction);
                     }
                     else
@@ -828,15 +697,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
                         char character = otherConstant[0];
                         int characterBucket = classification[character];
 
-                        if (!selfSet.allowed[characterBucket])
+                        if (!selfSet.allowed.Contains(characterBucket))
                         {
                             // The character is not allowed
                             return FlatPredicate.False;
                         }
-                        if (selfSet.mandatory[characterBucket] && classification.IsSingleton(characterBucket))
+                        if (selfSet.mandatory.Contains(characterBucket) && classification.IsSingleton(characterBucket))
                         {
                             // The character is mandatory in the string
-                            if (any || CountBits(selfSet.allowed) == 1)
+                            if (any || selfSet.allowed.IsSingleton)
                             {
                                 // We are looking for any occurence, or no other characters are allowed
                                 return FlatPredicate.True;
@@ -845,14 +714,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                         if (selfVariable != null)
                         {
-                            BitArray full = new BitArray(selfSet.classification.Buckets, true);
-                            BitArray empty = new BitArray(selfSet.classification.Buckets, false);
-                            BitArray with = new BitArray(selfSet.classification.Buckets, false);
-                            with.Set(characterBucket, true);
-                            BitArray without = new BitArray(with).Not();
+                            CharacterSet full = selfSet.CreateCharacterSetFor(true);
+                            CharacterSet empty = selfSet.CreateCharacterSetFor(false);
+                            CharacterSet with = empty.With(characterBucket);
+                            CharacterSet without = with.Inverted(classification.Buckets);
 
-                            CharacterInclusion trueAbstraction = new CharacterInclusion(with, full, classification);
-                            CharacterInclusion falseAbstraction = new CharacterInclusion(empty, without, classification);
+                            CharacterInclusion<CharacterSet> trueAbstraction = new CharacterInclusion<CharacterSet>(with, full, classification);
+                            CharacterInclusion<CharacterSet> falseAbstraction = new CharacterInclusion<CharacterSet>(empty, without, classification);
 
                             return StringAbstractionPredicate.For(selfVariable, trueAbstraction, falseAbstraction);
                         }
@@ -865,7 +733,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     {
                         foreach (char character in otherConstant)
                         {
-                            if (!selfSet.allowed[selfSet.classification[character]])
+                            if (!selfSet.allowed.Contains(selfSet.classification[character]))
                                 return FlatPredicate.False;
                         }
 
@@ -873,10 +741,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                         if (selfVariable != null)
                         {
-                            BitArray newMandatory = selfSet.CreateBitArrayFor(otherConstant);
-                            BitArray full = selfSet.CreateBitArrayFor(true);
+                            CharacterSet newMandatory = selfSet.CreateCharacterSetFor(otherConstant);
+                            CharacterSet full = selfSet.CreateCharacterSetFor(true);
 
-                            CharacterInclusion trueAbstraction = new CharacterInclusion(newMandatory, full, classification);
+                            CharacterInclusion<CharacterSet> trueAbstraction = new CharacterInclusion<CharacterSet>(newMandatory, full, classification);
                             return StringAbstractionPredicate.ForTrue(selfVariable, trueAbstraction);
                         }
                         else
@@ -889,39 +757,33 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             ///<inheritdoc/>
             public IStringPredicate Contains(
-              WithConstants<CharacterInclusion> self, Variable selfVariable,
-              WithConstants<CharacterInclusion> other, Variable otherVariable)
+              WithConstants<CharacterInclusion<CharacterSet>> self, Variable selfVariable,
+              WithConstants<CharacterInclusion<CharacterSet>> other, Variable otherVariable)
             {
                 return ContainCommon(self, selfVariable, other, otherVariable, true);
             }
             ///<inheritdoc/>
-            public IStringPredicate StartsWithOrdinal(
-              WithConstants<CharacterInclusion> self, Variable selfVariable,
-              WithConstants<CharacterInclusion> other, Variable otherVariable)
+            public IStringPredicate StartsEndsWithOrdinal(
+              WithConstants<CharacterInclusion<CharacterSet>> self, Variable selfVariable,
+              WithConstants<CharacterInclusion<CharacterSet>> other, Variable otherVariable, bool ends)
             {
                 return ContainCommon(self, selfVariable, other, otherVariable, false);
             }
-            ///<inheritdoc/>
-            public IStringPredicate EndsWithOrdinal(
-              WithConstants<CharacterInclusion> self, Variable selfVariable,
-              WithConstants<CharacterInclusion> other, Variable otherVariable)
-            {
-                return ContainCommon(self, selfVariable, other, otherVariable, false);
-            }
+  
             ///<inheritdoc/>
             public IStringPredicate Equals(
-              WithConstants<CharacterInclusion> self, Variable selfVariable,
-              WithConstants<CharacterInclusion> other, Variable otherVariable)
+              WithConstants<CharacterInclusion<CharacterSet>> self, Variable selfVariable,
+              WithConstants<CharacterInclusion<CharacterSet>> other, Variable otherVariable)
             {
-                CharacterInclusion selfSet = self.ToAbstract(this);
-                CharacterInclusion otherSet = other.ToAbstract(this);
+                CharacterInclusion<CharacterSet> selfSet = self.ToAbstract(this);
+                CharacterInclusion<CharacterSet> otherSet = other.ToAbstract(this);
 
                 if (selfSet.MustBeEmpty && otherSet.MustBeEmpty)
                 {
                     // Both strings must be empty, so they are equal
                     return FlatPredicate.True;
                 }
-                else if (!Subset(selfSet.mandatory, otherSet.allowed) || !Subset(otherSet.mandatory, selfSet.allowed))
+                else if (!selfSet.mandatory.IsSubset(otherSet.allowed) || !otherSet.mandatory.IsSubset(selfSet.allowed))
                 {
                     //One string must contain characters that are not allowed in the other one
                     return FlatPredicate.False;
@@ -945,8 +807,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
             #endregion
             #region String operations returning integers
 
-            private bool CanBeLess(CharacterInclusion self, CharacterInclusion other)
+            private bool CanBeLess(CharacterInclusion<CharacterSet> self, CharacterInclusion<CharacterSet> other)
             {
+                //TODO: VD: use interval approximations of character classes
+#if vdfalse
                 // If other must be empty, self cannot ever be less
                 if (other.MustBeEmpty)
                 {
@@ -960,8 +824,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 // Now we know that self.mandatory and other.allowed are non-empty
 
-                int maxOther = Max(other.allowed);
-                int minSelf = Min(self.allowed);
+                char maxOther = Max(other.allowed);
+                char minSelf = Min(self.allowed);
 
                 if (minSelf < maxOther)
                 {
@@ -970,7 +834,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
                 else
                 {
-                    int maxMandatory = Max(self.mandatory);
+                    char maxMandatory = Max(self.mandatory);
                     if (maxMandatory <= maxOther)
                     {
                         // Self can consist entirely of characters less than 
@@ -980,21 +844,23 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
 
                 return false;
+#endif
+                return true;
             }
             ///<inheritdoc/>
-            public CompareResult CompareOrdinal(WithConstants<CharacterInclusion> self, WithConstants<CharacterInclusion> other)
+            public CompareResult CompareOrdinal(WithConstants<CharacterInclusion<CharacterSet>> self, WithConstants<CharacterInclusion<CharacterSet>> other)
             {
-                CharacterInclusion selfSet = self.ToAbstract(this);
-                CharacterInclusion otherSet = other.ToAbstract(this);
+                CharacterInclusion<CharacterSet> selfSet = self.ToAbstract(this);
+                CharacterInclusion<CharacterSet> otherSet = other.ToAbstract(this);
 
                 bool less = CanBeLess(selfSet, otherSet);
                 bool greater = CanBeLess(otherSet, selfSet);
-                bool equal = Subset(selfSet.mandatory, otherSet.allowed) && Subset(otherSet.mandatory, selfSet.allowed);
+                bool equal = selfSet.mandatory.IsSubset(otherSet.allowed) && otherSet.mandatory.IsSubset(selfSet.allowed);
 
                 return CompareResultExtensions.Build(less, equal, greater);
             }
             ///<inheritdoc/>
-            public IndexInterval GetLength(CharacterInclusion self)
+            public IndexInterval GetLength(CharacterInclusion<CharacterSet> self)
             {
                 if (self.MustBeEmpty)
                 {
@@ -1002,24 +868,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
                 else
                 {
-                    return IndexInterval.For(IndexInt.For(CountBits(self.mandatory)), IndexInt.Infinity);
+                    return IndexInterval.For(IndexInt.For(self.mandatory.Count), IndexInt.Infinity);
                 }
             }
 
-            private bool CanContain(CharacterInclusion self, CharacterInclusion other)
+            private bool CanContain(CharacterInclusion<CharacterSet> self, CharacterInclusion<CharacterSet> other)
             {
-                for (int i = 0; i < self.allowed.Length; ++i)
-                {
-                    if (other.mandatory[i] && !self.allowed[i])
-                        return false;
-                }
-
-                return true;
+                return other.mandatory.IsSubset(self.allowed);
             }
 
             ///<inheritdoc/>
-            public IndexInterval IndexOf(WithConstants<CharacterInclusion> self,
-                WithConstants<CharacterInclusion> needle,
+            public IndexInterval IndexOf(WithConstants<CharacterInclusion<CharacterSet>> self,
+                WithConstants<CharacterInclusion<CharacterSet>> needle,
                 IndexInterval offset, IndexInterval count, bool last)
             {
                 if (!offset.IsFiniteConstant || offset.LowerBound != 0 || !count.IsInfinity)
@@ -1028,7 +888,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     return IndexInterval.Unknown;
                 }
 
-                CharacterInclusion selfSet = self.ToAbstract(this);
+                CharacterInclusion<CharacterSet> selfSet = self.ToAbstract(this);
 
                 if (needle.IsConstant)
                 {
@@ -1055,14 +915,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
                         }
                         else if (selfSet.MustContain(needleChar))
                         {
-                            if (!last && CountBits(selfSet.allowed) == 1)
+                            if (!last && selfSet.allowed.Count == 1)
                                 return IndexInterval.For(0);
                             else
                                 return IndexInterval.For(IndexInt.For(0), IndexInt.Infinity);
                         }
                         else
                         {
-                            if (!last && CountBits(selfSet.allowed) == 1)
+                            if (!last && selfSet.allowed.Count == 1)
                             {
                                 return IndexInterval.For(-1, 0);
                             }
@@ -1085,11 +945,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
 
-            #endregion
+#endregion
             ///<inheritdoc/>
-            public IStringPredicate RegexIsMatch(CharacterInclusion self, Variable selfVariable, Regex.AST.Element regex)
+            public IStringPredicate RegexIsMatch(CharacterInclusion<CharacterSet> self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
-                CharacterInclusionRegex characterSetRegexConverter = new CharacterInclusionRegex(self);
+                CharacterInclusionRegex<CharacterSet> characterSetRegexConverter = new CharacterInclusionRegex<CharacterSet>(self);
 
                 ProofOutcome isMatch = characterSetRegexConverter.IsMatch(regex);
 
@@ -1101,26 +961,26 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return FlatPredicate.ForProofOutcome(isMatch);
             }
             ///<inheritdoc/>
-            public CharacterInclusion SetCharAt(CharacterInclusion self, IndexInterval index, CharInterval value)
+            public CharacterInclusion<CharacterSet> SetCharAt(CharacterInclusion<CharacterSet> self, IndexInterval index, CharInterval value)
             {
-                BitArray values = CreateBitArrayFor(value);
+                CharacterSet values = self.CreateCharacterSetFor(value);
 
                 // Allowed are the old and new characters
-                BitArray allowed = Or(self.allowed, values);
+                CharacterSet allowed = self.allowed.Union(values);
                 // Mandatory is only the new character, if it is a single bucket
-                BitArray mandatory = CountBits(values) == 1 ? values : new BitArray(classification.Buckets);
+                CharacterSet mandatory = values.IsSingleton ? values : self.CreateCharacterSetFor(false);
 
-                return new CharacterInclusion(mandatory, allowed, classification);
+                return new CharacterInclusion<CharacterSet>(mandatory, allowed, classification);
             }
             ///<inheritdoc/>
-            public CharInterval GetCharAt(CharacterInclusion self, IndexInterval index)
+            public CharInterval GetCharAt(CharacterInclusion<CharacterSet> self, IndexInterval index)
             {
                 int min = char.MaxValue;
                 int max = char.MinValue;
 
                 for (int character = char.MinValue; character <= char.MaxValue; ++character)
                 {
-                    if (self.allowed[classification[(char)character]])
+                    if (self.allowed.Contains(classification[(char)character]))
                     {
                         min = Math.Min(min, character);
                         max = Math.Max(max, character);
@@ -1129,103 +989,100 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 return CharInterval.For((char)min, (char)max);
             }
-        }
-
-        #region String operations
 
 
-        /// <summary>
-        /// Creates abstraction for a part of the string.
-        /// </summary>
-        /// <param name="mustNotBeEmpty">Whether the source string is required to be non-empty.</param>
-        /// <param name="empty">Whether we take an empty part of the string.</param>
-        /// <param name="willNotBeEmpty">Whether the result string is known to be non-empty.</param>
-        /// <param name="full">Whether we take the whole string.</param>
-        /// <returns>Abstraction for a part of a string.</returns>
-        internal CharacterInclusion Part(bool mustNotBeEmpty, bool empty, bool willNotBeEmpty, bool full)
-        {
-            Contract.Requires(!(!mustNotBeEmpty && empty && full));
-            Contract.Requires(!(empty && willNotBeEmpty));
-
-            if (IsBottom)
-                return this;
-
-            if (mustNotBeEmpty && MustBeEmpty)
-                return Bottom;
-
-            if (willNotBeEmpty && CountBits(allowed) == 1)
+            /// <summary>
+            /// Creates abstraction for a part of the string.
+            /// </summary>
+            /// <param name="mustNotBeEmpty">Whether the source string is required to be non-empty.</param>
+            /// <param name="empty">Whether we take an empty part of the string.</param>
+            /// <param name="willNotBeEmpty">Whether the result string is known to be non-empty.</param>
+            /// <param name="full">Whether we take the whole string.</param>
+            /// <returns>Abstraction for a part of a string.</returns>
+            internal CharacterInclusion<CharacterSet> Part(CharacterInclusion<CharacterSet> self, bool mustNotBeEmpty, bool empty, bool willNotBeEmpty, bool full)
             {
-                // We know that the string will not be empty, but only one category
-                // is allowed, so it is mandatory.
-                return new CharacterInclusion(allowed, allowed, classification);
-            }
+                Contract.Requires(!(!mustNotBeEmpty && empty && full));
+                Contract.Requires(!(empty && willNotBeEmpty));
 
-            if (empty)
-            {
-                return new CharacterInclusion("", classification);
-            }
-            if (full)
-            {
-                return this;
-            }
+                if (self.IsBottom)
+                    return self;
 
-            BitArray newMandatory = CreateBitArrayFor(false);
-            return new CharacterInclusion(newMandatory, allowed, classification);
-        }
-        internal CharacterInclusion Extend()
-        {
-            BitArray newAllowed = CreateBitArrayFor(true);
-            return new CharacterInclusion(mandatory, newAllowed, classification);
-        }
-        private CharacterInclusion Pad(IndexInterval length, CharInterval padding)
-        {
-            BitArray newMandatory = mandatory;
-            BitArray newAllowed = allowed;
+                if (mustNotBeEmpty && self.MustBeEmpty)
+                    return self.Bottom;
 
-            if (length.LowerBound > 0 && padding.IsConstant)
-            {
-
-                int allowedCount = CountBits(allowed);
-                int paddingClass = classification[padding.LowerBound];
-
-                if (allowedCount == 0 || (allowedCount == 1 && allowed[paddingClass]))
+                if (willNotBeEmpty && self.allowed.IsSingleton)
                 {
-                    // We want to pad, the padding is known
-                    // and no other characters than padding are allowed
-                    // therefore the character must occur.
-
-                    newMandatory = new BitArray(newMandatory);
-                    newMandatory[paddingClass] = true;
+                    // We know that the string will not be empty, but only one category
+                    // is allowed, so it is mandatory.
+                    return new CharacterInclusion<CharacterSet>(self.allowed, self.allowed, classification);
                 }
-            }
 
-            // If we already have at least as many characters as the maximum length,
-            // no padding is possible.
-            if (length.UpperBound > CountBits(mandatory))
-            {
-                newAllowed = new BitArray(newAllowed);
-                for (int character = padding.LowerBound; character <= padding.UpperBound; ++character)
+                if (empty)
                 {
-                    newAllowed[classification[(char)character]] = true;
+                    return self.Empty;
                 }
+                if (full)
+                {
+                    return self;
+                }
+
+                CharacterSet newMandatory = setFactory.Create(false, classification.Buckets);
+                return new CharacterInclusion<CharacterSet>(newMandatory, self.allowed, classification);
             }
+            internal CharacterInclusion<CharacterSet> Extend(CharacterInclusion<CharacterSet> self)
+            {
+                CharacterSet newAllowed = setFactory.Create(true, classification.Buckets);
+                return new CharacterInclusion<CharacterSet>(self.mandatory, newAllowed, classification);
+            }
+            private CharacterInclusion<CharacterSet> Pad(CharacterInclusion<CharacterSet> self, IndexInterval length, CharInterval padding)
+            {
+                CharacterSet newMandatory = self.mandatory;
+                CharacterSet newAllowed = self.allowed;
 
-            return new CharacterInclusion(newMandatory, newAllowed, classification);
+                if (length.LowerBound > 0 && padding.IsConstant)
+                {
+
+                    int allowedCount = self.allowed.Count;
+                    int paddingClass = classification[padding.LowerBound];
+
+                    if (allowedCount == 0 || (allowedCount == 1 && self.allowed.Contains(paddingClass)))
+                    {
+                        // We want to pad, the padding is known
+                        // and no other characters than padding are allowed
+                        // therefore the character must occur.
+
+                        newMandatory = newMandatory.With(paddingClass);
+                    }
+                }
+
+                // If we already have at least as many characters as the maximum length,
+                // no padding is possible.
+                if (length.UpperBound > self.mandatory.Count)
+                {
+                    newAllowed = newAllowed.MutableClone();
+                    for (int character = padding.LowerBound; character <= padding.UpperBound; ++character)
+                    {
+                        newAllowed.Add(classification[(char)character]);
+                    }
+                }
+
+                return new CharacterInclusion<CharacterSet>(newMandatory, newAllowed, classification);
+            }
         }
-        #endregion
 
-        #region Object method override
+  
+#region Object method override
         public override string ToString()
         {
             StringBuilder str = new StringBuilder();
 
             int mc = 0;
 
-            for (int i = 0; i < mandatory.Length && mc < 50; ++i)
+            for (int i = 0; i < classification.Buckets && mc < 50; ++i)
             {
-                if (mandatory[i])
+                if (mandatory.Contains(i))
                 {
-                    str.Append((char)i);
+                    str.Append(classification.ToString(i));
                     ++mc;
                 }
             }
@@ -1234,11 +1091,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             mc = 0;
 
-            for (int i = 0; i < mandatory.Length && mc < 50; ++i)
+            for (int i = 0; i < classification.Buckets && mc < 50; ++i)
             {
-                if (!mandatory[i] && allowed[i])
+                if (!mandatory.Contains(i) && allowed.Contains(i))
                 {
-                    str.Append((char)i);
+                    str.Append(classification.ToString(i));
                     ++mc;
                 }
             }
@@ -1247,14 +1104,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
         public override bool Equals(object obj)
         {
-            return Equals(obj as CharacterInclusion);
+            return Equals(obj as CharacterInclusion<CharacterSet>);
         }
         public override int GetHashCode()
         {
             return 0;
         }
-        #endregion
-        #region IAbstractDomain implementation
+#endregion
+#region IAbstractDomain implementation
         bool IAbstractDomain.IsBottom
         {
             get { return IsBottom; }
@@ -1267,7 +1124,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         bool IAbstractDomain.LessEqual(IAbstractDomain a)
         {
-            return LessThanEqual(a as CharacterInclusion);
+            return LessThanEqual(a as CharacterInclusion<CharacterSet>);
         }
 
         IAbstractDomain IAbstractDomain.Bottom
@@ -1282,27 +1139,62 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public IAbstractDomain Join(IAbstractDomain a)
         {
-            return Join(a as CharacterInclusion);
+            return Join(a as CharacterInclusion<CharacterSet>);
         }
 
         public IAbstractDomain Meet(IAbstractDomain a)
         {
-            return Meet(a as CharacterInclusion);
+            return Meet(a as CharacterInclusion<CharacterSet>);
         }
 
         public IAbstractDomain Widening(IAbstractDomain prev)
         {
-            return Join(prev as CharacterInclusion);
+            return Join(prev as CharacterInclusion<CharacterSet>);
         }
 
         public object Clone()
         {
-            return new CharacterInclusion(mandatory, allowed, classification);
+            return new CharacterInclusion<CharacterSet>(mandatory, allowed, classification);
         }
         public T To<T>(IFactory<T> factory)
         {
             return factory.Constant(true);
         }
-        #endregion
+
+#endregion
+
+#region IStringInterval
+        public bool CheckMustBeLessEqualThan(CharacterInclusion<CharacterSet> greaterEqual)
+        {
+            //Checks that all strings contain only those characters that all strings in greaterEqual contain.
+            return allowed.IsSubset(greaterEqual.mandatory);
+        }
+
+        public bool TryRefineLessEqual(ref CharacterInclusion<CharacterSet> lessEqual)
+        {
+            // In lessEqual, keep the strings that contain only characters contained in all strings in this element
+            CharacterSet newAllowed = lessEqual.allowed.Intersection(mandatory);
+            if (newAllowed.Equals(lessEqual.allowed))
+                return false;
+            else
+            {
+                lessEqual = new CharacterInclusion<CharacterSet>(lessEqual.mandatory, newAllowed, lessEqual.classification);
+                return true;
+            }
+
+        }
+
+        public bool TryRefineGreaterEqual(ref CharacterInclusion<CharacterSet> greaterEqual)
+        {
+            CharacterSet newMandatory = greaterEqual.mandatory.Intersection(allowed);
+            if (newMandatory.Equals(greaterEqual.mandatory))
+                return false;
+            else
+            {
+                greaterEqual = new CharacterInclusion<CharacterSet>(newMandatory, greaterEqual.allowed, greaterEqual.classification);
+                return true;
+            }
+        }
+#endregion
     }
 }

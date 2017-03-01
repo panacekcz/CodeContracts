@@ -23,16 +23,26 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-    public class CharacterInclusionTestBase : StringAbstractionTestBase<CharacterInclusion>
+    public class CharacterInclusionTestBase : StringAbstractionTestBase<CharacterInclusion<BitArrayCharacterSet>>
     {
         protected readonly ICharacterClassification classification = new CompleteClassification();
+        protected readonly CharacterInclusion<BitArrayCharacterSet>.Operations<TestVariable> operations;
+        protected readonly CharacterInclusion<BitArrayCharacterSet> top;
+        protected readonly ICharacterSetFactory<BitArrayCharacterSet> setFactory;
 
-        protected CharacterInclusion Build(string mandatory, string additionalAllowed)
+        public CharacterInclusionTestBase()
         {
-            return new CharacterInclusion(mandatory, mandatory + additionalAllowed, classification);
+            setFactory = new BitArrayCharacterSetFactory();
+            operations = new CharacterInclusion<BitArrayCharacterSet>.Operations<TestVariable>(classification,setFactory);
+            top = operations.Top;
         }
 
-        protected WithConstants<CharacterInclusion> BuildArg(string mandatory, string additionalAllowed)
+        protected CharacterInclusion<BitArrayCharacterSet> Build(string mandatory, string additionalAllowed)
+        {
+            return new CharacterInclusion<BitArrayCharacterSet>(mandatory, mandatory + additionalAllowed, classification, setFactory);
+        }
+
+        protected WithConstants<CharacterInclusion<BitArrayCharacterSet>> BuildArg(string mandatory, string additionalAllowed)
         {
             return Arg(Build(mandatory, additionalAllowed));
         }
@@ -43,17 +53,6 @@ namespace StringDomainUnitTests
     [TestClass]
     public class CharacterInclusionOperationsTest : CharacterInclusionTestBase
     {
-        private readonly CharacterInclusion.Operations<TestVariable> operations;
-        private readonly CharacterInclusion top;
-
-        public CharacterInclusionOperationsTest()
-        {
-            operations = new CharacterInclusion.Operations<TestVariable>(classification);
-            top = new CharacterInclusion(true, classification);
-
-        }
-
-
         [TestMethod]
         public void TestReplaceChar()
         {
@@ -79,8 +78,6 @@ namespace StringDomainUnitTests
         [TestMethod]
         public void TestPadLeftPadRight()
         {
-
-
             TestPadLeftRight(false);
             TestPadLeftRight(true);
         }
@@ -126,17 +123,20 @@ namespace StringDomainUnitTests
         [TestMethod]
         public void TestStartEndsWith()
         {
-            Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg(""), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("d"), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("a"), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("b"), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("b", ""), null, Arg("b"), null).ProofOutcome);
+            foreach (bool ends in new[] { true, false })
+            {
+                Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(BuildArg("bc", "a"), null, Arg(""), null, ends).ProofOutcome);
+                Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(BuildArg("bc", "a"), null, Arg("d"), null, ends).ProofOutcome);
+                Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(BuildArg("bc", "a"), null, Arg("a"), null, ends).ProofOutcome);
+                Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(BuildArg("bc", "a"), null, Arg("b"), null, ends).ProofOutcome);
+                Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(BuildArg("b", ""), null, Arg("b"), null, ends).ProofOutcome);
 
-            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, Arg("bc"), null).ProofOutcome);
+                Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(BuildArg("bc", "a"), null, Arg("bc"), null, ends).ProofOutcome);
 
-            Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("", ""), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("", "b"), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("d", "b"), null).ProofOutcome);
+                Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("", ""), null, ends).ProofOutcome);
+                Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("", "b"), null, ends).ProofOutcome);
+                Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(BuildArg("bc", "a"), null, BuildArg("d", "b"), null, ends).ProofOutcome);
+            }
         }
 
         [TestMethod]

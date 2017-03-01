@@ -187,6 +187,7 @@
     <Compile Include="Array\NormalizedExpressions.cs" />
     <Compile Include="Array\SegmentLimit.cs" />
     <Compile Include="String\Brick.cs" />
+    <Compile Include="String\CharacterSet.cs" />
     <Compile Include="String\CharInterval.cs" />
     <Compile Include="DebugUtils.cs" />
     <Compile Include="Enum\Enum.cs" />

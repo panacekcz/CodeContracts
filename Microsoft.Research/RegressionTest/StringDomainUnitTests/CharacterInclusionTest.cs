@@ -23,58 +23,52 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class CharacterInclusionTest : CharacterInclusionTestBase
-  {
-    private readonly CharacterInclusion top;
-
-    public CharacterInclusionTest()
+    [TestClass]
+    public class CharacterInclusionTest : CharacterInclusionTestBase
     {
-      top = new CharacterInclusion(true, classification);
+        [TestMethod]
+        public void TestEqual()
+        {
+            Assert.AreEqual(Build("bc", "a"), Build("bbbbcccc", "cbacba"));
+            Assert.AreEqual(Build("", ""), Build("", ""));
+            Assert.AreNotEqual(Build("b", "ac"), Build("bc", "cbacba"));
+            Assert.AreNotEqual(Build("b", "a"), Build("b", "abc"));
+            Assert.AreNotEqual(top, Build("b", "abc"));
+            Assert.AreNotEqual(top, top.Bottom);
+        }
+
+        [TestMethod]
+        public void TestJoin()
+        {
+            Assert.AreEqual(Build("def", "abcghij"), Build("defgh", "ab").Join(Build("defij", "bc")));
+            Assert.AreEqual(Build("def", "abcghij"), Build("defgh", "abij").Join(Build("defij", "bcgh")));
+        }
+
+        [TestMethod]
+        public void TestMeet()
+        {
+            Assert.AreEqual(Build("defghij", "b"), Build("defgh", "abij").Meet(Build("defij", "bcgh")));
+        }
+
+        [TestMethod]
+        public void TestContainsValue()
+        {
+            Assert.IsTrue(Build("def", "abc").ContainsValue("ddffee"));
+            Assert.IsTrue(Build("def", "abc").ContainsValue("daebf"));
+            Assert.IsFalse(Build("def", "abc").ContainsValue("abcde"));
+            Assert.IsFalse(Build("def", "abc").ContainsValue("defg"));
+            Assert.IsFalse(Build("def", "abc").ContainsValue(""));
+        }
+
+
+
+        [TestMethod]
+        public void TestCategory()
+        {
+            CategoryClassification categoryClassification = new CategoryClassification();
+
+            Assert.AreEqual(new CharacterInclusion<BitArrayCharacterSet>("a", categoryClassification, setFactory), new CharacterInclusion<BitArrayCharacterSet>("b", categoryClassification, setFactory));
+            Assert.AreNotEqual(new CharacterInclusion<BitArrayCharacterSet>("a", categoryClassification, setFactory), new CharacterInclusion<BitArrayCharacterSet>("4", categoryClassification, setFactory));
+        }
     }
-
-    [TestMethod]
-    public void TestEqual()
-    {
-      Assert.AreEqual(Build("bc", "a"), Build("bbbbcccc", "cbacba"));
-      Assert.AreEqual(Build("", ""), Build("", ""));
-      Assert.AreNotEqual(Build("b", "ac"), Build("bc", "cbacba"));
-      Assert.AreNotEqual(Build("b", "a"), Build("b", "abc"));
-      Assert.AreNotEqual(top, Build("b", "abc"));
-      Assert.AreNotEqual(top, top.Bottom);
-    }
-
-    [TestMethod]
-    public void TestJoin()
-    {
-      Assert.AreEqual(Build("def", "abcghij"), Build("defgh", "ab").Join(Build("defij", "bc")));
-      Assert.AreEqual(Build("def", "abcghij"), Build("defgh", "abij").Join(Build("defij", "bcgh")));
-    }
-
-    [TestMethod]
-    public void TestMeet()
-    {
-      Assert.AreEqual(Build("defghij", "b"), Build("defgh", "abij").Meet(Build("defij", "bcgh")));
-    }
-
-    [TestMethod]
-    public void TestContainsValue()
-    {
-      Assert.IsTrue(Build("def", "abc").ContainsValue("ddffee"));
-      Assert.IsTrue(Build("def", "abc").ContainsValue("daebf"));
-      Assert.IsFalse(Build("def", "abc").ContainsValue("abcde"));
-      Assert.IsFalse(Build("def", "abc").ContainsValue("defg"));
-      Assert.IsFalse(Build("def", "abc").ContainsValue(""));
-    }
-
-
-
-    [TestMethod]
-    public void TestCategory()
-    {
-      CategoryClassification categoryClassification = new CategoryClassification();
-      Assert.AreEqual(new CharacterInclusion("a", categoryClassification), new CharacterInclusion("b", categoryClassification));
-      Assert.AreNotEqual(new CharacterInclusion("a", categoryClassification), new CharacterInclusion("4", categoryClassification));
-    }
-  }
 }

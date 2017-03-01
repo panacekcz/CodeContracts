@@ -25,45 +25,46 @@ using Microsoft.Research.Regex;
 namespace StringDomainUnitTests
 {
 
-  [TestClass]
-  public class CharacterInclusionRegexTest : CharacterInclusionTestBase
-  {
-    private readonly CharacterInclusion.Operations<TestVariable> operations;
-    private readonly CharacterInclusion top;
-
-    public CharacterInclusionRegexTest()
+    [TestClass]
+    public class CharacterInclusionRegexTest : CharacterInclusionTestBase
     {
-      operations = new CharacterInclusion.Operations<TestVariable>(classification);
-      top = new CharacterInclusion(true, classification);
+        [TestMethod]
+        public void TestIsMatch()
+        {
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("a", ""), null, RegexUtil.ModelForRegex("a")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("abcdef", ""), null, RegexUtil.ModelForRegex("[a-f]")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", ""), null, RegexUtil.ModelForRegex("")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("^a*\\z")));
+        }
+        [TestMethod]
+        public void TestIsNotMatch()
+        {
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("b")));
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("", "abc"), null, RegexUtil.ModelForRegex("d|e|f")));
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("b", ""), null, RegexUtil.ModelForRegex("^a*\\z")));
+        }
+        [TestMethod]
+        public void TestUnknownMatch()
+        {
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexUtil.ModelForRegex("^a")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexUtil.ModelForRegex("a\\z")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("a")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("[a-z]")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("x", "ab"), null, RegexUtil.ModelForRegex("a|b")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("x", "ab"), null, RegexUtil.ModelForRegex("a|y")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("@", ".abcdefgh_"), null, RegexUtil.ModelForRegex("^[a-z0-9_]+(?:.[a-z0-9_]+)*@[a-z0-9_]+(?:.[a-z0-9_]+)+\\z")));
 
-    }
+        }
 
-    [TestMethod]
-    public void TestIsMatch()
-    {
-      Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("a", ""), null, RegexParser.Parse("a")));
-      Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("abcdef", ""), null, RegexParser.Parse("[a-f]")));
-      Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", ""), null, RegexParser.Parse("")));
-      Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", "a"), null, RegexParser.Parse("")));
-      Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", "a"), null, RegexParser.Parse("^a*\\z")));
-    }
-    [TestMethod]
-    public void TestIsNotMatch()
-    {
-      Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("", "a"), null, RegexParser.Parse("b")));
-      Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("b", ""), null, RegexParser.Parse("^a*\\z")));
-    }
-    [TestMethod]
-    public void TestUnknownMatch()
-    {
-      Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexParser.Parse("^a")));
-      Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexParser.Parse("a\\z")));
-      Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexParser.Parse("a")));
-      Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexParser.Parse("[a-z]")));
-      Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("x", "ab"), null, RegexParser.Parse("a|b")));
-      Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("x", "ab"), null, RegexParser.Parse("a|y")));
-      Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("@", ".abcdefgh_"), null, RegexParser.Parse("^[a-z0-9_]+(?:.[a-z0-9_]+)*@[a-z0-9_]+(?:.[a-z0-9_]+)+\\z")));
 
+        [TestMethod]
+        public void Assume()
+        {
+            CharacterInclusionRegex<BitArrayCharacterSet> cir = new CharacterInclusionRegex<BitArrayCharacterSet>(top);
+            Assert.AreEqual(Build("c", "").Combine(top), cir.Assume(RegexUtil.ModelForRegex("c"), true));
+            Assert.AreEqual(Build("cd", "").Combine(top), cir.Assume(RegexUtil.ModelForRegex("cd"), true));
+            Assert.AreEqual(top, cir.Assume(RegexUtil.ModelForRegex("c|d"), true));
+        }
     }
-  }
 }

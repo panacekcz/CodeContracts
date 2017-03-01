@@ -23,146 +23,166 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  /// <summary>
-  /// Classifies characters by dividing them into equivalence classes.
-  /// </summary>
-  public interface ICharacterClassification
-  {
     /// <summary>
-    /// Gets the number of buckets.
+    /// Classifies characters by dividing them into equivalence classes.
     /// </summary>
-    int Buckets { get; }
-    /// <summary>
-    /// Classifies a chacharacter.
-    /// </summary>
-    /// <param name="index">The character to be classified.</param>
-    /// <returns>The bucket, where <paramref name="index"/> belongs.</returns>
-    int this[char index]
+    public interface ICharacterClassification
     {
-      get;
-    }
-    /// <summary>
-    /// Tells whether the bucket contains exactly one character.
-    /// </summary>
-    /// <param name="bucket">Index of the bucket.</param>
-    /// <returns>Whether the bucket of contains exactly one character.</returns>
-    bool IsSingleton(int bucket);
-  }
-
-  /// <summary>
-  /// Character classification where each character has its own class.
-  /// </summary>
-  public class CompleteClassification : ICharacterClassification
-  {
-    /// <summary>
-    /// Gets the number of buckets, which is the range of the <see cref="System.Char"/> type.
-    /// </summary>
-    public int Buckets
-    {
-      get { return 65536; }
-    }
-
-    /// <summary>
-    /// Classifies a chacharacter.
-    /// </summary>
-    /// <param name="character">The character to be classified.</param>
-    /// <returns>The bucket, where <paramref name="character"/> belongs.
-    /// Same value as <paramref name="character"/>.</returns>
-    public int this[char character]
-    {
-      get
-      {
-        return character;
-      }
-    }
-
-    /// <summary>
-    /// Tells whether the bucket contains exactly one character.
-    /// </summary>
-    /// <param name="bucket">Index of the bucket.</param>
-    /// <returns>Always <see langword="true"/>.</returns>
-    public bool IsSingleton(int bucket)
-    {
-      return true;
-    }
-  }
-
-  /// <summary>
-  /// Character classification where each ASCII character
-  /// has its category and all other character are in the same category.
-  /// </summary>
-  public class ASCIIClassification : ICharacterClassification
-  {
-    /// <summary>
-    /// Gets the number of buckets, which is the range ASCII characters + 1.
-    /// </summary>
-    public int Buckets
-    {
-      get { return 129; }
-    }
-
-    /// <summary>
-    /// Classifies a chacharacter.
-    /// </summary>
-    /// <param name="character">The character to be classified.</param>
-    /// <returns>The bucket, where <paramref name="character"/> belongs.
-    /// Same value as <paramref name="character"/> for ASCII characters,
-    /// 128 for other characters.
-    /// .</returns>
-    public int this[char character]
-    {
-      get
-      {
-        if (character < 128)
+        /// <summary>
+        /// Gets the number of buckets.
+        /// </summary>
+        int Buckets { get; }
+        /// <summary>
+        /// Classifies a chacharacter.
+        /// </summary>
+        /// <param name="index">The character to be classified.</param>
+        /// <returns>The bucket, where <paramref name="index"/> belongs.</returns>
+        int this[char index]
         {
-          return character;
+            get;
         }
-        else
-        {
-          return 128;
-        }
-      }
+        /// <summary>
+        /// Tells whether the bucket contains exactly one character.
+        /// </summary>
+        /// <param name="bucket">Index of the bucket.</param>
+        /// <returns>Whether the bucket of contains exactly one character.</returns>
+        bool IsSingleton(int bucket);
+
+        string ToString(int bucket);
     }
 
     /// <summary>
-    /// Tells whether the bucket contains exactly one character.
+    /// Character classification where each character has its own class.
     /// </summary>
-    /// <param name="bucket">Index of the bucket.</param>
-    /// <returns><see langword="true"/> for ascii characters.</returns>
-    public bool IsSingleton(int bucket)
+    public class CompleteClassification : ICharacterClassification
     {
-      return bucket != 128;
-    }
-  }
+        /// <summary>
+        /// Gets the number of buckets, which is the range of the <see cref="System.Char"/> type.
+        /// </summary>
+        public int Buckets
+        {
+            get { return 65536; }
+        }
 
-  /// <summary>
-  /// Character classification according to Unicode categories.
-  /// </summary>
-  /// <remarks>
-  /// This classification is not stable across Unicode versions.
-  /// There may be new characters defined and other changes in categories.
-  /// </remarks>
-  public class CategoryClassification : ICharacterClassification
-  {
-    public int Buckets
-    {
-      get
-      {
-        return 30;
-      }
+        /// <summary>
+        /// Classifies a chacharacter.
+        /// </summary>
+        /// <param name="character">The character to be classified.</param>
+        /// <returns>The bucket, where <paramref name="character"/> belongs.
+        /// Same value as <paramref name="character"/>.</returns>
+        public int this[char character]
+        {
+            get
+            {
+                return character;
+            }
+        }
+
+        /// <summary>
+        /// Tells whether the bucket contains exactly one character.
+        /// </summary>
+        /// <param name="bucket">Index of the bucket.</param>
+        /// <returns>Always <see langword="true"/>.</returns>
+        public bool IsSingleton(int bucket)
+        {
+            return true;
+        }
+
+        public string ToString(int bucket)
+        {
+            return ((char)bucket).ToString();
+        }
     }
 
-    public bool IsSingleton(int bucket)
+    /// <summary>
+    /// Character classification where each ASCII character
+    /// has its category and all other character are in the same category.
+    /// </summary>
+    public class ASCIIClassification : ICharacterClassification
     {
-      return false;
+        /// <summary>
+        /// Gets the number of buckets, which is the range ASCII characters + 1.
+        /// </summary>
+        public int Buckets
+        {
+            get { return 129; }
+        }
+
+        /// <summary>
+        /// Classifies a chacharacter.
+        /// </summary>
+        /// <param name="character">The character to be classified.</param>
+        /// <returns>The bucket, where <paramref name="character"/> belongs.
+        /// Same value as <paramref name="character"/> for ASCII characters,
+        /// 128 for other characters.
+        /// .</returns>
+        public int this[char character]
+        {
+            get
+            {
+                if (character < 128)
+                {
+                    return character;
+                }
+                else
+                {
+                    return 128;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tells whether the bucket contains exactly one character.
+        /// </summary>
+        /// <param name="bucket">Index of the bucket.</param>
+        /// <returns><see langword="true"/> for ascii characters.</returns>
+        public bool IsSingleton(int bucket)
+        {
+            return bucket != 128;
+        }
+
+        public string ToString(int bucket)
+        {
+            if (IsSingleton(bucket))
+                return ((char)bucket).ToString();
+            else
+                return "(non-ascii)";
+        }
     }
 
-    public int this[char character]
+    /// <summary>
+    /// Character classification according to Unicode categories.
+    /// </summary>
+    /// <remarks>
+    /// This classification is not stable across Unicode versions.
+    /// There may be new characters defined and other changes in categories.
+    /// </remarks>
+    public class CategoryClassification : ICharacterClassification
     {
-      get
-      {
-        return (int)char.GetUnicodeCategory(character);
-      }
+        public int Buckets
+        {
+            get
+            {
+                return 30;
+            }
+        }
+
+        public bool IsSingleton(int bucket)
+        {
+            return false;
+        }
+
+        public int this[char character]
+        {
+            get
+            {
+                return (int)char.GetUnicodeCategory(character);
+            }
+        }
+
+        public string ToString(int bucket)
+        {
+            return ((System.Globalization.UnicodeCategory)bucket).ToString();
+        }
     }
-  }
 }
