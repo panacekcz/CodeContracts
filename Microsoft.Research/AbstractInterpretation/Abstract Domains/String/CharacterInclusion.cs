@@ -533,7 +533,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 bool full = !lengthSpecified && index.IsFiniteConstant && index.UpperBound == 0;
                 bool willNotBeEmpty = lengthSpecified && length.LowerBound > 0;
 
-                return Part(self, mustNotBeEmpty, empty, willNotBeEmpty, full);
+                return self.Part(mustNotBeEmpty, empty, willNotBeEmpty, full);
             }
 
             ///<inheritdoc/>
@@ -549,7 +549,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 bool full = length.IsFiniteConstant && length.UpperBound == 0;
                 bool willNotBeEmpty = index.LowerBound > 0;
 
-                return Part(self, mustNotBeEmpty, empty, willNotBeEmpty, full);
+                return self.Part(mustNotBeEmpty, empty, willNotBeEmpty, full);
             }
 
             ///<inheritdoc/>
@@ -674,7 +674,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     else if (otherVariable != null)
                     {
                         // if we assume the predicate, then the var must only contain allowed chars from here
-                        CharacterInclusion<CharacterSet> trueAbstraction = Part(selfSet, false, false, false, false);
+                        CharacterInclusion<CharacterSet> trueAbstraction = selfSet.Part(false, false, false, false);
                         return StringAbstractionPredicate.ForTrue(otherVariable, trueAbstraction);
                     }
                     else
@@ -1010,44 +1010,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
 
 
-            /// <summary>
-            /// Creates abstraction for a part of the string.
-            /// </summary>
-            /// <param name="mustNotBeEmpty">Whether the source string is required to be non-empty.</param>
-            /// <param name="empty">Whether we take an empty part of the string.</param>
-            /// <param name="willNotBeEmpty">Whether the result string is known to be non-empty.</param>
-            /// <param name="full">Whether we take the whole string.</param>
-            /// <returns>Abstraction for a part of a string.</returns>
-            internal CharacterInclusion<CharacterSet> Part(CharacterInclusion<CharacterSet> self, bool mustNotBeEmpty, bool empty, bool willNotBeEmpty, bool full)
-            {
-                Contract.Requires(!(!mustNotBeEmpty && empty && full));
-                Contract.Requires(!(empty && willNotBeEmpty));
 
-                if (self.IsBottom)
-                    return self;
-
-                if (mustNotBeEmpty && self.MustBeEmpty)
-                    return self.Bottom;
-
-                if (willNotBeEmpty && self.allowed.IsSingleton)
-                {
-                    // We know that the string will not be empty, but only one category
-                    // is allowed, so it is mandatory.
-                    return new CharacterInclusion<CharacterSet>(self.allowed, self.allowed, classification);
-                }
-
-                if (empty)
-                {
-                    return self.Empty;
-                }
-                if (full)
-                {
-                    return self;
-                }
-
-                CharacterSet newMandatory = setFactory.Create(false, classification.Buckets);
-                return new CharacterInclusion<CharacterSet>(newMandatory, self.allowed, classification);
-            }
             internal CharacterInclusion<CharacterSet> Extend(CharacterInclusion<CharacterSet> self)
             {
                 CharacterSet newAllowed = setFactory.Create(true, classification.Buckets);
@@ -1088,9 +1051,47 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return new CharacterInclusion<CharacterSet>(newMandatory, newAllowed, classification);
             }
         }
+        /// <summary>
+        /// Creates abstraction for a part of the string.
+        /// </summary>
+        /// <param name="mustNotBeEmpty">Whether the source string is required to be non-empty.</param>
+        /// <param name="empty">Whether we take an empty part of the string.</param>
+        /// <param name="willNotBeEmpty">Whether the result string is known to be non-empty.</param>
+        /// <param name="full">Whether we take the whole string.</param>
+        /// <returns>Abstraction for a part of a string.</returns>
+        internal CharacterInclusion<CharacterSet> Part( bool mustNotBeEmpty, bool empty, bool willNotBeEmpty, bool full)
+        {
+            Contract.Requires(!(!mustNotBeEmpty && empty && full));
+            Contract.Requires(!(empty && willNotBeEmpty));
 
-  
-#region Object method override
+
+            if (IsBottom)
+                return this;
+
+            if (mustNotBeEmpty && MustBeEmpty)
+                return Bottom;
+
+            if (willNotBeEmpty && allowed.IsSingleton)
+            {
+                // We know that the string will not be empty, but only one category
+                // is allowed, so it is mandatory.
+                return new CharacterInclusion<CharacterSet>(allowed, allowed, classification);
+            }
+
+            if (empty)
+            {
+                return Empty;
+            }
+            if (full)
+            {
+                return this;
+            }
+
+            CharacterSet newMandatory = CreateCharacterSetFor(false);
+            return new CharacterInclusion<CharacterSet>(newMandatory, allowed, classification);
+        }
+
+        #region Object method override
         public override string ToString()
         {
             StringBuilder str = new StringBuilder();

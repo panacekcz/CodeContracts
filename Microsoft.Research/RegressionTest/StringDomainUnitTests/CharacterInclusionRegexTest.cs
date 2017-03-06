@@ -32,10 +32,16 @@ namespace StringDomainUnitTests
         public void TestIsMatch()
         {
             Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("a", ""), null, RegexUtil.ModelForRegex("a")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("a", ""), null, RegexUtil.ModelForRegex("a|b|c")));
             Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("abcdef", ""), null, RegexUtil.ModelForRegex("[a-f]")));
             Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", ""), null, RegexUtil.ModelForRegex("")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", ""), null, RegexUtil.ModelForRegex("^\\z")));
             Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("")));
             Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("^a*\\z")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("", "abcdef"), null, RegexUtil.ModelForRegex("^[a-f]*\\z")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("a", ""), null, RegexUtil.ModelForRegex("^a+\\z")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("a", ""), null, RegexUtil.ModelForRegex("^a")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(Build("a", ""), null, RegexUtil.ModelForRegex("a\\z")));
         }
         [TestMethod]
         public void TestIsNotMatch()
@@ -43,10 +49,13 @@ namespace StringDomainUnitTests
             Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("b")));
             Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("", "abc"), null, RegexUtil.ModelForRegex("d|e|f")));
             Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("b", ""), null, RegexUtil.ModelForRegex("^a*\\z")));
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(Build("b", ""), null, RegexUtil.ModelForRegex("^a\\z")));
         }
         [TestMethod]
         public void TestUnknownMatch()
         {
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "ab"), null, RegexUtil.ModelForRegex("^(?:b*|a*)\\z")));
+            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("ab", ""), null, RegexUtil.ModelForRegex("ab")));
             Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexUtil.ModelForRegex("^a")));
             Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexUtil.ModelForRegex("a\\z")));
             Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("a")));
@@ -65,6 +74,10 @@ namespace StringDomainUnitTests
             Assert.AreEqual(Build("c", "").Combine(top), cir.Assume(RegexUtil.ModelForRegex("c"), true));
             Assert.AreEqual(Build("cd", "").Combine(top), cir.Assume(RegexUtil.ModelForRegex("cd"), true));
             Assert.AreEqual(top, cir.Assume(RegexUtil.ModelForRegex("c|d"), true));
+            Assert.AreEqual(Build("c", "").Combine(top), cir.Assume(RegexUtil.ModelForRegex("c+"), true));
+            Assert.AreEqual(Build("", "c"), cir.Assume(RegexUtil.ModelForRegex("^c*\\z"), true));
+            Assert.AreEqual(Build("", "abcd"), cir.Assume(RegexUtil.ModelForRegex("^[a-d]*\\z"), true));
+            Assert.AreEqual(Build("", "c"), cir.Assume(RegexUtil.ModelForRegex("[^c]"), false));
         }
     }
 }

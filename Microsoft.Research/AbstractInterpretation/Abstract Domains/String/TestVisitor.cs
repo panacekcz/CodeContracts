@@ -1,4 +1,4 @@
-﻿﻿// CodeContracts
+﻿// CodeContracts
 // 
 // Copyright (c) Microsoft Corporation
 // 
@@ -24,140 +24,140 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  /// <summary>
-  /// Expression visitor implementing the TestTrue and TestFalse operations on an abstract domain for strings.
-  /// </summary>
-  /// <typeparam name="AbstractDomain">Type of the string abstract domain.</typeparam>
-  /// <typeparam name="Variable">Type of the variables.</typeparam>
-  /// <typeparam name="Expression">Type of the expression.</typeparam>
-  internal abstract class StringDomainTestVisitor<AbstractDomain, Variable, Expression>
-    where AbstractDomain : IAbstractDomainForEnvironments<Variable, Expression>
-    where Variable : IEquatable<Variable>
-  {
-    private readonly StringDomainTestTrueVisitor<AbstractDomain, Variable, Expression> testTrueVisitor;
-    private readonly StringDomainTestFalseVisitor<AbstractDomain, Variable, Expression> testFalseVisitor;
-
-    public StringDomainTestVisitor(IExpressionDecoder<Variable, Expression> decoder)
+    /// <summary>
+    /// Expression visitor implementing the TestTrue and TestFalse operations on an abstract domain for strings.
+    /// </summary>
+    /// <typeparam name="AbstractDomain">Type of the string abstract domain.</typeparam>
+    /// <typeparam name="Variable">Type of the variables.</typeparam>
+    /// <typeparam name="Expression">Type of the expression.</typeparam>
+    internal abstract class StringDomainTestVisitor<AbstractDomain, Variable, Expression>
+      where AbstractDomain : IAbstractDomainForEnvironments<Variable, Expression>
+      where Variable : IEquatable<Variable>
     {
-      this.testTrueVisitor = new StringDomainTestTrueVisitor<AbstractDomain, Variable, Expression>(decoder, this);
-      this.testFalseVisitor = new StringDomainTestFalseVisitor<AbstractDomain, Variable, Expression>(decoder, this);
+        private readonly StringDomainTestTrueVisitor<AbstractDomain, Variable, Expression> testTrueVisitor;
+        private readonly StringDomainTestFalseVisitor<AbstractDomain, Variable, Expression> testFalseVisitor;
 
-      testFalseVisitor.TrueVisitor = testTrueVisitor;
-      testTrueVisitor.FalseVisitor = testFalseVisitor;
-    }
-    internal protected abstract AbstractDomain TestVariableHolds(Variable var, bool holds, AbstractDomain data);
-
-    public AbstractDomain VisitTrue(Expression e, AbstractDomain data)
-    {
-      return testTrueVisitor.Visit(e, data);
-    }
-    public AbstractDomain VisitFalse(Expression e, AbstractDomain data)
-    {
-      return testFalseVisitor.Visit(e, data);
-    }
-  }
-
-  /// <summary>
-  /// Expression visitor implementing the TestTrue operation on an abstract domain for strings.
-  /// </summary>
-  /// <typeparam name="AbstractDomain">Type of the string abstract domain.</typeparam>
-  /// <typeparam name="Variable">Type of the variables.</typeparam>
-  /// <typeparam name="Expression">Type of the expression.</typeparam>
-  internal class StringDomainTestTrueVisitor<AbstractDomain, Variable, Expression> : TestTrueVisitor<AbstractDomain, Variable, Expression>
-    where AbstractDomain : IAbstractDomainForEnvironments<Variable, Expression>
-    where Variable : IEquatable<Variable>
-  {
-    private readonly StringDomainTestVisitor<AbstractDomain, Variable, Expression> parent;
-
-    internal StringDomainTestTrueVisitor(IExpressionDecoder<Variable, Expression> decoder, StringDomainTestVisitor<AbstractDomain, Variable, Expression> parent) :
-      base(decoder)
-    {
-      this.parent = parent;
-    }
-
-    public override AbstractDomain VisitEqual(Expression left, Expression right, Expression original, AbstractDomain data)
-    {
-      int value;
-      if (Decoder.IsConstantInt(right, out value))
-      {
-        if (value == 0)
+        public StringDomainTestVisitor(IExpressionDecoder<Variable, Expression> decoder)
         {
-          return FalseVisitor.Visit(left, data);
+            this.testTrueVisitor = new StringDomainTestTrueVisitor<AbstractDomain, Variable, Expression>(decoder, this);
+            this.testFalseVisitor = new StringDomainTestFalseVisitor<AbstractDomain, Variable, Expression>(decoder, this);
+
+            testFalseVisitor.TrueVisitor = testTrueVisitor;
+            testTrueVisitor.FalseVisitor = testFalseVisitor;
         }
-      }
-      return data;
-    }
+        internal protected abstract AbstractDomain TestVariableHolds(Variable var, bool holds, AbstractDomain data);
 
-    public override AbstractDomain VisitLessEqualThan(Expression left, Expression right, Expression original, AbstractDomain data)
-    {
-      return data;
-    }
-
-    public override AbstractDomain VisitLessThan(Expression left, Expression right, Expression original, AbstractDomain data)
-    {
-      return data;
-    }
-
-    public override AbstractDomain VisitNotEqual(Expression left, Expression right, Expression original, AbstractDomain data)
-    {
-      return data;
-    }
-
-    public override AbstractDomain VisitVariable(Variable var, Expression original, AbstractDomain data)
-    {
-      return parent.TestVariableHolds(var, true, data);
-    }
-  }
-
-  /// <summary>
-  /// Expression visitor implementing the TestFalse operation on an abstract domain for strings.
-  /// </summary>
-  /// <typeparam name="AbstractDomain">Type of the string abstract domain.</typeparam>
-  /// <typeparam name="Variable">Type of the variables.</typeparam>
-  /// <typeparam name="Expression">Type of the expression.</typeparam>
-  internal class StringDomainTestFalseVisitor<AbstractDomain, Variable, Expression> : TestFalseVisitor<AbstractDomain, Variable, Expression>
-    where AbstractDomain : IAbstractDomainForEnvironments<Variable, Expression>
-    where Variable : IEquatable<Variable>
-  {
-
-    private readonly StringDomainTestVisitor<AbstractDomain, Variable, Expression> parent;
-    internal StringDomainTestFalseVisitor(IExpressionDecoder<Variable, Expression> decoder, StringDomainTestVisitor<AbstractDomain, Variable, Expression> parent) :
-      base(decoder)
-    {
-      this.parent = parent;
-    }
-
-    public override AbstractDomain VisitEqual(Expression left, Expression right, Expression original, AbstractDomain data)
-    {
-      int value;
-      if (Decoder.IsConstantInt(right, out value))
-      {
-        if (value == 0)
+        public AbstractDomain VisitTrue(Expression e, AbstractDomain data)
         {
-          return TrueVisitor.Visit(left, data);
+            return testTrueVisitor.Visit(e, data);
         }
-      }
-      return data;
+        public AbstractDomain VisitFalse(Expression e, AbstractDomain data)
+        {
+            return testFalseVisitor.Visit(e, data);
+        }
     }
 
-    public override AbstractDomain VisitLessEqualThan(Expression left, Expression right, Expression original, AbstractDomain data)
+    /// <summary>
+    /// Expression visitor implementing the TestTrue operation on an abstract domain for strings.
+    /// </summary>
+    /// <typeparam name="AbstractDomain">Type of the string abstract domain.</typeparam>
+    /// <typeparam name="Variable">Type of the variables.</typeparam>
+    /// <typeparam name="Expression">Type of the expression.</typeparam>
+    internal class StringDomainTestTrueVisitor<AbstractDomain, Variable, Expression> : TestTrueVisitor<AbstractDomain, Variable, Expression>
+      where AbstractDomain : IAbstractDomainForEnvironments<Variable, Expression>
+      where Variable : IEquatable<Variable>
     {
-      return data;
+        private readonly StringDomainTestVisitor<AbstractDomain, Variable, Expression> parent;
+
+        internal StringDomainTestTrueVisitor(IExpressionDecoder<Variable, Expression> decoder, StringDomainTestVisitor<AbstractDomain, Variable, Expression> parent) :
+          base(decoder)
+        {
+            this.parent = parent;
+        }
+
+        public override AbstractDomain VisitEqual(Expression left, Expression right, Expression original, AbstractDomain data)
+        {
+            int value;
+            if (Decoder.IsConstantInt(right, out value))
+            {
+                if (value == 0)
+                {
+                    return FalseVisitor.Visit(left, data);
+                }
+            }
+            return data;
+        }
+
+        public override AbstractDomain VisitLessEqualThan(Expression left, Expression right, Expression original, AbstractDomain data)
+        {
+            return data;
+        }
+
+        public override AbstractDomain VisitLessThan(Expression left, Expression right, Expression original, AbstractDomain data)
+        {
+            return data;
+        }
+
+        public override AbstractDomain VisitNotEqual(Expression left, Expression right, Expression original, AbstractDomain data)
+        {
+            return data;
+        }
+
+        public override AbstractDomain VisitVariable(Variable var, Expression original, AbstractDomain data)
+        {
+            return parent.TestVariableHolds(var, true, data);
+        }
     }
 
-    public override AbstractDomain VisitLessThan(Expression left, Expression right, Expression original, AbstractDomain data)
+    /// <summary>
+    /// Expression visitor implementing the TestFalse operation on an abstract domain for strings.
+    /// </summary>
+    /// <typeparam name="AbstractDomain">Type of the string abstract domain.</typeparam>
+    /// <typeparam name="Variable">Type of the variables.</typeparam>
+    /// <typeparam name="Expression">Type of the expression.</typeparam>
+    internal class StringDomainTestFalseVisitor<AbstractDomain, Variable, Expression> : TestFalseVisitor<AbstractDomain, Variable, Expression>
+      where AbstractDomain : IAbstractDomainForEnvironments<Variable, Expression>
+      where Variable : IEquatable<Variable>
     {
-      return data;
-    }
 
-    public override AbstractDomain VisitNotEqual(Expression left, Expression right, Expression original, AbstractDomain data)
-    {
-      return data;
-    }
+        private readonly StringDomainTestVisitor<AbstractDomain, Variable, Expression> parent;
+        internal StringDomainTestFalseVisitor(IExpressionDecoder<Variable, Expression> decoder, StringDomainTestVisitor<AbstractDomain, Variable, Expression> parent) :
+          base(decoder)
+        {
+            this.parent = parent;
+        }
 
-    public override AbstractDomain VisitVariable(Variable var, Expression original, AbstractDomain data)
-    {
-      return parent.TestVariableHolds(var, false, data);
+        public override AbstractDomain VisitEqual(Expression left, Expression right, Expression original, AbstractDomain data)
+        {
+            int value;
+            if (Decoder.IsConstantInt(right, out value))
+            {
+                if (value == 0)
+                {
+                    return TrueVisitor.Visit(left, data);
+                }
+            }
+            return data;
+        }
+
+        public override AbstractDomain VisitLessEqualThan(Expression left, Expression right, Expression original, AbstractDomain data)
+        {
+            return data;
+        }
+
+        public override AbstractDomain VisitLessThan(Expression left, Expression right, Expression original, AbstractDomain data)
+        {
+            return data;
+        }
+
+        public override AbstractDomain VisitNotEqual(Expression left, Expression right, Expression original, AbstractDomain data)
+        {
+            return data;
+        }
+
+        public override AbstractDomain VisitVariable(Variable var, Expression original, AbstractDomain data)
+        {
+            return parent.TestVariableHolds(var, false, data);
+        }
     }
-  }
 }

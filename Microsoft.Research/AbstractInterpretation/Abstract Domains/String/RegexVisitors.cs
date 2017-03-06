@@ -103,6 +103,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             return left.Join(right);
         }
+
+        public D Loop(D prev, D loop, D last, IndexInt min, IndexInt max)
+        {
+            if (min == 0)
+                return prev;
+            else
+                //TODO: here could return more if there would be BeginLoop...
+                return prev;
+        }
     }
 
 
@@ -280,149 +289,29 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             return new LinearMatchingState<D>(prev.currentElement.Join(next.currentElement), index);
         }
-    }
 
-
-#if vdfalse
-    /// <summary>
-    /// Regex visitor evaluating a match from an anchor element.
-    /// </summary>
-    internal abstract class AnchoredIsMatchVisitor : SimpleRegexVisitor<ProofOutcome, IndexInt>
-  {
-    private readonly AnchorKind anchorKind;
-    private bool reverse;
-
-    protected AnchoredIsMatchVisitor(AnchorKind anchorKind, bool reverse)
-    {
-      this.anchorKind = anchorKind;
-      this.reverse = reverse;
-    }
-
-    /// <summary>
-    /// Tries to match a single character at the specified position from the anchor.
-    /// </summary>
-    /// <param name="element">The single character regex element.</param>
-    /// <param name="index">The index relative to the anchor.</param>
-    /// <returns>Possible results of the match.</returns>
-    protected abstract ProofOutcome IsMatchCharacterAt(SingleElement element, IndexInt index);
-
-    protected override ProofOutcome Unsupported(Element regex, ref IndexInt data)
-    {
-      data = IndexUtils.After;
-      return ProofOutcome.Top;
-    }
-    protected override ProofOutcome Visit(Alternation element, ref IndexInt data)
-    {
-      IndexInt next = IndexUtils.Before;
-      ProofOutcome result = ProofOutcome.Bottom;
-      foreach (var part in element.Patterns)
-      {
-        IndexInt next_offset = data;
-        result = ProofOutcomeUtils.Or(result, VisitElement(part, ref next_offset));
-        next = IndexUtils.JoinIndices(next, next_offset);
-      }
-      data = next;
-
-      return result;
-    }
-    protected override ProofOutcome Visit(Concatenation concat, ref IndexInt data)
-    {
-      ProofOutcome result = ProofOutcome.Bottom;
-
-      IEnumerable<Element> partSequence = concat.Parts;
-
-      if (reverse)
-      {
-        partSequence = partSequence.Reverse();
-      }
-
-      foreach (var part in partSequence)
-      {
-        result = ProofOutcomeUtils.And(result, VisitElement(part, ref data));
-      }
-      return result;
-    }
-
-    protected override ProofOutcome Visit(Empty element, ref IndexInt data)
-    {
-      if (data.IsNegative)
-      {
-        data = IndexUtils.After;
-        return ProofOutcome.Top;
-      }
-      else
-      {
-        return ProofOutcome.True;
-      }
-    }
-
-    protected override ProofOutcome Visit(Loop element, ref IndexInt data)
-    {
-      data = IndexUtils.After;
-      return ProofOutcome.Top;
-    }
-
-    protected override ProofOutcome Visit(SingleElement element, ref IndexInt data)
-    {
-      if (data.IsInfinite || data.IsNegative)
-      {
-        data = IndexUtils.After;
-        return ProofOutcome.Top;
-      }
-      /* If offset is negative, we could try to find the first element,
-       * however, it would not work in concatenation as it is implemented now,
-       * so we would need to keep additional state.
-       * The code for prefix might look like:
-      else if (offset.IsNegative)
-      {
-        for (int i = 0; i < prefix.Length; ++i)
+        public LinearMatchingState<D> BeginLoop(D input, LinearMatchingState<D> prev, bool under)
         {
-          char character = prefix[i];
-          if (element.CanMatch(character))
-          {
-            next = IndexInt.For(i + 1);
-            return ProofOutcomeUtils.Build(true, !element.MustMatch(character));
-          }
+            return prev;
         }
 
-        next = IndexUtils.After;
-        return ProofOutcome.Top;
-      }
-      */
-      else
-      {
-        ProofOutcome result = IsMatchCharacterAt(element, data);
-        data = IndexInt.For(data.AsInt + 1);
-        return result;
-      }
+        public LinearMatchingState<D> EndLoop(D input, LinearMatchingState<D> prev, LinearMatchingState<D> next, IndexInt min, IndexInt max, bool under)
+        {
+            if (under)
+            {
+                if (min == 0)
+                    return prev;
+                else if (max >= 1)
+                    //Underapproximate by considering only the first iteration
+                    return next;
+                else
+                    return GetBottom(input);
+            }
+            else
+            {
+                //TODO: could be better, use widneing
+                return GetTop(input);
+            }
+        }
     }
-
-
-    protected override ProofOutcome Visit(Anchor anchor, ref IndexInt data)
-    {
-      if (anchor.Kind == anchorKind)
-      {
-        if (data.IsNegative || data == 0)
-        {
-          data = IndexInt.For(0);
-          return ProofOutcome.True;
-        }
-        else if (data.IsInfinite)
-        {
-          return ProofOutcome.Top;
-        }
-        else
-        {
-          data = IndexInt.Negative;
-          return ProofOutcome.False;
-        }
-      }
-      else
-      {
-        data = IndexUtils.After;
-        return ProofOutcome.Top;
-      }
-    }
-  }
-#endif
 }

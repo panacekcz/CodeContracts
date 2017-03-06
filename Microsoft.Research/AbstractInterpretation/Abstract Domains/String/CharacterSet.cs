@@ -12,7 +12,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
           where CharacterSet : ICharacterSet<CharacterSet>
     {
         CharacterSet Create(bool value, int size);
-        CharacterSet CreateSingleton(char value, int size);
+        CharacterSet CreateSingleton(char value, ICharacterClassification classif);
+        CharacterSet CreateIntervals(IEnumerable<CharInterval> intervals, ICharacterClassification classif);
     }
 
     public class BitArrayCharacterSetFactory : ICharacterSetFactory<BitArrayCharacterSet>
@@ -22,9 +23,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return new BitArrayCharacterSet(value, size);
         }
 
-        public BitArrayCharacterSet CreateSingleton(char value, int size)
+        public BitArrayCharacterSet CreateSingleton(char value, ICharacterClassification classif)
         {
-            throw new NotImplementedException();
+            return Create(false, classif.Buckets).With(classif[value]);
+        }
+
+        public BitArrayCharacterSet CreateIntervals(IEnumerable<CharInterval> intervals, ICharacterClassification classif)
+        {
+            Contract.Requires(intervals != null);
+
+            BitArrayCharacterSet array = Create(false, classif.Buckets);
+            foreach (CharInterval interval in intervals)
+            {
+                for (int character = interval.LowerBound; character <= interval.UpperBound; ++character)
+                    array.Add(classif[(char)character]);
+            }
+            return array;
         }
     }
 

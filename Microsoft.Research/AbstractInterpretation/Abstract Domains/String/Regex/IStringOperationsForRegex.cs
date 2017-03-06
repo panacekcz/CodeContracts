@@ -16,6 +16,8 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
         D AssumeStart(D data);
         D AssumeEnd(D data);
         D Join(D prev, D next, bool widen);
+        D BeginLoop(D prev, IndexInt min, IndexInt max);
+        D EndLoop(D prev, D next, IndexInt min, IndexInt max);
     }
 
 
@@ -61,6 +63,9 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
         D AssumeStart(SD input, D prev, bool under);
 
         D AssumeEnd(SD input, D prev, bool under);
+
+        D BeginLoop(SD input, D prev, bool under);
+        D EndLoop(SD input, D prev, D next, IndexInt min, IndexInt max, bool under);
     }
 
     interface IGeneratingOperationsForRegex<D>
@@ -75,6 +80,8 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
 
         D AddChar(D prev, CharRanges next, bool closed);
         D Join(D left, D right, bool widen);
+
+        D Loop(D prev, D loop, D last, IndexInt min, IndexInt max);
     }
 
 }

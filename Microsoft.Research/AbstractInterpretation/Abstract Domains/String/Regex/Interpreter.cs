@@ -41,9 +41,21 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
             return null;
         }
 
+        private IndexInt LoopBoundIndexInt(int loopBound)
+        {
+            if (loopBound == Loop.Unbounded)
+                return IndexInt.Infinity;
+            else
+                return IndexInt.ForNonNegative(loopBound);
+        }
+
         protected override Void VisitLoop(Loop element, ref D data)
         {
-            throw new NotImplementedException();
+            D next = data;
+            next = operations.BeginLoop(data, LoopBoundIndexInt(element.Min), LoopBoundIndexInt(element.Max));
+            VisitElement(element.Pattern, ref next);
+            data = operations.EndLoop(data, next, LoopBoundIndexInt(element.Min), LoopBoundIndexInt(element.Max));
+            return null;
         }
 
         protected override Void VisitUnion(Union element, ref D data)

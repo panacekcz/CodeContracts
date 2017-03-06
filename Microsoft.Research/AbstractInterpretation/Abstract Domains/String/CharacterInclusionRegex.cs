@@ -29,7 +29,7 @@ using Microsoft.Research.AbstractDomains.Strings.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-#if vdfalse
+
     /// <summary>
     /// Operations for generating a non-matching CharacterInclusion for a regex.
     /// (CharacterInclusion that over-approximates the set of non-matching strings.)
@@ -75,7 +75,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             if (!closed && prev.IsBottom)
             {
                 IEnumerable<CharInterval> allowed = next.ToIntervals();
-                return prev.Character(allowed, true);
+                return prev.FromDisallowed(allowed);
             }
             else
                 return prev.Top;
@@ -98,6 +98,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 return true;
             }
+        }
+
+
+        public CharacterInclusion<CharacterSet> Loop(CharacterInclusion<CharacterSet> prev, CharacterInclusion<CharacterSet> loop, CharacterInclusion<CharacterSet> last, IndexInt min, IndexInt max)
+        {
+            return Bottom;
         }
     }
 
@@ -130,7 +136,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return Top;
+                return factory.Constant("");
             }
         }
 
@@ -165,6 +171,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             return widen ? (CharacterInclusion<CharacterSet>)left.Widening(right) : left.Join(right);
         }
+
+        public CharacterInclusion<CharacterSet> Loop(CharacterInclusion<CharacterSet> prev, CharacterInclusion<CharacterSet> loop, CharacterInclusion<CharacterSet> last, IndexInt min, IndexInt max)
+        {
+            if(min == 0)
+            {
+                return prev.Combine(last.Part(false, false, false, false));
+            }
+            else
+            {
+                return prev.Combine(last);
+            }
+        }
     }
 
 
@@ -175,15 +193,36 @@ namespace Microsoft.Research.AbstractDomains.Strings
         where CharacterSet : ICharacterSet<CharacterSet>
     {
         public CharacterSet encountered;
-        //TODO: VD: Closed start can be represented by setting encountered to full
-        public bool closedStart;
-        public bool fail;
+        public CharacterSet looped;
 
-        public CharacterInclusionMatchingState(CharacterSet encountered, bool fail, bool closedStart)
+        //TODO: VD: Closed start can be represented by setting encountered to full?
+        public bool startAnchor;
+        public bool endAnchor;
+        public bool empty;
+        public bool bottom;
+
+        /*public CharacterInclusionMatchingState(CharacterSet encountered, bool fail, bool closedStart)
         {
             this.encountered = encountered;
             this.fail = fail;
             this.closedStart = closedStart;
+        }*/
+        public bool Accepts(CharacterInclusion<CharacterSet> ci)
+        {
+            if (bottom)
+                return false;
+
+            if (!empty)
+            {
+                if (!ci.mandatory.Intersects(encountered))
+                    return false;
+                if ((startAnchor || endAnchor) && !(ci.allowed.IsSingleton))
+                    return false;
+            }
+            if (startAnchor && endAnchor && !ci.allowed.IsSubset(looped))
+                return false;
+
+            return true;
         }
     }
 
@@ -193,60 +232,290 @@ namespace Microsoft.Research.AbstractDomains.Strings
     internal class CharacterInclusionMatchingOperations<CharacterSet> : IMatchingOperationsForRegex<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>
         where CharacterSet : ICharacterSet<CharacterSet>
     {
-        ICharacterSetFactory<CharacterSet> setFactory;
-        ICharacterClassification classification;
+     /*   private readonly ICharacterSetFactory<CharacterSet> setFactory;
+        private readonly ICharacterClassification classification;
 
+        public CharacterInclusionMatchingOperations()
+        {
+            //TODO:...
+        }
+        */
         public CharacterInclusionMatchingState<CharacterSet> AssumeEnd(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
         {
-            if (prev.closedStart) {
-                //Test encountered against input
-                if (!input.mandatory.IsSubset(prev.encountered))
-                    return GetBottom(input);
-            }
+            if (prev.bottom)
+                return prev;
 
-            return prev;
+            if (under)
+            {
+
+                /*if (!input.allowed.IsSubset(prev.encountered))
+                    return GetBottom(input);
+                return prev;*/
+                return new CharacterInclusionMatchingState<CharacterSet>
+                {
+                    encountered = prev.encountered,
+                    looped = prev.looped,
+                    startAnchor = prev.startAnchor,
+                    endAnchor = true,
+                    empty = prev.empty,
+                    bottom = false
+                };
+            }
+            else
+            {
+                if (prev.startAnchor)
+                {
+                    //Test encountered against input
+                    if (!input.mandatory.IsSubset(prev.encountered))
+                        return GetBottom(input);
+                }
+
+                return prev;
+            }
         }
 
         public CharacterInclusionMatchingState<CharacterSet> AssumeStart(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
         {
-            if (prev.fail)
+            if (prev.bottom)
                 return prev;
 
-            return new CharacterInclusionMatchingState<CharacterSet>(setFactory.Create(false, classification.Buckets), false, true);
+            if (under)
+            {
+                if (prev.empty)
+                {
+                    // set empty and loopsafe to false
+                    return new CharacterInclusionMatchingState<CharacterSet>
+                    {
+                        encountered = input.CreateCharacterSetFor(false),
+                        looped = input.CreateCharacterSetFor(false),
+                        startAnchor = true,
+                        endAnchor = prev.endAnchor,
+                        empty = true,
+                        bottom = false,
+                    };
+                }
+                else
+                {
+                    return GetBottom(input);
+                }
+            }
+            else
+            {
+                // Set encountered to false
+                return new CharacterInclusionMatchingState<CharacterSet>
+                {
+                    encountered = input.CreateCharacterSetFor(false),
+                    looped = input.CreateCharacterSetFor(false),
+                    startAnchor = true,
+                    endAnchor = prev.endAnchor,
+                    empty = true,
+                    bottom = false,
+                };
+            }
         }
 
         public CharacterInclusionMatchingState<CharacterSet> GetBottom(CharacterInclusion<CharacterSet> input)
         {
-            return new CharacterInclusionMatchingState<CharacterSet>(setFactory.Create(false, classification.Buckets), true, false);
+            return new CharacterInclusionMatchingState<CharacterSet>
+            {
+                encountered = input.CreateCharacterSetFor(false),
+                looped = input.CreateCharacterSetFor(false),
+                startAnchor = false,
+                endAnchor = false,
+                empty = false,
+                bottom = true,
+            };
         }
 
         public CharacterInclusionMatchingState<CharacterSet> GetTop(CharacterInclusion<CharacterSet> input)
         {
-            return new CharacterInclusionMatchingState<CharacterSet>(setFactory.Create(false, classification.Buckets), false, false);
+            return new CharacterInclusionMatchingState<CharacterSet> {
+                encountered = input.CreateCharacterSetFor(false),
+                looped = input.CreateCharacterSetFor(false),
+                startAnchor = false,
+                endAnchor = false,
+                empty = true,
+                bottom = false,
+            };
         }
 
         public CharacterInclusionMatchingState<CharacterSet> Join(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> left, CharacterInclusionMatchingState<CharacterSet> right, bool under, bool widen)
         {
-            if (left.fail)
+            if (left.bottom)
                 return right;
-            if (right.fail)
+            if (right.bottom)
                 return left;
 
-            return new CharacterInclusionMatchingState<CharacterSet>(left.encountered.Union(right.encountered), false, left.closedStart && right.closedStart);
+            return new CharacterInclusionMatchingState<CharacterSet>
+            {
+                encountered = left.encountered.Union(right.encountered),
+                looped = left.looped.Intersection(right.looped),
+                startAnchor = under ? (left.startAnchor || right.startAnchor) : left.startAnchor && right.startAnchor,
+                endAnchor = under ? (left.endAnchor || right.endAnchor) : left.endAnchor && right.endAnchor,
+                bottom = false,
+            };
         }
 
         public CharacterInclusionMatchingState<CharacterSet> MatchChar(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, CharRanges next, bool under)
         {
-            CharacterSet cs;
+            if (prev.bottom)
+                return prev;
 
-            //Test against input
-            if (!input.allowed.Intersects(cs))
-                return GetBottom(input);
-            //Add to encountered
-            return new CharacterInclusionMatchingState<CharacterSet>(prev.encountered.Union(cs), false, prev.closedStart);
+            //TODO: convert charranges to set
+            CharacterSet cs = input.CreateCharacterSetFor(next.ToIntervals());
+
+            if (under)
+            {
+                if (!prev.empty || prev.endAnchor)
+                    return GetBottom(input);
+
+                return new CharacterInclusionMatchingState<CharacterSet>
+                {
+                    encountered = cs,
+                    looped = input.CreateCharacterSetFor(false),
+                    startAnchor = prev.startAnchor,
+                    endAnchor = false,
+                    empty = false,
+                    bottom = false,
+                };
+            }
+            else
+            {
+                //Test against input
+                if (!input.allowed.Intersects(cs))
+                    return GetBottom(input);
+                //Add to encountered
+                return new CharacterInclusionMatchingState<CharacterSet> {
+                    encountered = prev.encountered.Union(cs),
+                    looped = input.CreateCharacterSetFor(false),
+                    startAnchor = prev.startAnchor,
+                    endAnchor = false,
+                    empty = false,
+                    bottom = false,
+                };
+            }
+        }
+
+        public CharacterInclusionMatchingState<CharacterSet> BeginLoop(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
+        {
+            if (under)
+            {
+                return new CharacterInclusionMatchingState<CharacterSet>
+                {
+                    encountered = input.CreateCharacterSetFor(false),
+                    looped = input.CreateCharacterSetFor(false),
+                    startAnchor = false,
+                    endAnchor = false,
+                    empty = true,
+                    bottom = false,
+                };
+            }
+            else
+            {
+                return new CharacterInclusionMatchingState<CharacterSet>
+                {
+                    encountered = input.CreateCharacterSetFor(false),
+                    looped = input.CreateCharacterSetFor(false),
+                    startAnchor = false,
+                    endAnchor = false,
+                    empty = true,
+                    bottom = false,
+                };
+            }
+        }
+
+        public CharacterInclusionMatchingState<CharacterSet> EndLoop(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, CharacterInclusionMatchingState<CharacterSet> next, IndexInt min, IndexInt max, bool under)
+        {
+            if (under)
+            {
+                if (min == 0 || next.empty)
+                {
+                    if (prev.endAnchor || next.bottom || next.startAnchor || next.endAnchor)
+                    {
+                        return prev;
+                    }
+                    else if (prev.empty)
+                    {
+                        return new CharacterInclusionMatchingState<CharacterSet>
+                        {
+                            encountered = input.CreateCharacterSetFor(false),
+                            looped = next.encountered,
+                            startAnchor = prev.startAnchor,
+                            endAnchor = false,
+                            empty = true,
+                            bottom = false,
+                        };
+                    }
+                    else
+                    {
+                        return prev;
+                        /*return new CharacterInclusionMatchingState<CharacterSet>
+                        {
+                            encountered = setFactory.Create(false, classification.Buckets),
+                            looped = setFactory.Create(false, classification.Buckets),
+                            startAnchor = prev.startAnchor,
+                            endAnchor = false,
+                            empty = false,
+                            bottom = false,
+                        };*/
+                    }
+                }
+                else if(min == 1 && !next.endAnchor && !next.startAnchor && prev.empty && !prev.endAnchor && !next.bottom)
+                {
+                    return new CharacterInclusionMatchingState<CharacterSet>
+                    {
+                        encountered = next.encountered,
+                        looped = next.encountered,
+                        startAnchor = prev.startAnchor,
+                        endAnchor = false,
+                        empty = false,
+                        bottom = false,
+                    };
+                }
+                else
+                {
+                    return GetBottom(input);
+                }
+            }
+            else
+            {
+                if (min == 0)
+                {
+                    if (next.bottom)
+                        return prev;
+                    else
+                    {
+                        return new CharacterInclusionMatchingState<CharacterSet>
+                        {
+                            encountered = prev.encountered.Union(next.encountered),
+                            looped = prev.looped,
+                            startAnchor = prev.startAnchor,
+                            endAnchor = prev.endAnchor,
+                            empty = prev.empty,
+                            bottom = false,
+                        };
+                    }
+                }
+                else {
+                    if (next.bottom)
+                        return next;
+                    else
+                    {
+                        return new CharacterInclusionMatchingState<CharacterSet>
+                        {
+                            encountered = prev.encountered.Union(next.encountered),
+                            looped = prev.looped,
+                            startAnchor = prev.startAnchor,
+                            endAnchor = prev.endAnchor,
+                            empty = prev.empty,
+                            bottom = false,
+                        };
+                    }
+                }
+            }
         }
     }
-#endif
+
     /// <summary>
     /// Converts between Character Inclusion abstract domain
     /// and regexes.
@@ -264,158 +533,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             this.value = value;
         }
-#if vdfalse
-    private class IsMatchVisitor : OpenClosedRegexVisitor<ProofOutcome, bool>
-    {
-      private readonly CharacterInclusionRegex converter;
-
-      public IsMatchVisitor(CharacterInclusionRegex converter)
-      {
-        this.converter = converter;
-      }
-
-      protected override ProofOutcome Visit(Empty element, ref bool closed)
-      {
-        if (closed)
-        {
-          return ProofOutcomeUtils.Build(!converter.value.MustBeEmpty, !converter.value.MustBeNonEmpty);
-        }
-        else
-        {
-          return ProofOutcome.True;
-        }
-      }
-      protected override ProofOutcome Visit(Alternation element, ref bool data)
-      {
-        bool canMatch = false;
-        bool canNotMatch = true;
-
-        foreach (Element pattern in element.Patterns)
-        {
-          ProofOutcome patternMatch = VisitElement(pattern, ref data);
-          canMatch |= ProofOutcomeUtils.CanBeTrue(patternMatch);
-          canNotMatch &= ProofOutcomeUtils.CanBeFalse(patternMatch);
-        }
-
-        return ProofOutcomeUtils.Build(canMatch, canNotMatch);
-      }
-      protected override ProofOutcome VisitConcatenation(Concatenation element, int startIndex, int endIndex, RegexEndsData ends, ref bool data)
-      {
-        bool innerClosed = data || (ends.LeftClosed && ends.RightClosed);
-        bool halfClosed = ends.LeftClosed ^ ends.RightClosed;
-
-        if (endIndex - startIndex == 1 && !halfClosed)
-        {
-          //Just a single element
-          return VisitElement(element.Parts[startIndex], ref innerClosed);
-        }
-        else
-        {
-          innerClosed = false;
-
-          CharacterInclusion canMatchCI = converter.FromRegex(element, innerClosed);
-          bool canMatch = CharacterInclusion.MandatorySubsetAllowed(converter.value, canMatchCI);
-
-          for (int index = startIndex; index < endIndex && canMatch; ++index)
-          {
-            ProofOutcome part = VisitElement(element.Parts[index], ref innerClosed);
-            canMatch &= ProofOutcomeUtils.CanBeTrue(part);
-          }
-
-          return canMatch ? ProofOutcome.Top : ProofOutcome.False;
-        }
-      }
-      protected override ProofOutcome Visit(SingleElement element, ref bool closed)
-      {
-        bool canMatch, canNotMatch;
-
-        BitArray canMatchArray = converter.value.CreateBitArrayFor(element.CanMatchRanges.ToIntervals());
-        BitArray mustMatchArray = converter.value.CreateBitArrayFor(element.MustMatchRanges.ToIntervals());
-
-        bool allowedIntersect = CharacterInclusion.Intersects(converter.value.allowed, canMatchArray);
-
-        if (closed)
-        {
-          canNotMatch = true;
-          canMatch = allowedIntersect && CharacterInclusion.Subset(converter.value.mandatory, canMatchArray) && CharacterInclusion.CountBits(converter.value.mandatory) <= 1;
-        }
-        else
-        {
-          canNotMatch = CharacterInclusion.CountBits(mustMatchArray) == 0 || !CharacterInclusion.Subset(canMatchArray, converter.value.mandatory);
-          canMatch = allowedIntersect;
-        }
-
-        return ProofOutcomeUtils.Build(canMatch, canNotMatch);
-      }
-      protected override ProofOutcome Visit(Loop element, ref bool closed)
-      {
-        bool canMatch, canNotMatch;
-        bool innerClosed = false;
-
-        if (closed)
-        {
-          if (!element.IsUnbounded || element.Min > 1 || (element.Min == 1 && !converter.value.MustBeNonEmpty))
-          {
-            canNotMatch = true;
-          }
-          else
-          {
-            CharacterInclusion canNotMatchCI = converter.FromNegativeRegex(element.Content);
-
-            canNotMatch = CharacterInclusion.AllowedIntersects(canNotMatchCI, converter.value);
-          }
-
-          CharacterInclusion canMatchCI = converter.FromRegex(element.Content, true);
-          if (element.Min == 0 && !converter.value.MustBeNonEmpty)
-          {
-            canMatch = true;
-          }
-          else if (ProofOutcomeUtils.CanBeTrue(VisitElement(element.Content, ref innerClosed)))
-          {
-            canMatch = CharacterInclusion.MandatorySubsetAllowed(converter.value, canMatchCI);
-          }
-          else
-          {
-            canMatch = false;
-          }
-        }
-        else // Open
-        {
-          canMatch = element.Min == 0 || ProofOutcomeUtils.CanBeTrue(VisitElement(element.Content, ref innerClosed));
-          if (element.Min == 0)
-          {
-            canNotMatch = false;
-          }
-          else if (element.Min == 1)
-          {
-            CharacterInclusion canNotMatchCI = converter.FromNegativeRegex(element.Content);
-            canNotMatch = CharacterInclusion.MandatorySubsetAllowed(converter.value, canNotMatchCI);
-          }
-          else
-          {
-            canNotMatch = true;
-          }
-        }
-
-        return ProofOutcomeUtils.Build(canMatch, canNotMatch);
-      }
-      protected override ProofOutcome Unsupported(Element regex, ref bool data)
-      {
-        return ProofOutcome.Top;
-      }
-    }
-
-
-
-    public ProofOutcome IsMatch(Microsoft.Research.Regex.Model.Element element)
-    {
-      IsMatchVisitor visitor = new IsMatchVisitor(this);
-      bool closed = false;
-      return visitor.VisitSimpleRegex(element, ref closed);
-    }
-
-
-#endif
 #if false
         #region Convert matched regex to CharacterSet
 
@@ -593,7 +710,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public ProofOutcome IsMatch(Microsoft.Research.Regex.Model.Element regex)
         {
-#if vdfalse
+
             var operations = new CharacterInclusionMatchingOperations<CharacterSet>();
             MatchingInterpretation<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>> interpretation = new MatchingInterpretation<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>(operations, this.value);
             ForwardRegexInterpreter<MatchingState<CharacterInclusionMatchingState<CharacterSet>>> interpreter = new ForwardRegexInterpreter<MatchingState<CharacterInclusionMatchingState<CharacterSet>>>(interpretation);
@@ -601,17 +718,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
             var result = interpreter.Interpret(regex);
 
 
-            bool canMatch = !result.Over.fail;
-            bool mustMatch = false;//TODO: value.LessThanEqual(result.Under.currentElement);
+            bool canMatch = !result.Over.bottom;
+            bool mustMatch = result.Under.Accepts(value);
 
             return ProofOutcomeUtils.Build(canMatch, !mustMatch);
-#endif
-        return ProofOutcome.Top;
+
         }
     
         public CharacterInclusion<CharacterSet> Assume(Microsoft.Research.Regex.Model.Element regex, bool match)
         {
-            /*    
+         
                     IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>> operations;
                     if(match)
                         operations = new CharacterInclusionGeneratingOperations<CharacterSet>(value);
@@ -623,23 +739,20 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                     var result = interpreter.Interpret(regex);
                     return result.Open;
-                 */
-            return value.Top;  
+    
         }
 
 
     public IStringPredicate PredicateFromRegex<Variable>(Microsoft.Research.Regex.Model.Element regex, Variable thisVar)
             where Variable : class, IEquatable<Variable>
         {
-        /*
+
             System.Diagnostics.Contracts.Contract.Requires(thisVar != null);
 
             CharacterInclusion<CharacterSet> matchSet = Assume(regex, true);
             CharacterInclusion<CharacterSet> nonMatchSet = Assume(regex, false);
 
             return StringAbstractionPredicate.For(thisVar, matchSet, nonMatchSet);
-            */
-        return FlatPredicate.Top;
         }
     }
 

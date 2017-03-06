@@ -72,6 +72,8 @@ namespace StringDomainUnitTests
             Prefix prefix = new Prefix("prefix");
             Prefix pp = new Prefix("pp");
 
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(pp, null, RegexUtil.ModelForRegex("z*")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(pp, null, RegexUtil.ModelForRegex("p+")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(pp, null, RegexUtil.ModelForRegex("^p*$")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(pp, null, RegexUtil.ModelForRegex("^p+$")).ProofOutcome);
         }

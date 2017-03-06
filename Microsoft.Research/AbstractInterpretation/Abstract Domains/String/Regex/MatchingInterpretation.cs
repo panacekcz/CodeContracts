@@ -75,6 +75,16 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
         {
             return new MatchingState<D>(data.Over, operations.GetBottom(input));
         }
+
+        public MatchingState<D> BeginLoop(MatchingState<D> prev, IndexInt min, IndexInt max)
+        {
+            return new MatchingState<D>(operations.BeginLoop(input, prev.Over, false), operations.BeginLoop(input, prev.Under, true));
+        }
+
+        public MatchingState<D> EndLoop(MatchingState<D> prev, MatchingState<D> next, IndexInt min, IndexInt max)
+        {
+            return new MatchingState<D>(operations.EndLoop(input, prev.Over, next.Over, min, max, false), operations.EndLoop(input, prev.Under, next.Under, min, max, true));
+        }
     }
 
     

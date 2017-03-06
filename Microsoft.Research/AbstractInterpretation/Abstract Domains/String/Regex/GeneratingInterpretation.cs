@@ -81,6 +81,26 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
             }
         }
 
+        public GeneratingState<D> BeginLoop(GeneratingState<D> prev, IndexInt min, IndexInt max)
+        {
+            return new GeneratingState<D>(operations.Top, operations.Empty);
+            //throw new NotImplementedException();
+        }
+
+        public GeneratingState<D> EndLoop(GeneratingState<D> prev, GeneratingState<D> next, IndexInt min, IndexInt max)
+        {
+            D loopedOpen = operations.Loop(prev.Closed, next.Closed, next.Open, min, max);
+            D loopedClosed = operations.Loop(prev.Closed, next.Closed, next.Closed, min, max);
+
+            if (min == 0 || operations.CanBeEmpty(next.Closed))
+            {
+                loopedOpen = operations.Join(prev.Open, loopedOpen, false);
+            }
+
+            return new GeneratingState<D>(loopedOpen, loopedClosed);
+            //throw new NotImplementedException();
+        }
+
         public GeneratingState<D> Join(GeneratingState<D> left, GeneratingState<D> right, bool widen)
         {
             return new GeneratingState<D>(operations.Join(left.Open, right.Open, widen), operations.Join(left.Closed, right.Closed, widen));
