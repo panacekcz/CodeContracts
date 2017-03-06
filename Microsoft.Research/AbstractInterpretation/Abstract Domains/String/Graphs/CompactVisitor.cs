@@ -23,60 +23,60 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Compacts a string graph.
-  /// </summary>
-  class CompactVisitor : CopyVisitor<Void>
-  {
-    public Node Compact(Node root)
+    /// <summary>
+    /// Compacts a string graph.
+    /// </summary>
+    class CompactVisitor : CopyVisitor<Void>
     {
-      Void unusedData;
-      return VisitNode(root, VisitContext.Root, ref unusedData);
-    }
-
-    protected override Node Visit(ConcatNode concatNode, VisitContext context, ref Void data)
-    {
-      if (concatNode.children.Count == 1) //Rule 1
-      {
-        return VisitNode(concatNode.children[0], VisitContext.Concat, ref data);
-      }
-      else if (concatNode.children.Count > 1 && concatNode.children.TrueForAll(child => child is MaxNode)) //Rule 2
-      {
-        return concatNode.children[0];
-      }
-      else
-      {
-        return new ConcatNode();
-      }
-    }
-
-    private static bool IsOwnedConcatNode(Node graphNode)
-    {
-      return graphNode is ConcatNode && ((ConcatNode)graphNode).indegree == 1;
-    }
-
-    protected override Node VisitChildren(ConcatNode concatNode, Node result, ref Void data)
-    {
-      if (concatNode.children.Count != 1 && result is ConcatNode)
-      {
-        ConcatNode resultConcat = (ConcatNode)result;
-
-        foreach (Node child in concatNode.children)
+        public Node Compact(Node root)
         {
-          Node next = VisitNode(child, VisitContext.Concat, ref data);
-          if (IsOwnedConcatNode(next))
-          {
-            resultConcat.children.AddRange(((ConcatNode)next).children);
-          }
-          else
-          {
-            resultConcat.children.Add(next);
-          }
+            Void unusedData;
+            return VisitNode(root, VisitContext.Root, ref unusedData);
         }
 
-      }
+        protected override Node Visit(ConcatNode concatNode, VisitContext context, ref Void data)
+        {
+            if (concatNode.children.Count == 1) //Rule 1
+            {
+                return VisitNode(concatNode.children[0], VisitContext.Concat, ref data);
+            }
+            else if (concatNode.children.Count > 1 && concatNode.children.TrueForAll(child => child is MaxNode)) //Rule 2
+            {
+                return concatNode.children[0];
+            }
+            else
+            {
+                return new ConcatNode();
+            }
+        }
 
-      return result;
+        private static bool IsOwnedConcatNode(Node graphNode)
+        {
+            return graphNode is ConcatNode && ((ConcatNode)graphNode).indegree == 1;
+        }
+
+        protected override Node VisitChildren(ConcatNode concatNode, Node result, ref Void data)
+        {
+            if (concatNode.children.Count != 1 && result is ConcatNode)
+            {
+                ConcatNode resultConcat = (ConcatNode)result;
+
+                foreach (Node child in concatNode.children)
+                {
+                    Node next = VisitNode(child, VisitContext.Concat, ref data);
+                    if (IsOwnedConcatNode(next))
+                    {
+                        resultConcat.children.AddRange(((ConcatNode)next).children);
+                    }
+                    else
+                    {
+                        resultConcat.children.Add(next);
+                    }
+                }
+
+            }
+
+            return result;
+        }
     }
-  }
 }

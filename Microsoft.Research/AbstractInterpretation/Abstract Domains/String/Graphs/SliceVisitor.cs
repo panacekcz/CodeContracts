@@ -23,63 +23,63 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Extracts a string graph corresponding to substrings.
-  /// </summary>
-  abstract class SliceVisitor : CopyVisitor<IndexInterval>
-  {
-    private readonly LengthVisitor lengths;
-
-    protected SliceVisitor(LengthVisitor lengths)
+    /// <summary>
+    /// Extracts a string graph corresponding to substrings.
+    /// </summary>
+    abstract class SliceVisitor : CopyVisitor<IndexInterval>
     {
-      this.lengths = lengths;
+        private readonly LengthVisitor lengths;
+
+        protected SliceVisitor(LengthVisitor lengths)
+        {
+            this.lengths = lengths;
+        }
+
+        public Node Slice(Node root, IndexInterval index)
+        {
+            return VisitNode(root, VisitContext.Root, ref index);
+        }
+
+        protected override Node VisitChildren(ConcatNode concatNode, Node result, ref IndexInterval data)
+        {
+            IndexInterval index = concatNode.indegree > 1 ? IndexInterval.UnknownNonNegative : data;
+
+            foreach (Node child in concatNode.children)
+            {
+                IndexInterval length = lengths.GetLengthFor(child);
+
+                Node next = VisitNode(child, VisitContext.Concat, ref index);
+
+                ((ConcatNode)result).children.Add(next);
+
+                index = index.AfterOffset(length);
+            }
+
+            return result;
+        }
+
+
+        protected override Node Visit(MaxNode maxNode, VisitContext context, ref IndexInterval data)
+        {
+            return maxNode;
+        }
+
+        protected override Node VisitChildren(OrNode orNode, Node result, ref IndexInterval data)
+        {
+            IndexInterval index = orNode.indegree > 1 ? IndexInterval.UnknownNonNegative : data;
+
+            foreach (Node child in orNode.children)
+            {
+                Node next = VisitNode(child, VisitContext.Or, ref index);
+                ((OrNode)result).children.Add(next);
+            }
+
+            return result;
+        }
+
+        protected override Node Visit(BottomNode bottomNode, VisitContext context, ref IndexInterval data)
+        {
+            return bottomNode;
+        }
     }
-
-    public Node Slice(Node root, IndexInterval index)
-    {
-      return VisitNode(root, VisitContext.Root, ref index);
-    }
-
-    protected override Node VisitChildren(ConcatNode concatNode, Node result, ref IndexInterval data)
-    {
-      IndexInterval index = concatNode.indegree > 1 ? IndexInterval.UnknownNonNegative : data;
-
-      foreach (Node child in concatNode.children)
-      {
-        IndexInterval length = lengths.GetLengthFor(child);
-
-        Node next = VisitNode(child, VisitContext.Concat, ref index);
-
-        ((ConcatNode)result).children.Add(next);
-
-        index = index.AfterOffset(length);
-      }
-
-      return result;
-    }
-
-
-    protected override Node Visit(MaxNode maxNode, VisitContext context, ref IndexInterval data)
-    {
-      return maxNode;
-    }
-
-    protected override Node VisitChildren(OrNode orNode, Node result, ref IndexInterval data)
-    {
-      IndexInterval index = orNode.indegree > 1 ? IndexInterval.UnknownNonNegative : data;
-
-      foreach (Node child in orNode.children)
-      {
-        Node next = VisitNode(child, VisitContext.Or, ref index);
-        ((OrNode)result).children.Add(next);
-      }
-
-      return result;
-    }
-
-    protected override Node Visit(BottomNode bottomNode, VisitContext context, ref IndexInterval data)
-    {
-      return bottomNode;
-    }
-  }
 }

@@ -24,102 +24,102 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Searches for a string constant contained in a string graph
-  /// </summary>
-  class ContainsVisitor : Visitor<bool, Void>
-  {
-    private string needle;
-
-    protected readonly ConstantsVisitor constants;
-
-    public ContainsVisitor(string needle)
+    /// <summary>
+    /// Searches for a string constant contained in a string graph
+    /// </summary>
+    class ContainsVisitor : Visitor<bool, Void>
     {
-      constants = new ConstantsVisitor();
-      this.needle = needle;
-    }
+        private string needle;
 
-    public bool MustContain(Node node)
-    {
-      if (needle == "")
-      {
-        return true;
-      }
-      constants.ComputeConstantsFor(node);
+        protected readonly ConstantsVisitor constants;
 
-      Void unusedData;
-      return VisitNode(node, VisitContext.Root, ref unusedData);
-    }
-
-    protected override bool Visit(ConcatNode concatNode, VisitContext context, ref Void data)
-    {
-      return false;
-    }
-
-    protected override bool VisitChildren(ConcatNode concatNode, bool result, ref Void data)
-    {
-      // Holds a successive constant part
-      StringBuilder constantPart = new StringBuilder();
-
-      foreach (Node child in concatNode.children)
-      {
-        string childConstant = constants.GetConstantFor(child);
-        if (childConstant != null)
+        public ContainsVisitor(string needle)
         {
-          // If the child is constant, add to the constant part
-          constantPart.Append(childConstant);
+            constants = new ConstantsVisitor();
+            this.needle = needle;
         }
-        else
+
+        public bool MustContain(Node node)
         {
-          // Check whether the preceding constant part contains needle
-          if (constantPart.ToString().Contains(needle))
-          {
+            if (needle == "")
+            {
+                return true;
+            }
+            constants.ComputeConstantsFor(node);
+
+            Void unusedData;
+            return VisitNode(node, VisitContext.Root, ref unusedData);
+        }
+
+        protected override bool Visit(ConcatNode concatNode, VisitContext context, ref Void data)
+        {
+            return false;
+        }
+
+        protected override bool VisitChildren(ConcatNode concatNode, bool result, ref Void data)
+        {
+            // Holds a successive constant part
+            StringBuilder constantPart = new StringBuilder();
+
+            foreach (Node child in concatNode.children)
+            {
+                string childConstant = constants.GetConstantFor(child);
+                if (childConstant != null)
+                {
+                    // If the child is constant, add to the constant part
+                    constantPart.Append(childConstant);
+                }
+                else
+                {
+                    // Check whether the preceding constant part contains needle
+                    if (constantPart.ToString().Contains(needle))
+                    {
+                        return true;
+                    }
+                    // Start a new constant part
+                    constantPart.Clear();
+                    // Check inside the non-constant child node
+                    if (VisitNode(child, VisitContext.Concat, ref data))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return constantPart.ToString().Contains(needle);
+        }
+
+        protected override bool Visit(CharNode charNode, VisitContext context, ref Void data)
+        {
+            return needle.Length == 1 && needle[0] == charNode.Value;
+        }
+
+        protected override bool Visit(MaxNode maxNode, VisitContext context, ref Void data)
+        {
+            return false;
+        }
+
+        protected override bool Visit(OrNode orNode, VisitContext context, ref Void data)
+        {
             return true;
-          }
-          // Start a new constant part
-          constantPart.Clear();
-          // Check inside the non-constant child node
-          if (VisitNode(child, VisitContext.Concat, ref data))
-          {
-            return true;
-          }
         }
-      }
 
-      return constantPart.ToString().Contains(needle);
-    }
-
-    protected override bool Visit(CharNode charNode, VisitContext context, ref Void data)
-    {
-      return needle.Length == 1 && needle[0] == charNode.Value;
-    }
-
-    protected override bool Visit(MaxNode maxNode, VisitContext context, ref Void data)
-    {
-      return false;
-    }
-
-    protected override bool Visit(OrNode orNode, VisitContext context, ref Void data)
-    {
-      return true;
-    }
-
-    protected override bool VisitChildren(OrNode orNode, bool result, ref Void data)
-    {
-      foreach (Node child in orNode.children)
-      {
-        if (!VisitNode(child, VisitContext.Or, ref data))
+        protected override bool VisitChildren(OrNode orNode, bool result, ref Void data)
         {
-          return false;
+            foreach (Node child in orNode.children)
+            {
+                if (!VisitNode(child, VisitContext.Or, ref data))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
-      }
-      return true;
-    }
 
-    protected override bool Visit(BottomNode bottomNode, VisitContext context, ref Void data)
-    {
-      return true;
+        protected override bool Visit(BottomNode bottomNode, VisitContext context, ref Void data)
+        {
+            return true;
+        }
     }
-  }
 
 }

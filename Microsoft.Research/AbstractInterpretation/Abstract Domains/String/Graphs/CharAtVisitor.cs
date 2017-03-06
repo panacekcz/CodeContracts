@@ -23,85 +23,85 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Computes the interval of possible character at the specified 
-  /// indices in a string graph.
-  /// </summary>
-  class CharAtVisitor : Visitor<CharInterval, IndexInterval>
-  {
-    private readonly LengthVisitor lengths;
-
-    public CharAtVisitor(LengthVisitor lengths)
+    /// <summary>
+    /// Computes the interval of possible character at the specified 
+    /// indices in a string graph.
+    /// </summary>
+    class CharAtVisitor : Visitor<CharInterval, IndexInterval>
     {
-      this.lengths = lengths;
-    }
+        private readonly LengthVisitor lengths;
 
-    public CharInterval ComputeCharAt(Node root, IndexInterval index)
-    {
-      return VisitNode(root, VisitContext.Root, ref index);
-    }
-
-    protected override CharInterval Visit(ConcatNode concatNode, VisitContext context, ref IndexInterval data)
-    {
-      return CharInterval.Unreached;
-    }
-
-    protected override CharInterval VisitChildren(ConcatNode concatNode, CharInterval result, ref IndexInterval data)
-    {
-      IndexInterval index = concatNode.indegree > 1 ? IndexInterval.UnknownNonNegative : data;
-
-      foreach (Node child in concatNode.children)
-      {
-        if (index.IsBottom)
+        public CharAtVisitor(LengthVisitor lengths)
         {
-          break;
+            this.lengths = lengths;
         }
 
-        IndexInterval length = lengths.GetLengthFor(child);
-
-        if (length.UpperBound > index.LowerBound)
+        public CharInterval ComputeCharAt(Node root, IndexInterval index)
         {
-          CharInterval next = VisitNode(child, VisitContext.Concat, ref index);
-          result = result.Join(next);
+            return VisitNode(root, VisitContext.Root, ref index);
         }
 
-        index = index.AfterOffset(length);
-      }
+        protected override CharInterval Visit(ConcatNode concatNode, VisitContext context, ref IndexInterval data)
+        {
+            return CharInterval.Unreached;
+        }
 
-      return result;
+        protected override CharInterval VisitChildren(ConcatNode concatNode, CharInterval result, ref IndexInterval data)
+        {
+            IndexInterval index = concatNode.indegree > 1 ? IndexInterval.UnknownNonNegative : data;
+
+            foreach (Node child in concatNode.children)
+            {
+                if (index.IsBottom)
+                {
+                    break;
+                }
+
+                IndexInterval length = lengths.GetLengthFor(child);
+
+                if (length.UpperBound > index.LowerBound)
+                {
+                    CharInterval next = VisitNode(child, VisitContext.Concat, ref index);
+                    result = result.Join(next);
+                }
+
+                index = index.AfterOffset(length);
+            }
+
+            return result;
+        }
+
+        protected override CharInterval Visit(CharNode charNode, VisitContext context, ref IndexInterval data)
+        {
+            return CharInterval.For(charNode.Value);
+        }
+
+        protected override CharInterval Visit(MaxNode maxNode, VisitContext context, ref IndexInterval data)
+        {
+            return CharInterval.Unknown;
+        }
+
+        protected override CharInterval Visit(OrNode orNode, VisitContext context, ref IndexInterval data)
+        {
+            return CharInterval.Unreached;
+        }
+
+        protected override CharInterval VisitChildren(OrNode orNode, CharInterval result, ref IndexInterval data)
+        {
+            IndexInterval index = orNode.indegree > 1 ? IndexInterval.UnknownNonNegative : data;
+
+            foreach (Node child in orNode.children)
+            {
+                CharInterval next = VisitNode(child, VisitContext.Or, ref index);
+                result = result.Join(next);
+            }
+
+            return result;
+        }
+
+        protected override CharInterval Visit(BottomNode bottomNode, VisitContext context, ref IndexInterval data)
+        {
+            return CharInterval.Unreached;
+        }
     }
-
-    protected override CharInterval Visit(CharNode charNode, VisitContext context, ref IndexInterval data)
-    {
-      return CharInterval.For(charNode.Value);
-    }
-
-    protected override CharInterval Visit(MaxNode maxNode, VisitContext context, ref IndexInterval data)
-    {
-      return CharInterval.Unknown;
-    }
-
-    protected override CharInterval Visit(OrNode orNode, VisitContext context, ref IndexInterval data)
-    {
-      return CharInterval.Unreached;
-    }
-
-    protected override CharInterval VisitChildren(OrNode orNode, CharInterval result, ref IndexInterval data)
-    {
-      IndexInterval index = orNode.indegree > 1 ? IndexInterval.UnknownNonNegative : data;
-
-      foreach (Node child in orNode.children)
-      {
-        CharInterval next = VisitNode(child, VisitContext.Or, ref index);
-        result = result.Join(next);
-      }
-
-      return result;
-    }
-
-    protected override CharInterval Visit(BottomNode bottomNode, VisitContext context, ref IndexInterval data)
-    {
-      return CharInterval.Unreached;
-    }
-  }
 }

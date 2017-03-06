@@ -23,66 +23,66 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Extracts another string abstraction from a string graph.
-  /// </summary>
-  /// <typeparam name="Abstraction">Type of the target abstraction.</typeparam>
-  internal abstract class ExtractAbstractionVisitor<Abstraction> : Visitor<Abstraction, Void>
-    where Abstraction : IStringAbstraction<Abstraction, string>
-  {
-    protected readonly ConstantsVisitor constants;
-    protected readonly Abstraction top;
-
-    protected ExtractAbstractionVisitor(Abstraction top)
+    /// <summary>
+    /// Extracts another string abstraction from a string graph.
+    /// </summary>
+    /// <typeparam name="Abstraction">Type of the target abstraction.</typeparam>
+    internal abstract class ExtractAbstractionVisitor<Abstraction> : Visitor<Abstraction, Void>
+      where Abstraction : IStringAbstraction<Abstraction, string>
     {
-      constants = new ConstantsVisitor();
-      this.top = top;
+        protected readonly ConstantsVisitor constants;
+        protected readonly Abstraction top;
+
+        protected ExtractAbstractionVisitor(Abstraction top)
+        {
+            constants = new ConstantsVisitor();
+            this.top = top;
+        }
+
+        public Abstraction Extract(Node node)
+        {
+            constants.ComputeConstantsFor(node);
+
+            Void unusedData;
+            return VisitNode(node, VisitContext.Root, ref unusedData);
+        }
+
+        protected override Abstraction Visit(ConcatNode concatNode, VisitContext context, ref Void data)
+        {
+            return top;
+        }
+
+        protected override Abstraction Visit(CharNode charNode, VisitContext context, ref Void data)
+        {
+            return top.Constant(charNode.Value.ToString());
+        }
+
+        protected override Abstraction Visit(MaxNode maxNode, VisitContext context, ref Void data)
+        {
+            return top;
+        }
+
+        protected override Abstraction Visit(OrNode orNode, VisitContext context, ref Void data)
+        {
+            return top;
+        }
+
+        protected override Abstraction VisitChildren(OrNode orNode, Abstraction result, ref Void data)
+        {
+            result = top.Bottom;
+
+            foreach (Node child in orNode.children)
+            {
+                Abstraction next = VisitNode(child, VisitContext.Or, ref data);
+                result = result.Join(next);
+            }
+            return result;
+        }
+
+        protected override Abstraction Visit(BottomNode bottomNode, VisitContext context, ref Void data)
+        {
+            return top.Bottom;
+        }
     }
-
-    public Abstraction Extract(Node node)
-    {
-      constants.ComputeConstantsFor(node);
-
-      Void unusedData;
-      return VisitNode(node, VisitContext.Root, ref unusedData);
-    }
-
-    protected override Abstraction Visit(ConcatNode concatNode, VisitContext context, ref Void data)
-    {
-      return top;
-    }
-
-    protected override Abstraction Visit(CharNode charNode, VisitContext context, ref Void data)
-    {
-      return top.Constant(charNode.Value.ToString());
-    }
-
-    protected override Abstraction Visit(MaxNode maxNode, VisitContext context, ref Void data)
-    {
-      return top;
-    }
-
-    protected override Abstraction Visit(OrNode orNode, VisitContext context, ref Void data)
-    {
-      return top;
-    }
-
-    protected override Abstraction VisitChildren(OrNode orNode, Abstraction result, ref Void data)
-    {
-      result = top.Bottom;
-
-      foreach (Node child in orNode.children)
-      {
-        Abstraction next = VisitNode(child, VisitContext.Or, ref data);
-        result = result.Join(next);
-      }
-      return result;
-    }
-
-    protected override Abstraction Visit(BottomNode bottomNode, VisitContext context, ref Void data)
-    {
-      return top.Bottom;
-    }
-  }
 
 }

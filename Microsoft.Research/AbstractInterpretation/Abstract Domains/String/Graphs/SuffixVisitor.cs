@@ -23,39 +23,39 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Extracts constant suffix from a string graph.
-  /// </summary>
-  class SuffixVisitor : ExtractAbstractionVisitor<Suffix>
-  {
-    public SuffixVisitor() :
-      base(new Suffix(""))
+    /// <summary>
+    /// Extracts constant suffix from a string graph.
+    /// </summary>
+    class SuffixVisitor : ExtractAbstractionVisitor<Suffix>
     {
-    }
-
-    protected override Suffix VisitChildren(ConcatNode concatNode, Suffix result, ref Void data)
-    {
-      List<string> suffixParts = new List<string>();
-      foreach (Node child in Enumerable.Reverse(concatNode.children))
-      {
-        string childConstant = constants.GetConstantFor(child);
-        if (childConstant != null)
+        public SuffixVisitor() :
+          base(new Suffix(""))
         {
-          suffixParts.Add(childConstant);
         }
-        else
-        {
-          Suffix childSuffix = VisitNode(child, VisitContext.Concat, ref data);
-          if (childSuffix.IsBottom)
-          {
-            return childSuffix;
-          }
-          suffixParts.Add(childSuffix.suffix);
-          break;
-        }
-      }
 
-      return new Suffix(StringBuilderUtils.BuildStringFromReverseList(suffixParts));
+        protected override Suffix VisitChildren(ConcatNode concatNode, Suffix result, ref Void data)
+        {
+            List<string> suffixParts = new List<string>();
+            foreach (Node child in Enumerable.Reverse(concatNode.children))
+            {
+                string childConstant = constants.GetConstantFor(child);
+                if (childConstant != null)
+                {
+                    suffixParts.Add(childConstant);
+                }
+                else
+                {
+                    Suffix childSuffix = VisitNode(child, VisitContext.Concat, ref data);
+                    if (childSuffix.IsBottom)
+                    {
+                        return childSuffix;
+                    }
+                    suffixParts.Add(childSuffix.suffix);
+                    break;
+                }
+            }
+
+            return new Suffix(StringBuilderUtils.BuildStringFromReverseList(suffixParts));
+        }
     }
-  }
 }

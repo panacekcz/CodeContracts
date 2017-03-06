@@ -23,22 +23,22 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Represents a node of a string graph.
-  /// </summary>
-  internal abstract class Node
-  {
     /// <summary>
-    /// Gets the label of the node (kind, value).
+    /// Represents a node of a string graph.
     /// </summary>
-    public abstract Label Label { get; }
-
-    public override string ToString()
+    internal abstract class Node
     {
-      StringBuilder builder = new StringBuilder();
-      ToStringVisitor visitor = new ToStringVisitor(builder);
-      visitor.Generate(this);
-      return builder.ToString();
+        /// <summary>
+        /// Gets the label of the node (kind, value).
+        /// </summary>
+        public abstract Label Label { get; }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            ToStringVisitor visitor = new ToStringVisitor(builder);
+            visitor.Generate(this);
+            return builder.ToString();
+        }
     }
-  }
 }

@@ -23,25 +23,25 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Represents an OR node in a string graph
-  /// </summary>
-  internal class OrNode : InnerNode
-  {
-    internal OrNode() :
-      base()
+    /// <summary>
+    /// Represents an OR node in a string graph
+    /// </summary>
+    internal class OrNode : InnerNode
     {
-    }
+        internal OrNode() :
+          base()
+        {
+        }
 
-    public OrNode(IEnumerable<Node> node) :
-      base(node)
-    {
-    }
+        public OrNode(IEnumerable<Node> node) :
+          base(node)
+        {
+        }
 
-    public override Label Label
-    {
-      get { return new Label(NodeKind.Or); }
-    }
+        public override Label Label
+        {
+            get { return new Label(NodeKind.Or); }
+        }
 
-  }
+    }
 }

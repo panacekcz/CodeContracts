@@ -23,70 +23,70 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Computes string for nodes representing constants in a string graph.
-  /// </summary>
-  class ConstantsVisitor : Visitor<string, Void>
-  {
-    public void ComputeConstantsFor(Node root)
+    /// <summary>
+    /// Computes string for nodes representing constants in a string graph.
+    /// </summary>
+    class ConstantsVisitor : Visitor<string, Void>
     {
-      Void unusedData;
-      VisitNode(root, VisitContext.Root, ref unusedData);
-    }
+        public void ComputeConstantsFor(Node root)
+        {
+            Void unusedData;
+            VisitNode(root, VisitContext.Root, ref unusedData);
+        }
 
-    public string GetConstantFor(Node node)
-    {
-      string result;
-      results.TryGetValue(node, out result);
-      return result;
-    }
+        public string GetConstantFor(Node node)
+        {
+            string result;
+            results.TryGetValue(node, out result);
+            return result;
+        }
 
-    protected override string Visit(ConcatNode concatNode, VisitContext context, ref Void data)
-    {
-      return "";
-    }
+        protected override string Visit(ConcatNode concatNode, VisitContext context, ref Void data)
+        {
+            return "";
+        }
 
-    protected override string VisitChildren(ConcatNode concatNode, string result, ref Void data)
-    {
-      StringBuilder builder = new StringBuilder();
-      foreach (Node child in concatNode.children)
-      {
-        string part = VisitNode(child, VisitContext.Concat, ref data);
-        if (part == null)
-          return null;
-        builder.Append(part);
-      }
-      return builder.ToString();
-    }
+        protected override string VisitChildren(ConcatNode concatNode, string result, ref Void data)
+        {
+            StringBuilder builder = new StringBuilder();
+            foreach (Node child in concatNode.children)
+            {
+                string part = VisitNode(child, VisitContext.Concat, ref data);
+                if (part == null)
+                    return null;
+                builder.Append(part);
+            }
+            return builder.ToString();
+        }
 
-    protected override string Visit(CharNode charNode, VisitContext context, ref Void data)
-    {
-      return charNode.Value.ToString();
-    }
+        protected override string Visit(CharNode charNode, VisitContext context, ref Void data)
+        {
+            return charNode.Value.ToString();
+        }
 
-    protected override string Visit(MaxNode maxNode, VisitContext context, ref Void data)
-    {
-      return null;
-    }
+        protected override string Visit(MaxNode maxNode, VisitContext context, ref Void data)
+        {
+            return null;
+        }
 
-    protected override string Visit(OrNode orNode, VisitContext context, ref Void data)
-    {
-      return null;
-    }
+        protected override string Visit(OrNode orNode, VisitContext context, ref Void data)
+        {
+            return null;
+        }
 
-    protected override string VisitChildren(OrNode orNode, string result, ref Void data)
-    {
-      if (orNode.children.Count == 1)
-        return VisitNode(orNode.children[0], VisitContext.Or, ref data);
-      else
-      {
-        return null;
-      }
-    }
+        protected override string VisitChildren(OrNode orNode, string result, ref Void data)
+        {
+            if (orNode.children.Count == 1)
+                return VisitNode(orNode.children[0], VisitContext.Or, ref data);
+            else
+            {
+                return null;
+            }
+        }
 
-    protected override string Visit(BottomNode bottomNode, VisitContext context, ref Void data)
-    {
-      return null;
+        protected override string Visit(BottomNode bottomNode, VisitContext context, ref Void data)
+        {
+            return null;
+        }
     }
-  }
 }

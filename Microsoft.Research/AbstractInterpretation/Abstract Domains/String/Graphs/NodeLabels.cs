@@ -23,24 +23,24 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Provides unique labels to nodes in the string graph for the ToString operation
-  /// </summary>
-  class NodeLabels
-  {
-    private int counter;
-
-    public string GetNextName()
+    /// <summary>
+    /// Provides unique labels to nodes in the string graph for the ToString operation
+    /// </summary>
+    class NodeLabels
     {
-      if (counter < 26)
-      {
-        char ch = (char)('a' + counter++);
-        return ch.ToString();
-      }
-      else
-      {
-        return string.Format("n{0}", counter++ - 26);
-      }
+        private int counter;
+
+        public string GetNextName()
+        {
+            if (counter < 26)
+            {
+                char ch = (char)('a' + counter++);
+                return ch.ToString();
+            }
+            else
+            {
+                return string.Format("n{0}", counter++ - 26);
+            }
+        }
     }
-  }
 }

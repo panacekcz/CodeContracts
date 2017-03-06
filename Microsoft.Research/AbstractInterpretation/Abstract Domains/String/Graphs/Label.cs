@@ -23,61 +23,61 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  internal struct Label
-  {
-    private readonly NodeKind kind;
-    private readonly int value;
-
-    public NodeKind Kind
+    internal struct Label
     {
-      get
-      {
-        return kind;
-      }
-    }
+        private readonly NodeKind kind;
+        private readonly int value;
 
-    public int Arity
-    {
-      get
-      {
-        if (kind != NodeKind.Concat)
+        public NodeKind Kind
         {
-          throw new InvalidOperationException();
+            get
+            {
+                return kind;
+            }
         }
-        return value;
-      }
-    }
 
-    public char Character
-    {
-      get
-      {
-        if (kind != NodeKind.Char)
+        public int Arity
         {
-          throw new InvalidOperationException();
+            get
+            {
+                if (kind != NodeKind.Concat)
+                {
+                    throw new InvalidOperationException();
+                }
+                return value;
+            }
         }
-        return (char)value;
-      }
-    }
 
-    public Label(NodeKind kind, int value = 0)
-    {
-      this.kind = kind;
-      this.value = value;
-    }
+        public char Character
+        {
+            get
+            {
+                if (kind != NodeKind.Char)
+                {
+                    throw new InvalidOperationException();
+                }
+                return (char)value;
+            }
+        }
 
-    public override string ToString()
-    {
-      return string.Format("");
-    }
+        public Label(NodeKind kind, int value = 0)
+        {
+            this.kind = kind;
+            this.value = value;
+        }
 
-    public static bool operator ==(Label left, Label right)
-    {
-      return left.Equals(right);
+        public override string ToString()
+        {
+            return string.Format("");
+        }
+
+        public static bool operator ==(Label left, Label right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(Label left, Label right)
+        {
+            return !left.Equals(right);
+        }
     }
-    public static bool operator !=(Label left, Label right)
-    {
-      return !left.Equals(right);
-    }
-  }
 }

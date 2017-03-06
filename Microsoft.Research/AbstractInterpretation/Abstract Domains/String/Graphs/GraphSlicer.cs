@@ -23,35 +23,35 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Produces slices of a string graph.
-  /// </summary>
-  class GraphSlicer
-  {
-    private readonly LengthVisitor lengths;
-    private readonly Node root;
+    /// <summary>
+    /// Produces slices of a string graph.
+    /// </summary>
+    class GraphSlicer
+    {
+        private readonly LengthVisitor lengths;
+        private readonly Node root;
 
-    public GraphSlicer(Node root)
-    {
-      this.root = root;
-      this.lengths = new LengthVisitor();
-      lengths.ComputeLengthsFor(root);
-    }
+        public GraphSlicer(Node root)
+        {
+            this.root = root;
+            this.lengths = new LengthVisitor();
+            lengths.ComputeLengthsFor(root);
+        }
 
-    public Node Before(IndexInterval index)
-    {
-      SliceBeforeVisitor visitor = new SliceBeforeVisitor(lengths);
-      return visitor.Slice(root, index);
+        public Node Before(IndexInterval index)
+        {
+            SliceBeforeVisitor visitor = new SliceBeforeVisitor(lengths);
+            return visitor.Slice(root, index);
+        }
+        public Node After(IndexInterval index)
+        {
+            SliceAfterVisitor visitor = new SliceAfterVisitor(lengths);
+            return visitor.Slice(root, index);
+        }
+        public CharInterval CharAt(IndexInterval index)
+        {
+            CharAtVisitor visitor = new CharAtVisitor(lengths);
+            return visitor.ComputeCharAt(root, index);
+        }
     }
-    public Node After(IndexInterval index)
-    {
-      SliceAfterVisitor visitor = new SliceAfterVisitor(lengths);
-      return visitor.Slice(root, index);
-    }
-    public CharInterval CharAt(IndexInterval index)
-    {
-      CharAtVisitor visitor = new CharAtVisitor(lengths);
-      return visitor.ComputeCharAt(root, index);
-    }
-  }
 }

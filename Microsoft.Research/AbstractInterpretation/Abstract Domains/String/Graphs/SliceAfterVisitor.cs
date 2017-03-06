@@ -23,31 +23,31 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Extracts a string graph corresponding to substrings beginning
-  /// at (after) an index from an interval.
-  /// </summary>
-  class SliceAfterVisitor : SliceVisitor
-  {
-    public SliceAfterVisitor(LengthVisitor lengths) :
-      base(lengths)
+    /// <summary>
+    /// Extracts a string graph corresponding to substrings beginning
+    /// at (after) an index from an interval.
+    /// </summary>
+    class SliceAfterVisitor : SliceVisitor
     {
-    }
+        public SliceAfterVisitor(LengthVisitor lengths) :
+          base(lengths)
+        {
+        }
 
-    protected override Node Visit(CharNode charNode, VisitContext context, ref IndexInterval data)
-    {
-      if (data.IsBottom || data.UpperBound == 0)
-      {
-        return charNode;
-      }
-      else if (data.LowerBound > 0)
-      {
-        return NodeBuilder.CreateEmptyNode();
-      }
-      else
-      {
-        return NodeBuilder.CreateOptionalNode(charNode);
-      }
+        protected override Node Visit(CharNode charNode, VisitContext context, ref IndexInterval data)
+        {
+            if (data.IsBottom || data.UpperBound == 0)
+            {
+                return charNode;
+            }
+            else if (data.LowerBound > 0)
+            {
+                return NodeBuilder.CreateEmptyNode();
+            }
+            else
+            {
+                return NodeBuilder.CreateOptionalNode(charNode);
+            }
+        }
     }
-  }
 }

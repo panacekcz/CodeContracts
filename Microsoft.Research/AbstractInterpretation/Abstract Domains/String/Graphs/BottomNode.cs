@@ -23,18 +23,18 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Represents a bottom node in a string graph.
-  /// </summary>
-  /// <remarks>
-  /// This class is immutable and instances can be shared across
-  /// multiple graphs.
-  /// </remarks>
-  class BottomNode : Node
-  {
-    public override Label Label
+    /// <summary>
+    /// Represents a bottom node in a string graph.
+    /// </summary>
+    /// <remarks>
+    /// This class is immutable and instances can be shared across
+    /// multiple graphs.
+    /// </remarks>
+    class BottomNode : Node
     {
-      get { return new Label(NodeKind.Bottom); }
+        public override Label Label
+        {
+            get { return new Label(NodeKind.Bottom); }
+        }
     }
-  }
 }

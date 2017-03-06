@@ -23,30 +23,30 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Represents a single character node in a string graph.
-  /// </summary>
-  /// <remarks>
-  /// The node is immutable and can be shared in multiple graphs.
-  /// </remarks>
-  class CharNode : Node
-  {
-    private readonly char value;
-
-    public char Value
+    /// <summary>
+    /// Represents a single character node in a string graph.
+    /// </summary>
+    /// <remarks>
+    /// The node is immutable and can be shared in multiple graphs.
+    /// </remarks>
+    class CharNode : Node
     {
-      get { return value; }
-    }
+        private readonly char value;
 
-    public CharNode(char value)
-    {
-      this.value = value;
-    }
+        public char Value
+        {
+            get { return value; }
+        }
 
-    public override Label Label
-    {
-      get { return new Label(NodeKind.Char, value); }
-    }
+        public CharNode(char value)
+        {
+            this.value = value;
+        }
 
-  }
+        public override Label Label
+        {
+            get { return new Label(NodeKind.Char, value); }
+        }
+
+    }
 }

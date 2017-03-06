@@ -23,42 +23,42 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Extracts constant prefix from a string graph.
-  /// </summary>
-  class PrefixVisitor : ExtractAbstractionVisitor<Prefix>
-  {
-    public PrefixVisitor() :
-      base(new Prefix(""))
+    /// <summary>
+    /// Extracts constant prefix from a string graph.
+    /// </summary>
+    class PrefixVisitor : ExtractAbstractionVisitor<Prefix>
     {
-    }
-
-
-    protected override Prefix VisitChildren(ConcatNode concatNode, Prefix result, ref Void data)
-    {
-      StringBuilder builder = new StringBuilder();
-      foreach (Node child in concatNode.children)
-      {
-        string childConstant = constants.GetConstantFor(child);
-        if (childConstant != null)
+        public PrefixVisitor() :
+          base(new Prefix(""))
         {
-          builder.Append(childConstant);
         }
-        else
+
+
+        protected override Prefix VisitChildren(ConcatNode concatNode, Prefix result, ref Void data)
         {
-          Prefix childPrefix = VisitNode(child, VisitContext.Concat, ref data);
-          if (childPrefix.IsBottom)
-          {
-            return childPrefix;
-          }
-          builder.Append(childPrefix.prefix);
-          break;
+            StringBuilder builder = new StringBuilder();
+            foreach (Node child in concatNode.children)
+            {
+                string childConstant = constants.GetConstantFor(child);
+                if (childConstant != null)
+                {
+                    builder.Append(childConstant);
+                }
+                else
+                {
+                    Prefix childPrefix = VisitNode(child, VisitContext.Concat, ref data);
+                    if (childPrefix.IsBottom)
+                    {
+                        return childPrefix;
+                    }
+                    builder.Append(childPrefix.prefix);
+                    break;
+                }
+            }
+
+            return new Prefix(builder.ToString());
         }
-      }
 
-      return new Prefix(builder.ToString());
+
     }
-
-
-  }
 }

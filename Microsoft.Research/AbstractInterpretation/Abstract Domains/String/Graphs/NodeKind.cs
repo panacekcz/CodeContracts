@@ -23,30 +23,30 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Kind of a string graph node.
-  /// </summary>
-  internal enum NodeKind
-  {
     /// <summary>
-    /// The max node, <see cref="MaxNode"/>.
+    /// Kind of a string graph node.
     /// </summary>
-    Max,
-    /// <summary>
-    /// The bottom node, <see cref="BottomNode"/>.
-    /// </summary>
-    Bottom,
-    /// <summary>
-    /// The char node, <see cref="CharNode"/>.
-    /// </summary>
-    Char,
-    /// <summary>
-    /// The concat node, <see cref="ConcatNode"/>.
-    /// </summary>
-    Concat,
-    /// <summary>
-    /// The bottom node, <see cref="OrNode"/>.
-    /// </summary>
-    Or
-  }
+    internal enum NodeKind
+    {
+        /// <summary>
+        /// The max node, <see cref="MaxNode"/>.
+        /// </summary>
+        Max,
+        /// <summary>
+        /// The bottom node, <see cref="BottomNode"/>.
+        /// </summary>
+        Bottom,
+        /// <summary>
+        /// The char node, <see cref="CharNode"/>.
+        /// </summary>
+        Char,
+        /// <summary>
+        /// The concat node, <see cref="ConcatNode"/>.
+        /// </summary>
+        Concat,
+        /// <summary>
+        /// The bottom node, <see cref="OrNode"/>.
+        /// </summary>
+        Or
+    }
 }

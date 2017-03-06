@@ -48,7 +48,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
       {
         result = VisitBackwardEdge(graphNode, result, context, ref data);
       }
-      else if (graphNode is InnerNode)
+      else
       {
         result = VisitSharedEdge(graphNode, result, context, ref data);
       }

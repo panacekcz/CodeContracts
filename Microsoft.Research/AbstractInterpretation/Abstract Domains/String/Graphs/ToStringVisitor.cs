@@ -23,92 +23,94 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  struct Void { }
+    struct Void { }
 
-  /// <summary>
-  /// Generates a readable string representation of the string graph.
-  /// </summary>
-  class ToStringVisitor : Visitor<string, Void>
-  {
-    private readonly StringBuilder builder;
-    private readonly NodeLabels nameGenerator;
-
-    public ToStringVisitor(StringBuilder builder)
+    /// <summary>
+    /// Generates a readable string representation of the string graph.
+    /// </summary>
+    class ToStringVisitor : Visitor<string, Void>
     {
-      this.builder = builder;
-      nameGenerator = new NodeLabels();
-    }
+        private readonly StringBuilder builder;
+        private readonly NodeLabels nameGenerator;
 
-    public void Generate(Node node)
-    {
-      Void unusedData;
-      VisitNode(node, VisitContext.Root, ref unusedData);
-    }
+        public ToStringVisitor(StringBuilder builder)
+        {
+            this.builder = builder;
+            nameGenerator = new NodeLabels();
+        }
 
-    private string VisitInnerNode(InnerNode innerNode)
-    {
-      if (innerNode.indegree > 1)
-      {
-        string name = nameGenerator.GetNextName();
-        builder.Append(name);
-        builder.Append(':');
-        return name;
-      }
-      else
-      {
-        return null;
-      }
-    }
+        public void Generate(Node node)
+        {
+            Void unusedData;
+            VisitNode(node, VisitContext.Root, ref unusedData);
+        }
 
-    protected override string Visit(ConcatNode concatNode, VisitContext context, ref Void data)
-    {
-      return VisitInnerNode(concatNode);
-    }
+        private string VisitInnerNode(InnerNode innerNode)
+        {
+            if (innerNode.indegree > 1)
+            {
+                string name = nameGenerator.GetNextName();
+                builder.Append(name);
+                builder.Append(':');
+                return name;
+            }
+            else
+            {
+                return null;
+            }
+        }
 
-    protected override string Visit(CharNode charNode, VisitContext context, ref Void data)
-    {
-      builder.AppendFormat("[{0}]", charNode.Value);
-      return null;
-    }
+        protected override string Visit(ConcatNode concatNode, VisitContext context, ref Void data)
+        {
+            return VisitInnerNode(concatNode);
+        }
 
-    protected override string Visit(MaxNode maxNode, VisitContext context, ref Void data)
-    {
-      builder.Append("T");
-      return null;
-    }
+        protected override string Visit(CharNode charNode, VisitContext context, ref Void data)
+        {
+            builder.AppendFormat("[{0}]", charNode.Value);
+            return null;
+        }
 
-    protected override string Visit(OrNode orNode, VisitContext context, ref Void data)
-    {
-      return VisitInnerNode(orNode);
-    }
+        protected override string Visit(MaxNode maxNode, VisitContext context, ref Void data)
+        {
+            builder.Append("T");
+            return null;
+        }
 
-    protected override string Visit(BottomNode bottomNode, VisitContext context, ref Void data)
-    {
-      builder.Append("_|_");
-      return null;
-    }
+        protected override string Visit(OrNode orNode, VisitContext context, ref Void data)
+        {
+            return VisitInnerNode(orNode);
+        }
 
-    protected override string VisitChildren(ConcatNode orNode, string result, ref Void data)
-    {
-      builder.Append('<');
-      base.VisitChildren(orNode, result, ref data);
-      builder.Append('>');
-      return result;
-    }
+        protected override string Visit(BottomNode bottomNode, VisitContext context, ref Void data)
+        {
+            builder.Append("_|_");
+            return null;
+        }
 
-    protected override string VisitChildren(OrNode orNode, string result, ref Void data)
-    {
-      builder.Append('{');
-      base.VisitChildren(orNode, result, ref data);
-      builder.Append('}');
-      return result;
-    }
+        protected override string VisitChildren(ConcatNode orNode, string result, ref Void data)
+        {
+            builder.Append('<');
+            base.VisitChildren(orNode, result, ref data);
+            builder.Append('>');
+            return result;
+        }
 
-    protected override string VisitBackwardEdge(Node graphNode, string result, VisitContext context, ref Void data)
-    {
-      System.Diagnostics.Debug.Assert(result != null);
-      builder.Append(result);
-      return result;
+        protected override string VisitChildren(OrNode orNode, string result, ref Void data)
+        {
+            builder.Append('{');
+            base.VisitChildren(orNode, result, ref data);
+            builder.Append('}');
+            return result;
+        }
+
+        protected override string VisitBackwardEdge(Node graphNode, string result, VisitContext context, ref Void data)
+        {
+            if (result == null)
+                VisitForwardEdge(graphNode, context, ref data);
+            else
+                builder.Append(result);
+            return result;
+        }
     }
-  }
 }

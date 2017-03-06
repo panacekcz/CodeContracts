@@ -23,26 +23,26 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Trims characters from the start of a string graph.
-  /// </summary>
-  class TrimStartVisitor : TrimVisitor
-  {
-    public TrimStartVisitor(HashSet<char> trimmedChars) :
-      base(trimmedChars)
+    /// <summary>
+    /// Trims characters from the start of a string graph.
+    /// </summary>
+    class TrimStartVisitor : TrimVisitor
     {
+        public TrimStartVisitor(HashSet<char> trimmedChars) :
+          base(trimmedChars)
+        {
+        }
+
+
+        protected override Node VisitChildren(ConcatNode concatNode, Node result, ref TrimVisitorState data)
+        {
+            foreach (Node child in concatNode.children)
+            {
+                Node trimmedChild = VisitNode(child, VisitContext.Concat, ref data);
+                ((ConcatNode)result).children.Add(trimmedChild);
+            }
+
+            return result;
+        }
     }
-
-
-    protected override Node VisitChildren(ConcatNode concatNode, Node result, ref TrimVisitorState data)
-    {
-      foreach (Node child in concatNode.children)
-      {
-        Node trimmedChild = VisitNode(child, VisitContext.Concat, ref data);
-        ((ConcatNode)result).children.Add(trimmedChild);
-      }
-
-      return result;
-    }
-  }
 }

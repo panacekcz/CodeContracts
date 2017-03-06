@@ -23,59 +23,59 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Traverses the string graph, copying the nodes.
-  /// </summary>
-  /// <typeparam name="Data">The data passed along the traversal.</typeparam>
-  class CopyVisitor<Data> : Visitor<Node, Data>
-  {
-    protected override Node Visit(ConcatNode concatNode, VisitContext context, ref Data data)
+    /// <summary>
+    /// Traverses the string graph, copying the nodes.
+    /// </summary>
+    /// <typeparam name="Data">The data passed along the traversal.</typeparam>
+    class CopyVisitor<Data> : Visitor<Node, Data>
     {
-      return new ConcatNode();
-    }
+        protected override Node Visit(ConcatNode concatNode, VisitContext context, ref Data data)
+        {
+            return new ConcatNode();
+        }
 
-    protected override Node Visit(CharNode charNode, VisitContext context, ref Data data)
-    {
-      return charNode;
-    }
+        protected override Node Visit(CharNode charNode, VisitContext context, ref Data data)
+        {
+            return charNode;
+        }
 
-    protected override Node Visit(MaxNode maxNode, VisitContext context, ref Data data)
-    {
-      return maxNode;
-    }
+        protected override Node Visit(MaxNode maxNode, VisitContext context, ref Data data)
+        {
+            return maxNode;
+        }
 
-    protected override Node Visit(OrNode orNode, VisitContext context, ref Data data)
-    {
-      return new OrNode();
-    }
+        protected override Node Visit(OrNode orNode, VisitContext context, ref Data data)
+        {
+            return new OrNode();
+        }
 
-    protected override Node VisitBackwardEdge(Node graphNode, Node result, VisitContext context, ref Data data)
-    {
-      if (result is InnerNode)
-      {
-        ((InnerNode)result).indegree++;
-      }
-      return result;
-    }
+        protected override Node VisitBackwardEdge(Node graphNode, Node result, VisitContext context, ref Data data)
+        {
+            if (result is InnerNode)
+            {
+                ((InnerNode)result).indegree++;
+            }
+            return result;
+        }
 
-    protected override Node VisitSharedEdge(Node graphNode, Node result, VisitContext context, ref Data data)
-    {
-      return VisitForwardEdge(graphNode, context, ref data);
-    }
+        protected override Node VisitSharedEdge(Node graphNode, Node result, VisitContext context, ref Data data)
+        {
+            return VisitForwardEdge(graphNode, context, ref data);
+        }
 
-    protected override Node VisitNodeChildren(InnerNode innerNode, Node result, VisitContext context, ref Data data)
-    {
-      InnerNode newInnerNode = (InnerNode)result;
-      foreach (Node child in innerNode.children)
-      {
-        newInnerNode.children.Add(VisitNode(child, context, ref data));
-      }
-      return result;
-    }
+        protected override Node VisitNodeChildren(InnerNode innerNode, Node result, VisitContext context, ref Data data)
+        {
+            InnerNode newInnerNode = (InnerNode)result;
+            foreach (Node child in innerNode.children)
+            {
+                newInnerNode.children.Add(VisitNode(child, context, ref data));
+            }
+            return result;
+        }
 
-    protected override Node Visit(BottomNode bottomNode, VisitContext context, ref Data data)
-    {
-      return bottomNode;
+        protected override Node Visit(BottomNode bottomNode, VisitContext context, ref Data data)
+        {
+            return bottomNode;
+        }
     }
-  }
 }

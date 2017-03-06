@@ -23,19 +23,19 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Represents a Top node in a string graph.
-  /// </summary>
-  /// <remarks>
-  /// This class is immutable and instances can be shared across
-  /// multiple graphs.
-  /// </remarks>
-  class MaxNode : Node
-  {
-
-    public override Label Label
+    /// <summary>
+    /// Represents a Top node in a string graph.
+    /// </summary>
+    /// <remarks>
+    /// This class is immutable and instances can be shared across
+    /// multiple graphs.
+    /// </remarks>
+    class MaxNode : Node
     {
-      get { return new Label(NodeKind.Max); }
+
+        public override Label Label
+        {
+            get { return new Label(NodeKind.Max); }
+        }
     }
-  }
 }

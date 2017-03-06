@@ -23,24 +23,24 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Represents a concat node in a string graph.
-  /// </summary>
-  internal class ConcatNode : InnerNode
-  {
-    internal ConcatNode()
-      : base()
+    /// <summary>
+    /// Represents a concat node in a string graph.
+    /// </summary>
+    internal class ConcatNode : InnerNode
     {
-    }
+        internal ConcatNode()
+          : base()
+        {
+        }
 
-    public ConcatNode(IEnumerable<Node> nodes)
-      : base(nodes)
-    {
-    }
+        public ConcatNode(IEnumerable<Node> nodes)
+          : base(nodes)
+        {
+        }
 
-    public override Label Label
-    {
-      get { return new Label(NodeKind.Concat, children.Count); }
+        public override Label Label
+        {
+            get { return new Label(NodeKind.Concat, children.Count); }
+        }
     }
-  }
 }

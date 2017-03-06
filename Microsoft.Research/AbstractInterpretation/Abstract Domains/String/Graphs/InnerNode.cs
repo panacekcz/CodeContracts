@@ -23,21 +23,21 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Represents an inner (non-leaf) node of a string graph.
-  /// </summary>
-  internal abstract class InnerNode : Node
-  {
-    internal readonly List<Node> children;
-    internal int indegree = 1;
+    /// <summary>
+    /// Represents an inner (non-leaf) node of a string graph.
+    /// </summary>
+    internal abstract class InnerNode : Node
+    {
+        internal readonly List<Node> children;
+        internal int indegree = 1;
 
-    internal InnerNode()
-    {
-      this.children = new List<Node>();
+        internal InnerNode()
+        {
+            this.children = new List<Node>();
+        }
+        public InnerNode(IEnumerable<Node> children)
+        {
+            this.children = new List<Node>(children);
+        }
     }
-    public InnerNode(IEnumerable<Node> children)
-    {
-      this.children = new List<Node>(children);
-    }
-  }
 }

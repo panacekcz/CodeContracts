@@ -23,94 +23,94 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  internal enum TrimVisitorState
-  {
-    Trimmed, Unknown, Preserved, Bottom
-  }
-
-  abstract class TrimVisitor : CopyVisitor<TrimVisitorState>
-  {
-    private readonly HashSet<char> trimmedChars;
-
-    protected TrimVisitor(HashSet<char> trimmedChars)
+    internal enum TrimVisitorState
     {
-      this.trimmedChars = trimmedChars;
+        Trimmed, Unknown, Preserved, Bottom
     }
 
-    public Node Trim(Node root)
+    abstract class TrimVisitor : CopyVisitor<TrimVisitorState>
     {
-      TrimVisitorState state = TrimVisitorState.Trimmed;
-      return VisitNode(root, VisitContext.Root, ref state);
-    }
+        private readonly HashSet<char> trimmedChars;
 
-    protected override Node Visit(CharNode charNode, VisitContext context, ref TrimVisitorState data)
-    {
-      if (data == TrimVisitorState.Preserved)
-      {
-        // Not trimmed
-        return charNode;
-      }
-      else if (trimmedChars.Contains(charNode.Value))
-      {
-        // May be trimmed
-        if (data == TrimVisitorState.Trimmed)
+        protected TrimVisitor(HashSet<char> trimmedChars)
         {
-          return NodeBuilder.CreateEmptyNode();
+            this.trimmedChars = trimmedChars;
         }
-        else
+
+        public Node Trim(Node root)
         {
-          return NodeBuilder.CreateOptionalNode(charNode);
+            TrimVisitorState state = TrimVisitorState.Trimmed;
+            return VisitNode(root, VisitContext.Root, ref state);
         }
-      }
-      else
-      {
-        // Not trimmed
-        data = TrimVisitorState.Preserved;
-        return charNode;
-      }
-    }
-    protected override Node Visit(MaxNode maxNode, VisitContext context, ref TrimVisitorState data)
-    {
-      if (data == TrimVisitorState.Preserved)
-      {
-        data = TrimVisitorState.Unknown;
-      }
-      return maxNode;
-    }
 
-    protected override Node VisitChildren(OrNode orNode, Node result, ref TrimVisitorState data)
-    {
-      TrimVisitorState stateBefore = data;
-      TrimVisitorState stateAfter = TrimVisitorState.Trimmed;
+        protected override Node Visit(CharNode charNode, VisitContext context, ref TrimVisitorState data)
+        {
+            if (data == TrimVisitorState.Preserved)
+            {
+                // Not trimmed
+                return charNode;
+            }
+            else if (trimmedChars.Contains(charNode.Value))
+            {
+                // May be trimmed
+                if (data == TrimVisitorState.Trimmed)
+                {
+                    return NodeBuilder.CreateEmptyNode();
+                }
+                else
+                {
+                    return NodeBuilder.CreateOptionalNode(charNode);
+                }
+            }
+            else
+            {
+                // Not trimmed
+                data = TrimVisitorState.Preserved;
+                return charNode;
+            }
+        }
+        protected override Node Visit(MaxNode maxNode, VisitContext context, ref TrimVisitorState data)
+        {
+            if (data == TrimVisitorState.Preserved)
+            {
+                data = TrimVisitorState.Unknown;
+            }
+            return maxNode;
+        }
 
-      foreach (Node child in orNode.children)
-      {
-        TrimVisitorState childState = stateBefore;
-        Node trimmedChild = VisitNode(child, VisitContext.Or, ref childState);
-        ((OrNode)result).children.Add(trimmedChild);
+        protected override Node VisitChildren(OrNode orNode, Node result, ref TrimVisitorState data)
+        {
+            TrimVisitorState stateBefore = data;
+            TrimVisitorState stateAfter = TrimVisitorState.Trimmed;
 
-        stateAfter = Join(stateAfter, childState);
-      }
-      data = stateAfter;
+            foreach (Node child in orNode.children)
+            {
+                TrimVisitorState childState = stateBefore;
+                Node trimmedChild = VisitNode(child, VisitContext.Or, ref childState);
+                ((OrNode)result).children.Add(trimmedChild);
 
-      return result;
+                stateAfter = Join(stateAfter, childState);
+            }
+            data = stateAfter;
+
+            return result;
+        }
+        private static TrimVisitorState Join(TrimVisitorState stateA, TrimVisitorState stateB)
+        {
+            if (stateA == TrimVisitorState.Unknown || stateB == TrimVisitorState.Bottom)
+            {
+                return stateA;
+            }
+            if (stateB == TrimVisitorState.Unknown || stateA == TrimVisitorState.Bottom)
+            {
+                return stateB;
+            }
+            if (stateA == stateB)
+            {
+                return stateA;
+            }
+            return TrimVisitorState.Unknown;
+        }
     }
-    private static TrimVisitorState Join(TrimVisitorState stateA, TrimVisitorState stateB)
-    {
-      if (stateA == TrimVisitorState.Unknown || stateB == TrimVisitorState.Bottom)
-      {
-        return stateA;
-      }
-      if (stateB == TrimVisitorState.Unknown || stateA == TrimVisitorState.Bottom)
-      {
-        return stateB;
-      }
-      if (stateA == stateB)
-      {
-        return stateA;
-      }
-      return TrimVisitorState.Unknown;
-    }
-  }
 
 }

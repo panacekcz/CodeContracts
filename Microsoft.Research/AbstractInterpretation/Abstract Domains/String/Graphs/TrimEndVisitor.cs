@@ -23,33 +23,33 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Trims characters from the end of a string graph.
-  /// </summary>
-  class TrimEndVisitor : TrimVisitor
-  {
-    public TrimEndVisitor(HashSet<char> trimmedChars) :
-      base(trimmedChars)
+    /// <summary>
+    /// Trims characters from the end of a string graph.
+    /// </summary>
+    class TrimEndVisitor : TrimVisitor
     {
-    }
-
-
-    protected override Node VisitChildren(ConcatNode concatNode, Node result, ref TrimVisitorState data)
-    {
-      ConcatNode concatResult = ((ConcatNode)result);
-
-      foreach (Node child in Enumerable.Reverse(concatNode.children))
-      {
-        Node trimmedChild = VisitNode(child, VisitContext.Concat, ref data);
-        if (trimmedChild != null)
+        public TrimEndVisitor(HashSet<char> trimmedChars) :
+          base(trimmedChars)
         {
-          concatResult.children.Add(trimmedChild);
         }
-      }
 
-      concatResult.children.Reverse();
 
-      return concatResult;
+        protected override Node VisitChildren(ConcatNode concatNode, Node result, ref TrimVisitorState data)
+        {
+            ConcatNode concatResult = ((ConcatNode)result);
+
+            foreach (Node child in Enumerable.Reverse(concatNode.children))
+            {
+                Node trimmedChild = VisitNode(child, VisitContext.Concat, ref data);
+                if (trimmedChild != null)
+                {
+                    concatResult.children.Add(trimmedChild);
+                }
+            }
+
+            concatResult.children.Reverse();
+
+            return concatResult;
+        }
     }
-  }
 }

@@ -23,38 +23,38 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-  /// <summary>
-  /// Replaces all occurences of characters from an interval by another string graph.
-  /// </summary>
-  class ReplaceCharVisitor : CopyVisitor<Void>
-  {
-    public delegate Node NodeGenerator();
-
-    private readonly CharInterval from;
-    private readonly NodeGenerator generator;
-
-    public ReplaceCharVisitor(CharInterval from, NodeGenerator generator)
+    /// <summary>
+    /// Replaces all occurences of characters from an interval by another string graph.
+    /// </summary>
+    class ReplaceCharVisitor : CopyVisitor<Void>
     {
-      this.from = from;
-      this.generator = generator;
-    }
+        public delegate Node NodeGenerator();
 
-    public Node ReplaceIn(Node node)
-    {
-      Void unusedData;
-      return VisitNode(node, VisitContext.Root, ref unusedData);
-    }
+        private readonly CharInterval from;
+        private readonly NodeGenerator generator;
 
-    protected override Node Visit(CharNode charNode, VisitContext context, ref Void data)
-    {
-      if (charNode.Value >= from.LowerBound && charNode.Value <= from.UpperBound)
-      {
-        return generator();
-      }
-      else
-      {
-        return charNode;
-      }
+        public ReplaceCharVisitor(CharInterval from, NodeGenerator generator)
+        {
+            this.from = from;
+            this.generator = generator;
+        }
+
+        public Node ReplaceIn(Node node)
+        {
+            Void unusedData;
+            return VisitNode(node, VisitContext.Root, ref unusedData);
+        }
+
+        protected override Node Visit(CharNode charNode, VisitContext context, ref Void data)
+        {
+            if (charNode.Value >= from.LowerBound && charNode.Value <= from.UpperBound)
+            {
+                return generator();
+            }
+            else
+            {
+                return charNode;
+            }
+        }
     }
-  }
 }
