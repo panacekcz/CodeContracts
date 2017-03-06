@@ -1139,9 +1139,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             ///<inheritdoc/>
             public IStringPredicate RegexIsMatch(Bricks self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
-                //TODO: use interpreter
-                throw new NotImplementedException();
-                /*BricksRegex brickRegexConverter = new BricksRegex(self);
+                BricksRegex brickRegexConverter = new BricksRegex(self);
 
                 ProofOutcome matchOutcome = brickRegexConverter.IsMatch(regex);
 
@@ -1153,7 +1151,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     Bricks regexBricks = brickRegexConverter.BricksForRegex(regex).Normalize(BrickNormalizationLocation.Conversion);
                     return StringAbstractionPredicate.ForTrue(selfVariable, regexBricks);
-                }*/
+                }
             }
             ///<inheritdoc/>
             public CharInterval GetCharAt(Bricks self, IndexInterval index)

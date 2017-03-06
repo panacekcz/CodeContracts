@@ -21,236 +21,285 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Microsoft.Research.Regex.AST;
+using Microsoft.Research.Regex.Model;
 using Microsoft.Research.Regex;
 using Microsoft.Research.CodeAnalysis;
+using Microsoft.Research.AbstractDomains.Strings.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-#if vdfalse
+
     /// <summary>
     /// Converts regexes to bricks.
     /// </summary>
     public class BricksRegex
-  {
-    private readonly Bricks element;
-
-    public BricksRegex(Bricks element)
     {
-      this.element = element;
-    }
+        private readonly Bricks element;
 
-    private class BricksRegexVisitor : OpenClosedRegexVisitor<List<Brick>, RegexEndsData>
-    {
-      private IBricksPolicy bricksPolicy;
-      private bool overapproximate;
-
-      public BricksRegexVisitor(IBricksPolicy bricksPolicy, bool overapproximate)
-      {
-        this.bricksPolicy = bricksPolicy;
-        this.overapproximate = overapproximate;
-      }
-
-      protected override List<Brick> Unsupported(Element regex, ref RegexEndsData data)
-      {
-        return new List<Brick> { new Brick(overapproximate) };
-      }
-
-      protected override List<Brick> Visit(Alternation element, ref RegexEndsData data)
-      {
-        bool isSingleBrick = true;
-        HashSet<string> constants = new HashSet<string>();
-
-        Bricks joined = new Bricks(new List<Brick>(), bricksPolicy);
-
-        foreach (Element child in element.Patterns)
+        public BricksRegex(Bricks element)
         {
-          List<Brick> childBricks = VisitElement(child, ref data);
+            this.element = element;
+        }
 
-          if (isSingleBrick && childBricks.Count == 1 && childBricks[0].min == 1 && childBricks[0].max == 1)
-          {
-            constants.UnionWith(childBricks[0].values);
-          }
-          else if (!overapproximate)
-          {
-            // If we are underapproximating, do not allow joining lists
-            return new List<Brick> { new Brick(false) };
-          }
-          else
-          {
-            if (isSingleBrick)
+        private class BrickGeneratingState
+        {
+            public Brick brick;
+            public BrickGeneratingState previous;
+            public int index;
+
+            public BrickGeneratingState(Brick b, BrickGeneratingState previous = null)
             {
-              isSingleBrick = false;
-              joined.bricks.Add(new Brick(constants));
+                brick = b;
+                this.previous = previous;
+                index = previous == null ? 0 : previous.index + 1;
             }
 
-            joined = joined.Join(new Bricks(childBricks, bricksPolicy));
-          }
-
-        }
-
-        if (isSingleBrick)
-        {
-          joined.bricks.Add(new Brick(constants));
-        }
-
-        return joined.bricks;
-      }
-
-      protected override List<Brick> VisitConcatenation(Concatenation element,
-        int startIndex, int endIndex, RegexEndsData ends,
-        ref RegexEndsData data)
-      {
-        bool isSingleString = true;
-        StringBuilder singleString = new StringBuilder();
-        List<Brick> brickList = new List<Brick>();
-
-        for (int index = startIndex; index < endIndex; ++index)
-        {
-          RegexEndsData childEnds = ConcatChildEnds(ends, data, startIndex, endIndex, index);
-
-          Element child = element.Parts[index];
-
-          List<Brick> childBricks = VisitElement(child, ref childEnds);
-
-          if (isSingleString && childBricks.Count == 1 &&
-            childBricks[0].min == 1 && childBricks[0].max == 1 &&
-            childBricks[0].values.Count == 1)
-          {
-            singleString.Append(childBricks[0].values.Single());
-          }
-          else
-          {
-            if (isSingleString)
+            public IEnumerable<Brick> Bricks
             {
-              if (singleString.Length != 0)
-              {
-                brickList.Add(new Brick(singleString.ToString(), 1, 1));
-              }
-
-              isSingleString = false;
-              singleString = null;
+                get
+                {
+                    BrickGeneratingState bs = this;
+                    while (bs != null)
+                    {
+                        yield return bs.brick;
+                        bs = bs.previous;
+                    }
+                }
             }
-            brickList.AddRange(childBricks);
-          }
-        }
 
-        if (isSingleString && singleString.Length != 0)
+            internal static BrickGeneratingState Concat(BrickGeneratingState prev, BrickGeneratingState last)
+            {
+                List<Brick> lastList = last.Bricks.ToList();
+                foreach(Brick brick in lastList)
+                {
+                    prev = new BrickGeneratingState(brick, prev);
+                }
+                return prev;
+            }
+
+            internal bool TryAppend(string c, out BrickGeneratingState next)
+            {
+                if(brick.values != null && brick.values.Count == 1 && brick.min == 1 && brick.max == 1)
+                {
+                    Brick newBrick = new Brick(brick.values.First() + c);
+                    next = new BrickGeneratingState(newBrick, previous);
+                    return true;
+                }
+                else if(brick.max == 0)
+                {
+                    Brick newBrick = new Brick(c);
+                    next = new BrickGeneratingState(newBrick, previous);
+                    return true;
+                }
+                else
+                {
+                    next = null;
+                    return false;
+                }
+            }
+
+            internal List<Brick> ToBrickList()
+            {
+                List<Brick> bricks = Bricks.ToList();
+                bricks.Reverse();
+                return bricks;
+            }
+
+            internal BrickGeneratingState NotEmpty()
+            {
+                if (previous == null && brick.max == 0)
+                    return null;
+                else
+                    return this;
+            }
+        }
+        
+        private class BricksGeneratingOperations : IGeneratingOperationsForRegex<BrickGeneratingState>
         {
-          brickList.Add(new Brick(singleString.ToString(), 1, 1));
+
+            private IBricksPolicy bricksPolicy;
+            private bool overapproximate;
+
+            public BricksGeneratingOperations(IBricksPolicy bricksPolicy, bool overapproximate)
+            {
+                this.bricksPolicy = bricksPolicy;
+                this.overapproximate = overapproximate;
+            }
+
+            public bool IsUnderapproximating
+            {
+                get { return !overapproximate; }
+            }
+    
+            public BrickGeneratingState Join(BrickGeneratingState prev, BrickGeneratingState next, bool widen)
+            {
+                List<Brick> prevDif = new List<Brick>();
+                List<Brick> nextDif = new List<Brick>();
+
+
+                BrickGeneratingState prevf = prev, nextf = next;
+                while (prevf.index > nextf.index)
+                {
+                    prevDif.Add(prevf.brick);
+                    prevf = prevf.previous;
+                }
+                while (nextf.index > prevf.index)
+                {
+                    nextDif.Add(nextf.brick);
+                    nextf = nextf.previous;
+                }
+
+                while (prevf != nextf) {
+                    nextDif.Add(nextf.brick);
+                    prevDif.Add(prevf.brick);
+
+                    prevf = prevf.previous;
+                    nextf = nextf.previous;
+                }
+
+                if(prevDif.Count == 1 && nextDif.Count == 1 && prevDif[0].min == 1 && prevDif[0].max == 1 && nextDif[0].min == 1 && nextDif[0].max == 1)
+                {
+                    return new BrickGeneratingState(prevDif[0].Join(nextDif[0]));
+                }
+                else if (!overapproximate)
+                {
+                    // If we are underapproximating, do not allow joining lists
+                    return Bottom;
+                }
+                else
+                {
+                    prevDif.Reverse();
+                    nextDif.Reverse();
+
+                    Bricks joinded = new Bricks(prevDif, bricksPolicy).Join(new Bricks(nextDif, bricksPolicy));
+
+                    foreach (Brick b in joinded.bricks)
+                        prevf = new BrickGeneratingState(b, prevf);
+                    return prevf;
+                }
+
+            }
+
+            public BrickGeneratingState Empty
+            {
+                get
+                {
+                    return new BrickGeneratingState(new Brick(""));
+                }
+            }
+            public BrickGeneratingState Top
+            {
+                get
+                {
+                    return new BrickGeneratingState(new Brick(true));
+                }
+            }
+            public BrickGeneratingState Bottom
+            {
+                get
+                {
+                    return new BrickGeneratingState(new Brick(false));
+                }
+            }
+
+
+
+            public bool CanBeEmpty(BrickGeneratingState state)
+            {
+                return state.Bricks.All(b => b.CanBeEmpty);
+            }
+
+            public BrickGeneratingState Loop(BrickGeneratingState prev, BrickGeneratingState loop, BrickGeneratingState last, IndexInt min, IndexInt max)
+            {
+                if (min == 1 && max == 1)
+                {
+                    // Single occurence, append last to prev
+                    return BrickGeneratingState.Concat(prev.NotEmpty(), last);
+                }
+
+                if (last.previous == null && last.brick.min == 1 && last.brick.max == 1)
+                {
+                    //A brick has single occurence, can apply the loop bounds
+                    Brick loopedBrick = new Brick(last.brick.values, min, max);
+                    return new BrickGeneratingState(loopedBrick, prev.NotEmpty());
+                }
+                else
+                {
+                    // Cannot represent the loop
+                    return new BrickGeneratingState(new Brick(overapproximate));
+                }
+            }
+
+            public BrickGeneratingState AddChar(BrickGeneratingState prev, CharRanges next, bool closed)
+            {
+                HashSet<string> chars = new HashSet<string>();
+
+                foreach (var range in next.Ranges)
+                {
+                    foreach (char character in range)
+                    {
+                        chars.Add(character.ToString());
+                    }
+                }
+                BrickGeneratingState r;
+                
+                if (chars.Count == 1 && prev.TryAppend(chars.First(), out r))
+                {
+                 
+                }
+                else
+                {
+                    r = new BrickGeneratingState(new Brick(chars), prev.NotEmpty());
+                }
+
+                if(!closed)
+                    r = new BrickGeneratingState(new Brick(true), r);
+
+                return r;
+            }
         }
 
-        return brickList;
-      }
 
-      protected override List<Brick> Visit(Empty element, ref RegexEndsData data)
-      {
-        if (data.LeftClosed && data.RightClosed)
+
+        /// <summary>
+        /// Constructs a Bricks abstract element that overapproximates
+        /// the specified regex.
+        /// </summary>
+        /// <param name="regex">A regex AST.</param>
+        /// <returns>An abstract element overapproximating <paramref name="regex"/>.</returns>
+        public Bricks BricksForRegex(Element regex)
         {
-          return new List<Brick> { new Brick("") };
+            BricksGeneratingOperations operations = new BricksGeneratingOperations(element.Policy, true);
+            GeneratingInterpretation<BrickGeneratingState> interpretation = new GeneratingInterpretation<BrickGeneratingState>(operations);
+            ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>>(interpretation);
+
+            var result = interpreter.Interpret(regex);
+
+            return new Bricks(result.Open.ToBrickList(), element.Policy);
         }
-        else
+
+
+        /// <summary>
+        /// Verifies whether the bricks match the specified regex expression.
+        /// </summary>
+        /// <param name="regex">AST of the regex.</param>
+        /// <returns>Proven result of the match.</returns>
+        public ProofOutcome IsMatch(Element regex)
         {
-          return new List<Brick> { new Brick(true) };
-        }
-      }
+            Bricks overapproximation = BricksForRegex(regex);
+            Bricks canMatchBricks = element.Meet(overapproximation);
 
-      private List<Brick> Wrap(Brick brick, RegexEndsData endsData)
-      {
-        List<Brick> bricks = new List<Brick>();
-        if (!endsData.LeftClosed)
-        {
-          bricks.Add(new Brick(true));
-        }
-        bricks.Add(brick);
-        if (!endsData.RightClosed)
-        {
-          bricks.Add(new Brick(true));
+            BricksGeneratingOperations operations = new BricksGeneratingOperations(element.Policy, false);
+            GeneratingInterpretation<BrickGeneratingState> interpretation = new GeneratingInterpretation<BrickGeneratingState>(operations);
+            ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>>(interpretation);
+            var result = interpreter.Interpret(regex);
+            Bricks underapproximation = new Bricks(result.Open.ToBrickList(), element.Policy);
+
+            bool mustMatch = element.LessThanEqual(underapproximation);
+
+            return ProofOutcomeUtils.Build(!canMatchBricks.IsBottom, !mustMatch);
         }
 
-        return bricks;
-      }
-
-      protected override List<Brick> Visit(Loop element, ref RegexEndsData data)
-      {
-        if (element.Min == 1 && element.Max == 1)
-        {
-          // Single occurence, just pass the content
-          return VisitElement(element.Content, ref data);
-        }
-
-        RegexEndsData closedEnds = new RegexEndsData(true, true);
-        List<Brick> inner = VisitElement(element.Content, ref closedEnds);
-
-        if (inner.Count == 1 && inner[0].min == 1 && inner[0].max == 1)
-        {
-          //A brick has single occurence, can apply the loop bounds
-          IndexInt min = IndexInt.ForNonNegative(element.Min);
-          IndexInt max = element.IsUnbounded ? IndexInt.Infinity : IndexInt.ForNonNegative(element.Max);
-          return Wrap(new Brick(inner[0].values, min, max), data);
-        }
-        else
-        {
-          return new List<Brick> { new Brick(overapproximate) };
-        }
-      }
-
-      protected override List<Brick> Visit(SingleElement element, ref RegexEndsData data)
-      {
-        HashSet<string> chars = new HashSet<string>();
-
-        var intervals = overapproximate ? element.CanMatchRanges : element.MustMatchRanges;
-
-        foreach (var range in intervals.Ranges)
-        {
-          foreach (char character in range)
-          {
-            chars.Add(character.ToString());
-          }
-        }
-
-        return Wrap(new Brick(chars), data);
-      }
     }
 
-
-
-    /// <summary>
-    /// Constructs a Bricks abstract element that overapproximates
-    /// the specified regex.
-    /// </summary>
-    /// <param name="regex">A regex AST.</param>
-    /// <returns>An abstract element overapproximating <paramref name="regex"/>.</returns>
-    public Bricks BricksForRegex(Element regex)
-    {
-      BricksRegexVisitor visitor = new BricksRegexVisitor(element.Policy, true);
-
-      RegexEndsData ends = new RegexEndsData();
-
-      List<Brick> list = visitor.VisitSimpleRegex(regex, ref ends);
-
-      return new Bricks(list, element.Policy);
-    }
-
-
-    /// <summary>
-    /// Verifies whether the bricks match the specified regex expression.
-    /// </summary>
-    /// <param name="regex">AST of the regex.</param>
-    /// <returns>Proven result of the match.</returns>
-    public ProofOutcome IsMatch(Element regex)
-    {
-      Bricks overapproximation = BricksForRegex(regex);
-      Bricks canMatchBricks = element.Meet(overapproximation);
-
-      BricksRegexVisitor visitor = new BricksRegexVisitor(element.Policy, false);
-      RegexEndsData ends = new RegexEndsData();
-      Bricks underapproximation = new Bricks(visitor.VisitSimpleRegex(regex, ref ends), element.Policy);
-
-      bool mustMatch = element.LessThanEqual(underapproximation);
-
-      return ProofOutcomeUtils.Build(!canMatchBricks.IsBottom, !mustMatch);
-    }
-  }
-#endif
 }

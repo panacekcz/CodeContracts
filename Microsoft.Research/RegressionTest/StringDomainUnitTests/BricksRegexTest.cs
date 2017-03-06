@@ -18,69 +18,68 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Research.Regex;
-using Microsoft.Research.Regex.AST;
+using Microsoft.Research.Regex.Model;
 using Microsoft.Research.AbstractDomains.Strings;
 using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class BricksRegexTest : BricksTestBase
-  {
-    private Bricks top;
-
-    public BricksRegexTest()
+    [TestClass]
+    public class BricksRegexTest : BricksTestBase
     {
-      this.top = operations.Top;
+        private Bricks top;
+
+        public BricksRegexTest()
+        {
+            this.top = operations.Top;
+        }
+
+        private Bricks BricksForRegex(string regexString)
+        {
+            Element regex = RegexUtil.ModelForRegex(regexString);
+            BricksRegex br = new BricksRegex(top);
+            return br.BricksForRegex(regex);
+        }
+
+        private void AssertBricksForRegex(string testRegexString, string expectedBricksString)
+        {
+            Bricks bricks = BricksForRegex(testRegexString);
+            string regexBricksString = bricks.ToString();
+            Assert.AreEqual(expectedBricksString, regexBricksString);
+        }
+
+        private void AssertBricksIsMatch(ProofOutcome expectedResult, string bricksRegexString, string patternString)
+        {
+            Bricks bricks = BricksForRegex(bricksRegexString);
+
+            Assert.AreEqual(expectedResult, operations.RegexIsMatch(bricks, null, RegexUtil.ModelForRegex(patternString)).ProofOutcome);
+        }
+
+        [TestMethod]
+        public void TestBricksForRegex()
+        {
+            AssertBricksForRegex(@"^A\z", "{A}[1,1]");
+            AssertBricksForRegex(@"^(?:A|B|C)\z", "{A,B,C}[1,1]");
+            AssertBricksForRegex(@"^[ab][cd][ef]\z", "{a,b}[1,1]{c,d}[1,1]{e,f}[1,1]");
+            AssertBricksForRegex(@"^(?:ab|cd){3,8}\z", "{ab,cd}[3,8]");
+            AssertBricksForRegex(@"^(?:ab|cd){3,8}(?:ef|gh){4,7}\z", "{ab,cd}[3,8]{ef,gh}[4,7]");
+            AssertBricksForRegex(@"^(?:ab|cd)?\z", "{ab,cd}[0,1]");
+        }
+
+        [TestMethod]
+        public void TestBricksIsMatch()
+        {
+            AssertBricksIsMatch(ProofOutcome.True, @"^A\z", @"^A\z");
+            AssertBricksIsMatch(ProofOutcome.False, @"^A\z", @"^B\z");
+            AssertBricksIsMatch(ProofOutcome.Top, @"^[AB]\z", @"^B\z");
+            AssertBricksIsMatch(ProofOutcome.True, @"^[A]\z", @"^[AB]\z");
+            AssertBricksIsMatch(ProofOutcome.True, @"^[A]\z", @"");
+
+            AssertBricksIsMatch(ProofOutcome.Top, @"A", @"B");
+            AssertBricksIsMatch(ProofOutcome.False, @"^A", @"^B");
+            AssertBricksIsMatch(ProofOutcome.True, @"^A", @"^A");
+            AssertBricksIsMatch(ProofOutcome.True, @"^[a]+[b]+[c]+\z", @"^[a]+[b]+[c]+\z");
+
+        }
     }
-
-    private Bricks BricksForRegex(string regexString)
-    {
-            //TODO: VD: use interpreter
-            throw new NotImplementedException();
-    /*  Element regex = RegexParser.Parse(regexString);
-      BricksRegex br = new BricksRegex(top);
-      return br.BricksForRegex(regex);*/
-    }
-
-    private void AssertBricksForRegex(string testRegexString, string expectedBricksString)
-    {
-      Bricks bricks = BricksForRegex(testRegexString);
-      string regexBricksString = bricks.ToString();
-      Assert.AreEqual(expectedBricksString, regexBricksString);
-    }
-
-    private void AssertBricksIsMatch(ProofOutcome expectedResult, string bricksRegexString, string patternString)
-    {
-      Bricks bricks = BricksForRegex(bricksRegexString);
-
-      Assert.AreEqual(expectedResult, operations.RegexIsMatch(bricks, null, RegexUtil.ModelForRegex(patternString)).ProofOutcome);
-    }
-
-    [TestMethod]
-    public void TestBricksForRegex()
-    {
-      AssertBricksForRegex(@"^A\z", "{A}[1,1]");
-      AssertBricksForRegex(@"^(?:A|B|C)\z", "{A,B,C}[1,1]");
-      AssertBricksForRegex(@"^[ab][cd][ef]\z", "{a,b}[1,1]{c,d}[1,1]{e,f}[1,1]");
-      AssertBricksForRegex(@"^(?:ab|cd){3,8}\z", "{ab,cd}[3,8]");
-      AssertBricksForRegex(@"^(?:ab|cd)?\z", "{ab,cd}[0,1]");
-    }
-
-    [TestMethod]
-    public void TestBricksIsMatch()
-    {
-      AssertBricksIsMatch(ProofOutcome.True, @"^A\z", @"^A\z");
-      AssertBricksIsMatch(ProofOutcome.False, @"^A\z", @"^B\z");
-      AssertBricksIsMatch(ProofOutcome.Top, @"^[AB]\z", @"^B\z");
-      AssertBricksIsMatch(ProofOutcome.True, @"^[A]\z", @"^[AB]\z");
-      AssertBricksIsMatch(ProofOutcome.True, @"^[A]\z", @"");
-
-      AssertBricksIsMatch(ProofOutcome.Top, @"A", @"B");
-      AssertBricksIsMatch(ProofOutcome.False, @"^A", @"^B");
-      AssertBricksIsMatch(ProofOutcome.True, @"^A", @"^A");
-      AssertBricksIsMatch(ProofOutcome.True, @"^[a]+[b]+[c]+\z", @"^[a]+[b]+[c]+\z");
-
-    }
-  }
 }
