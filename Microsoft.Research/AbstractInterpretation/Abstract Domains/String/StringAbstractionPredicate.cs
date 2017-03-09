@@ -29,7 +29,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     public static StringAbstractionPredicate<Abstraction, Variable>
       ForTrue<Abstraction, Variable>(Variable variable, Abstraction trueAbstraction)
       where Variable : class, IEquatable<Variable>
-      where Abstraction : IStringAbstraction<Abstraction, string>
+      where Abstraction : IStringAbstraction<Abstraction>
     {
       return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, trueAbstraction.Top);
     }
@@ -37,7 +37,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     public static StringAbstractionPredicate<Abstraction, Variable>
       For<Abstraction, Variable>(Variable variable, Abstraction trueAbstraction, Abstraction falseAbstraction)
       where Variable : class, IEquatable<Variable>
-      where Abstraction : IStringAbstraction<Abstraction, string>
+      where Abstraction : IStringAbstraction<Abstraction>
     {
       return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction);
     }
@@ -45,7 +45,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
   class StringAbstractionPredicate<Abstraction, Variable> : IStringPredicate
     where Variable : class, IEquatable<Variable>
-    where Abstraction : IStringAbstraction<Abstraction, string>
+    where Abstraction : IStringAbstraction<Abstraction>
   {
     private readonly Abstraction trueAbstraction, falseAbstraction;
     private readonly Variable variable;

@@ -68,7 +68,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
 
         public MatchingState<D> Join(MatchingState<D> prev, MatchingState<D> next, bool widen)
         {
-            return new MatchingState<D>(operations.Join(input, prev.Over, next.Over, false, widen), operations.Join(input, prev.Under, next.Under, true, widen));
+            return new MatchingState<D>(operations.Join(input, prev.Over, next.Over, widen, false), operations.Join(input, prev.Under, next.Under, widen, true));
         }
 
         public MatchingState<D> Unknown(MatchingState<D> data)

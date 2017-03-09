@@ -174,7 +174,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public CharacterInclusion<CharacterSet> Loop(CharacterInclusion<CharacterSet> prev, CharacterInclusion<CharacterSet> loop, CharacterInclusion<CharacterSet> last, IndexInt min, IndexInt max)
         {
-            if(min == 0)
+            if (min == 0)
             {
                 return prev.Combine(last.Part(false, false, false, false));
             }
@@ -232,14 +232,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
     internal class CharacterInclusionMatchingOperations<CharacterSet> : IMatchingOperationsForRegex<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>
         where CharacterSet : ICharacterSet<CharacterSet>
     {
-     /*   private readonly ICharacterSetFactory<CharacterSet> setFactory;
-        private readonly ICharacterClassification classification;
+        /*   private readonly ICharacterSetFactory<CharacterSet> setFactory;
+           private readonly ICharacterClassification classification;
 
-        public CharacterInclusionMatchingOperations()
-        {
-            //TODO:...
-        }
-        */
+           public CharacterInclusionMatchingOperations()
+           {
+               //TODO:...
+           }
+           */
         public CharacterInclusionMatchingState<CharacterSet> AssumeEnd(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
         {
             if (prev.bottom)
@@ -329,7 +329,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public CharacterInclusionMatchingState<CharacterSet> GetTop(CharacterInclusion<CharacterSet> input)
         {
-            return new CharacterInclusionMatchingState<CharacterSet> {
+            return new CharacterInclusionMatchingState<CharacterSet>
+            {
                 encountered = input.CreateCharacterSetFor(false),
                 looped = input.CreateCharacterSetFor(false),
                 startAnchor = false,
@@ -339,13 +340,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
             };
         }
 
-        public CharacterInclusionMatchingState<CharacterSet> Join(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> left, CharacterInclusionMatchingState<CharacterSet> right, bool under, bool widen)
+        public CharacterInclusionMatchingState<CharacterSet> Join(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> left, CharacterInclusionMatchingState<CharacterSet> right, bool widen, bool under)
         {
             if (left.bottom)
                 return right;
             if (right.bottom)
                 return left;
-
+            // TODO: check under-join
             return new CharacterInclusionMatchingState<CharacterSet>
             {
                 encountered = left.encountered.Union(right.encountered),
@@ -385,7 +386,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 if (!input.allowed.Intersects(cs))
                     return GetBottom(input);
                 //Add to encountered
-                return new CharacterInclusionMatchingState<CharacterSet> {
+                return new CharacterInclusionMatchingState<CharacterSet>
+                {
                     encountered = prev.encountered.Union(cs),
                     looped = input.CreateCharacterSetFor(false),
                     startAnchor = prev.startAnchor,
@@ -460,7 +462,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                         };*/
                     }
                 }
-                else if(min == 1 && !next.endAnchor && !next.startAnchor && prev.empty && !prev.endAnchor && !next.bottom)
+                else if (min == 1 && !next.endAnchor && !next.startAnchor && prev.empty && !prev.endAnchor && !next.bottom)
                 {
                     return new CharacterInclusionMatchingState<CharacterSet>
                     {
@@ -496,7 +498,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                         };
                     }
                 }
-                else {
+                else
+                {
                     if (next.bottom)
                         return next;
                     else
@@ -538,13 +541,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         private class FromRegexVisitor : SimpleRegexVisitor<CharacterInclusion, bool>
     {
-      private readonly CharacterInclusion factoryValue;
-
-      public FromRegexVisitor(CharacterInclusion factoryValue)
-      {
-        this.factoryValue = factoryValue;
-      }
-
 
       protected override CharacterInclusion Visit(SingleElement single, ref bool closed)
       {
@@ -724,27 +720,27 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return ProofOutcomeUtils.Build(canMatch, !mustMatch);
 
         }
-    
+
         public CharacterInclusion<CharacterSet> Assume(Microsoft.Research.Regex.Model.Element regex, bool match)
         {
-         
-                    IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>> operations;
-                    if(match)
-                        operations = new CharacterInclusionGeneratingOperations<CharacterSet>(value);
-                    else
-                        operations = new CharacterInclusionComplementGeneratingOperations<CharacterSet>(value);
 
-                    GeneratingInterpretation<CharacterInclusion<CharacterSet>> interpretation = new GeneratingInterpretation<CharacterInclusion<CharacterSet>>(operations);
-                    ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>> interpreter = new ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>>(interpretation);
+            IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>> operations;
+            if (match)
+                operations = new CharacterInclusionGeneratingOperations<CharacterSet>(value);
+            else
+                operations = new CharacterInclusionComplementGeneratingOperations<CharacterSet>(value);
 
-                    var result = interpreter.Interpret(regex);
-                    return result.Open;
-    
+            GeneratingInterpretation<CharacterInclusion<CharacterSet>> interpretation = new GeneratingInterpretation<CharacterInclusion<CharacterSet>>(operations);
+            ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>> interpreter = new ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>>(interpretation);
+
+            var result = interpreter.Interpret(regex);
+            return result.Open;
+
         }
 
 
-    public IStringPredicate PredicateFromRegex<Variable>(Microsoft.Research.Regex.Model.Element regex, Variable thisVar)
-            where Variable : class, IEquatable<Variable>
+        public IStringPredicate PredicateFromRegex<Variable>(Microsoft.Research.Regex.Model.Element regex, Variable thisVar)
+                where Variable : class, IEquatable<Variable>
         {
 
             System.Diagnostics.Contracts.Contract.Requires(thisVar != null);

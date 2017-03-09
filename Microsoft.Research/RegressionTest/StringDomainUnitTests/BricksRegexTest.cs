@@ -34,6 +34,11 @@ namespace StringDomainUnitTests
             this.top = operations.Top;
         }
 
+        protected override IBricksPolicy CreateBricksPolicy()
+        {
+            return new DefaultBricksPolicy { MergeConstantSets = false };
+        }
+
         private Bricks BricksForRegex(string regexString)
         {
             Element regex = RegexUtil.ModelForRegex(regexString);
@@ -64,6 +69,8 @@ namespace StringDomainUnitTests
             AssertBricksForRegex(@"^(?:ab|cd){3,8}\z", "{ab,cd}[3,8]");
             AssertBricksForRegex(@"^(?:ab|cd){3,8}(?:ef|gh){4,7}\z", "{ab,cd}[3,8]{ef,gh}[4,7]");
             AssertBricksForRegex(@"^(?:ab|cd)?\z", "{ab,cd}[0,1]");
+
+            AssertBricksForRegex(@"^(?:[ab][cd]|[ef][gh])\z", "{a,b,e,f}[1,1]{c,d,g,h}[1,1]");
         }
 
         [TestMethod]
@@ -79,6 +86,10 @@ namespace StringDomainUnitTests
             AssertBricksIsMatch(ProofOutcome.False, @"^A", @"^B");
             AssertBricksIsMatch(ProofOutcome.True, @"^A", @"^A");
             AssertBricksIsMatch(ProofOutcome.True, @"^[a]+[b]+[c]+\z", @"^[a]+[b]+[c]+\z");
+
+            AssertBricksIsMatch(ProofOutcome.Top, @"^[AB][CD]\z", @"^AC\z");
+            AssertBricksIsMatch(ProofOutcome.False, @"^[AB]C\z", @"^[AC]D\z");
+            AssertBricksIsMatch(ProofOutcome.True, @"^[AB]C\z", @"^[AB][CD]\z");
 
         }
     }

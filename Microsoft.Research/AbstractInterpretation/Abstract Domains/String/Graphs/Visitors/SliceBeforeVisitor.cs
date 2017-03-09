@@ -24,24 +24,37 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
     /// <summary>
-    /// Represents an OR node in a string graph
+    /// Extracts a string graph corresponding to substrings ending
+    /// at (before) an index from an interval.
     /// </summary>
-    internal class OrNode : InnerNode
+    class SliceBeforeVisitor : SliceVisitor
     {
-        internal OrNode() :
-          base()
+        public SliceBeforeVisitor(LengthVisitor lengths) :
+          base(lengths)
         {
         }
 
-        public OrNode(IEnumerable<Node> node) :
-          base(node)
-        {
-        }
 
-        public override Label Label
+        protected override Node Visit(CharNode charNode, VisitContext context, ref IndexInterval data)
         {
-            get { return new Label(NodeKind.Or); }
+            if (data.IsBottom || data.UpperBound == 0)
+            {
+                // We are at a position in the graph where for all strings we are at or after the 
+                // upper bound of the index, that means the character is always after the index,
+                // so it is excluded.
+                return NodeBuilder.CreateEmptyNode();
+            }
+            else if (data.LowerBound > 0)
+            {
+                // We are at a position in the graph before the lower bound of the index,
+                // that means the character is never after the index, so it is included.
+                return charNode;
+            }
+            else
+            {
+                // In other cases, the character may be included or not.
+                return NodeBuilder.CreateOptionalNode(charNode);
+            }
         }
-
     }
 }

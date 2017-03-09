@@ -30,7 +30,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// Elements of the prefix abstract domain for strings.
     /// Represents a set of strings starting with a specified prefix.
     /// </summary>
-    public class Prefix : IStringAbstraction<Prefix, string>
+    public class Prefix : IStringAbstraction<Prefix>
     {
         /// <summary>
         /// The prefix which the represented strings start with.

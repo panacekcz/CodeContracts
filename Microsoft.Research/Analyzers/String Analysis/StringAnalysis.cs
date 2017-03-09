@@ -54,7 +54,7 @@ namespace Microsoft.Research.CodeAnalysis
       }
 
       internal class StringAbstractDomainFactory<StringAbstraction> : IStringAbstractDomainFactory
-        where StringAbstraction : class, IStringAbstraction<StringAbstraction, string>
+        where StringAbstraction : class, IStringAbstraction<StringAbstraction>
       {
         private readonly IStringOperations<StringAbstraction, BoxedVariable<Variable>> operations;
 
@@ -85,7 +85,7 @@ namespace Microsoft.Research.CodeAnalysis
       }
 
       private static IStringAbstractDomainFactory CreateFactoryForAbstraction<StringAbstraction>(IStringOperations<StringAbstraction, BoxedVariable<Variable>> operations)
-        where StringAbstraction : class, IStringAbstraction<StringAbstraction, string>
+        where StringAbstraction : class, IStringAbstraction<StringAbstraction>
       {
         return new StringAbstractDomainFactory<StringAbstraction>(operations);
       }
@@ -599,6 +599,7 @@ namespace Microsoft.Research.CodeAnalysis
 
         public override bool SuggestAnalysisSpecificPostconditions(ContractInferenceManager inferenceManager, IFixpointInfo<APC, IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression>> fixpointInfo, List<BoxedExpression> postconditions)
         {
+                    //TODO: VD: Fix or remove
 #if false
           var method = this.MethodDriver.CurrentMethod;
           var retType = this.MethodDriver.MetaDataDecoder.ReturnType(method);

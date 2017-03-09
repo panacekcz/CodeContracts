@@ -49,13 +49,24 @@ namespace StringDomainUnitTests
             Prefix p = new Prefix("prefix");
 
             Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^prefix")).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^prefix|^other")).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^(?:prefix|other)")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("prefix$")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("other")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^other")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.False, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^other$")).ProofOutcome);
         }
+
+        [TestMethod]
+        public void MatchUnion()
+        {
+            Prefix p = new Prefix("prefix");
+
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^prefix|^other")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^(?:prefix|other)")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^(?:pre|oth)")).ProofOutcome);
+
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(p, null, RegexUtil.ModelForRegex("^(?:prefixA|prefixB)")).ProofOutcome);
+        }
+
         [TestMethod]
         public void MatchSet()
         {

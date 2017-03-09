@@ -8,6 +8,7 @@ using Microsoft.Research.Regex.Model;
 
 namespace Microsoft.Research.Regex
 {
+    internal struct Void { }
     /// <summary>
     /// Helpers for building regex AST.
     /// </summary>

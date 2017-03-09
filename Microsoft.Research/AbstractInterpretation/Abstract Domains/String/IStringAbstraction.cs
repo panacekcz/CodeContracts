@@ -28,10 +28,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <summary>
     /// The interface for an abstract domain for string values.
     /// </summary>
-    /// <typeparam name="Self">Type of the string abstract domain.</typeparam>
-    /// <typeparam name="Value">Type of the string values.</typeparam>
-    public interface IStringAbstraction<Self, Value> : IAbstractDomain
-        where Self : IStringAbstraction<Self, Value>
+    /// <typeparam name="Self">Type of the string abstract domain.</typeparam>    
+    public interface IStringAbstraction<Self> : IAbstractDomain
+        where Self : IStringAbstraction<Self>
     {
         #region Domain properties
         /// <summary>
@@ -55,7 +54,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="value">The concrete value.</param>
         /// <returns><see langword="true"/>, if <paramref name="value"/> is in the set of strings represented by this.</returns>
-        bool ContainsValue(Value value);
+        bool ContainsValue(string value);
         /// <summary>
         /// Determines whether two abstract elements are the same.
         /// </summary>
@@ -87,7 +86,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="cst">The constant value.</param>
         /// <returns>An abstract element overapproximating a set of values containing <paramref name="cst"/>.</returns>
-        Self Constant(Value cst);
+        Self Constant(string cst);
         #endregion
     }
 
@@ -120,8 +119,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// </summary>
     /// <typeparam name="StringAbstraction">The type of the string abstraction.</typeparam>
     /// <typeparam name="Variable">The type of variables used in predicates.</typeparam>
-    public interface IStringOperations<StringAbstraction, Variable> : IStringAbstractionFactory<StringAbstraction, string>
-      where StringAbstraction : IStringAbstraction<StringAbstraction, string>
+    public interface IStringOperations<StringAbstraction, Variable> : IStringAbstractionFactory<StringAbstraction>
+      where StringAbstraction : IStringAbstraction<StringAbstraction>
       where Variable : IEquatable<Variable>
     {
         /// <summary>
@@ -347,9 +346,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// of an abstract domain for strings.
     /// </summary>
     /// <typeparam name="Abstraction">Type of the string abstract domain.</typeparam>
-    /// <typeparam name="Value">Type of the string values.</typeparam>
-    public interface IStringAbstractionFactory<Abstraction, Value>
-     where Abstraction : IStringAbstraction<Abstraction, Value>
+    public interface IStringAbstractionFactory<Abstraction>
+     where Abstraction : IStringAbstraction<Abstraction>
     {
         /// <summary>
         /// Gets the top element of the domain.
@@ -360,7 +358,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="constant">The constant value.</param>
         /// <returns>An abstract element overapproximating a set of values containing <paramref name="constant"/>.</returns>
-        Abstraction Constant(Value constant);
+        Abstraction Constant(string constant);
     }
 
     /// <summary>
@@ -368,7 +366,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// </summary>
     /// <typeparam name="Abstraction">Type of the string abstract domain.</typeparam>
     public struct WithConstants<Abstraction>
-      where Abstraction : IStringAbstraction<Abstraction, string>
+      where Abstraction : IStringAbstraction<Abstraction>
     {
         private readonly string constant;
         private readonly Abstraction abstraction;
@@ -421,7 +419,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="factory">Factory for creating the abstract elements.</param>
         /// <returns></returns>
-        public Abstraction ToAbstract(IStringAbstractionFactory<Abstraction, string> factory)
+        public Abstraction ToAbstract(IStringAbstractionFactory<Abstraction> factory)
         {
             if (constant == null)
             {
@@ -465,8 +463,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
     }
 
-    public interface IStringInterval<Self> : IStringAbstraction<Self, string>
-      where Self : IStringAbstraction<Self, string>
+    /// <summary>
+    /// The interface for an abstract domain for string values which is based on intervals with respect to some ordering.
+    /// </summary>
+    /// <typeparam name="Self">Type of the string abstract domain.</typeparam>   
+    public interface IStringInterval<Self> : IStringAbstraction<Self>
+      where Self : IStringInterval<Self>
     {
         /// <summary>
         /// Checks whether it is guaranteed that all values of this interval are less than or equal to

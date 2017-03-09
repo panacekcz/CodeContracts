@@ -29,12 +29,21 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
     /// </summary>
     internal class LengthVisitor : Visitor<IndexInterval, Void>
     {
+        /// <summary>
+        /// Computes and stores the lengths for all nodes in a graph.
+        /// </summary>
+        /// <param name="root">Root node of the graph.</param>
         public void ComputeLengthsFor(Node root)
         {
             Void unusedData;
             VisitNode(root, VisitContext.Root, ref unusedData);
         }
 
+        /// <summary>
+        /// Gets the previously computed lengths for a node.
+        /// </summary>
+        /// <param name="node">A node of a string graph.</param>
+        /// <returns>The interval of possible lengths that has been computed for <paramref name="node"/>.</returns>
         public IndexInterval GetLengthFor(Node node)
         {
             IndexInterval result;
@@ -48,6 +57,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
             }
         }
 
+        #region Visitor overrides
         protected override IndexInterval VisitBackwardEdge(Node graphNode, IndexInterval result, VisitContext context, ref Void data)
         {
             return IndexInterval.Infinity;
@@ -70,17 +80,19 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 
         protected override IndexInterval Visit(CharNode charNode, VisitContext context, ref Void data)
         {
+            // Character node is always a single character (length 1).
             return IndexInterval.For(1);
         }
 
         protected override IndexInterval Visit(MaxNode maxNode, VisitContext context, ref Void data)
         {
+            // Max node represents all strings, that means all non-negative lengths.
             return IndexInterval.UnknownNonNegative;
         }
 
         protected override IndexInterval Visit(OrNode orNode, VisitContext context, ref Void data)
         {
-            return IndexInterval.Unknown.Bottom;
+            return IndexInterval.Unreached;
         }
 
         protected override IndexInterval VisitChildren(OrNode orNode, IndexInterval result, ref Void data)
@@ -95,7 +107,8 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 
         protected override IndexInterval Visit(BottomNode bottomNode, VisitContext context, ref Void data)
         {
-            return IndexInterval.Unknown.Bottom;
+            return IndexInterval.Unreached;
         }
+        #endregion
     }
 }

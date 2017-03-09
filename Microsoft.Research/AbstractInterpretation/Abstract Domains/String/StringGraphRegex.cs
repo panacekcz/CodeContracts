@@ -22,14 +22,17 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.Research.Regex;
-using Microsoft.Research.Regex.AST;
+using Microsoft.Research.Regex.Model;
 using Microsoft.Research.AbstractDomains.Strings.Graphs;
 using Microsoft.Research.CodeAnalysis;
+using Microsoft.Research.AbstractDomains.Strings.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-#if vdfalse
-    class StringGraphRegex
+
+    using SGGeneratingState = Node;
+
+    public class StringGraphRegex
     {
         private StringGraph element;
 
@@ -38,142 +41,169 @@ namespace Microsoft.Research.AbstractDomains.Strings
             this.element = element;
         }
 
-        private class StringGraphRegexVisitor : OpenClosedRegexVisitor<Node, RegexEndsData>
+        /*private struct SGGeneratingState
         {
-            private bool overapproximate;
-
-            public StringGraphRegexVisitor(bool overapproximate)
+            public Node sgNode;
+            public SGGeneratingState(Node nd)
             {
-                this.overapproximate = overapproximate;
+                sgNode = nd;
+            }
+        }*/
+
+        private class StringGraphGeneratingOperations : IGeneratingOperationsForRegex<SGGeneratingState>
+        {
+            private bool underapproximate;
+
+            public StringGraphGeneratingOperations(bool underapproximate)
+            {
+                this.underapproximate = underapproximate;
             }
 
-            private Node Wrap(Node inner, RegexEndsData endsData)
+            public bool IsUnderapproximating
             {
-                if (endsData.LeftClosed && endsData.RightClosed)
+                get
+                {
+                    return underapproximate;
+                }
+            }
+
+            private Node Wrap(Node inner, bool closed)
+            {
+                if (closed)
                 {
                     return inner;
                 }
                 else
                 {
-                    ConcatNode concat = new ConcatNode();
-                    if (!endsData.LeftClosed)
-                    {
-                        concat.children.Add(new MaxNode());
-                    }
-                    concat.children.Add(inner);
-                    if (!endsData.RightClosed)
-                    {
-                        concat.children.Add(new MaxNode());
-                    }
-                    return concat;
+                    return Concat(inner, new MaxNode());
                 }
             }
 
-
-            protected override Node VisitConcatenation(Concatenation element,
-              int startIndex, int endIndex, RegexEndsData ends,
-              ref RegexEndsData data)
+            public SGGeneratingState Join(SGGeneratingState prev, SGGeneratingState next, bool widen)
             {
-                ConcatNode concatNode = new ConcatNode();
+                List<Node> nxDif = new List<SGGeneratingState>(), prDif = new List<SGGeneratingState>();
+                if (prev is ConcatNode)
+                    prDif.AddRange(((ConcatNode)prev).children);
+                else
+                    prDif.Add(prev);
 
-                for (int index = startIndex; index < endIndex; ++index)
-                {
-                    RegexEndsData childEnds = ConcatChildEnds(ends, data, startIndex, endIndex, index);
-                    concatNode.children.Add(VisitElement(element.Parts[index], ref childEnds));
-                }
+                if (next is ConcatNode)
+                    nxDif.AddRange(((ConcatNode)next).children);
+                else
+                    nxDif.Add(next);
 
-                return concatNode;
+                int common = 0;
+                while (common < nxDif.Count && common < prDif.Count && nxDif[common] == prDif[common])
+                    ++common;
+
+                ConcatNode cn = new ConcatNode();
+
+                cn.children.AddRange(nxDif.Take(common));
+
+                ConcatNode c1 = new ConcatNode();
+                c1.children.AddRange(nxDif.Skip(common));
+                ConcatNode c2 = new ConcatNode();
+                c2.children.AddRange(nxDif.Skip(common));
+
+                OrNode orNode = new OrNode(new[] { c1.Compact(), c2.Compact() });
+                cn.children.Add(orNode);
+
+                return cn.Compact();
             }
 
-            protected override Node Visit(Alternation element, ref RegexEndsData data)
+            public SGGeneratingState AddChar(SGGeneratingState prev, CharRanges ranges, bool closed)
             {
-                OrNode orNode = new OrNode();
-
-                foreach (Element child in element.Patterns)
-                {
-                    orNode.children.Add(VisitElement(child, ref data));
-                }
-
-                return orNode;
-            }
-
-            protected override Node Visit(SingleElement element, ref RegexEndsData data)
-            {
-                var intervals = overapproximate ? element.CanMatchRanges : element.MustMatchRanges;
-                var charIntervals = intervals.ToIntervals();
+                var charIntervals = ranges.ToIntervals();
                 Node closedNode = NodeBuilder.CreateNodeForIntervals(charIntervals);
-                return Wrap(closedNode, data);
+
+                ConcatNode concatNode = new ConcatNode(new[] { prev, closedNode });
+
+                return Wrap(concatNode, closed);
             }
 
-            protected override Node Visit(Loop element, ref RegexEndsData data)
+            public SGGeneratingState Loop(SGGeneratingState prev, SGGeneratingState loop, SGGeneratingState last, IndexInt min, IndexInt max)
             {
-                if (element.Max == 1)
+                if (max == 1)
                 {
-                    if (element.Min == 1)
+                    if (min == 1)
                     {
-                        return VisitElement(element.Content, ref data);
+                        return Concat(prev, last);
                     }
-                    else if (element.Min == 0)
+                    else if (min == 0)
                     {
                         OrNode orNode = new OrNode();
-                        orNode.children.Add(VisitElement(element.Content, ref data));
-                        orNode.children.Add(ForEmpty(data));
+                        orNode.children.Add(last);
+                        //TODO: closed/open
+                        orNode.children.Add(NodeBuilder.CreateEmptyNode());
                         return orNode;
                     }
                 }
 
-                if (overapproximate)
+                if (!underapproximate)
                 {
-                    RegexEndsData closedEnds = new RegexEndsData(true, true);
-                    Node contentNode = VisitElement(element.Content, ref closedEnds);
-                    return Wrap(NodeBuilder.CreateLoop(contentNode), data);
+                    return Wrap(NodeBuilder.CreateLoop(loop), (loop == last));
                 }
-                else if (element.Min == 0)
+                else if (min == 0)
                 {
-                    return ForEmpty(data);
+                    //TODO: here we do not consider open/closed
+                    return prev;
                 }
-                else if (element.Min == 1 && element.Max >= 1)
+                else if (min == 1 && max >= 1)
                 {
-                    return VisitElement(element.Content, ref data);
+                    return Concat(prev, last);
                 }
                 else
                 {
                     return new BottomNode();
                 }
             }
-
-            private Node ForEmpty(RegexEndsData ends)
+            private Node Concat(Node left, Node right)
             {
-                if (ends.LeftClosed && ends.RightClosed)
+
+                return new ConcatNode(new[] { left, right }).Compact();
+            }
+
+            public bool CanBeEmpty(Node node)
+            {
+                //We dont know
+                //TODO: what if underapproximating
+                return true;
+            }
+            public Node Empty
+            {
+                get
                 {
                     return new ConcatNode();
                 }
-                else
+            }
+            public Node Top
+            {
+                get
                 {
                     return new MaxNode();
                 }
             }
 
-            protected override Node Visit(Empty element, ref RegexEndsData data)
+            public Node Bottom
             {
-                return ForEmpty(data);
-            }
-
-            protected override Node Unsupported(Element regex, ref RegexEndsData data)
-            {
-                return overapproximate ? (Node)new MaxNode() : (Node)new BottomNode();
+                get
+                {
+                    return new BottomNode();
+                }
             }
         }
 
+
         public StringGraph StringGraphForRegex(Element regex)
         {
-            StringGraphRegexVisitor visitor = new StringGraphRegexVisitor(true);
+            StringGraphGeneratingOperations operations = new StringGraphGeneratingOperations(false);
+            GeneratingInterpretation<SGGeneratingState> interpretation = new GeneratingInterpretation<SGGeneratingState>(operations);
+            ForwardRegexInterpreter<GeneratingState<SGGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<SGGeneratingState>>(interpretation);
 
-            RegexEndsData ends = new RegexEndsData();
 
-            Node node = visitor.VisitSimpleRegex(regex, ref ends);
-
-            return new StringGraph(node);
+            Node node = interpreter.Interpret(regex).Open;
+            CompactVisitor compacter = new CompactVisitor();
+            return new StringGraph(compacter.Compact(node));
         }
 
         /// <summary>
@@ -186,15 +216,19 @@ namespace Microsoft.Research.AbstractDomains.Strings
             StringGraph overapproximation = StringGraphForRegex(regex);
             StringGraph canMatchGraph = element.Meet(overapproximation);
 
-            StringGraphRegexVisitor visitor = new StringGraphRegexVisitor(false);
+            StringGraphGeneratingOperations operations = new StringGraphGeneratingOperations(true);
+            GeneratingInterpretation<SGGeneratingState> interpretation = new GeneratingInterpretation<SGGeneratingState>(operations);
+            ForwardRegexInterpreter<GeneratingState<SGGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<SGGeneratingState>>(interpretation);
 
-            RegexEndsData ends = new RegexEndsData();
-            StringGraph underapproximation = new StringGraph(visitor.VisitSimpleRegex(regex, ref ends));
+            var r = interpreter.Interpret(regex);
+
+
+            StringGraph underapproximation = new StringGraph(r.Open);
 
             bool mustMatch = element.LessThanEqual(underapproximation);
 
             return ProofOutcomeUtils.Build(!canMatchGraph.IsBottom, !mustMatch);
         }
+
     }
-#endif
 }

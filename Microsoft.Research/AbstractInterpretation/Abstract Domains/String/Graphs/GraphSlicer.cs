@@ -26,9 +26,19 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
     /// <summary>
     /// Produces slices of a string graph.
     /// </summary>
-    class GraphSlicer
+    /// <remarks>
+    /// If more than one slice is needed from the same graph,
+    /// this class reuses computed lengths for all such operations.
+    /// </remarks>
+    internal class GraphSlicer
     {
+        /// <summary>
+        /// Stores pre-computed information about lenghts of nodes.
+        /// </summary>
         private readonly LengthVisitor lengths;
+        /// <summary>
+        /// Root node of the sliced graph.
+        /// </summary>
         private readonly Node root;
 
         public GraphSlicer(Node root)

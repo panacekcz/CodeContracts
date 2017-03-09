@@ -39,9 +39,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return new Prefix(s);
         }
 
-
+        #region Construction
         /// <summary>
-        /// Constructs a prefix abstraction for the specified constant.
+        /// Constructs a prefix interval abstraction for the specified constant.
         /// </summary>
         /// <param name="constant">Constant string value.</param>
         public PrefixInterval(string constant)
@@ -50,9 +50,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         }
         /// <summary>
-        /// Constructs a new instance of prefix.
+        /// Constructs a new instance of prefix interval from another instance.
         /// </summary>
-        /// <param name="p">The prefix that is copied.</param>
+        /// <param name="p">The prefix interval that is copied.</param>
         public PrefixInterval(PrefixInterval p)
           : base(p.LowerBound, p.UpperBound)
         {
@@ -63,6 +63,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
           : base(lower, upper)
         {
         }
+        #endregion
 
         #region Domain properties
         /// <summary>
@@ -320,7 +321,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     string trimmedLower = selfInterval.lowerBound.IsBottom ? null : selfInterval.lowerBound.prefix.TrimStart(trimArray);
                     string trimmedUpper = selfInterval.upperBound.prefix.TrimStart(trimArray);
 
-                    return For(trimmedLower,trimmedUpper);
+                    return For(trimmedLower, trimmedUpper);
                 }
                 else
                 {
@@ -379,7 +380,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                             return IndexInterval.For(index);
                     }
                 }
-               
+
                 return IndexInterval.Unknown;
             }
 
@@ -425,9 +426,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
                         return FlatPredicate.False;
                     }
                     else if (selfVariable != null && index + length > self.ToAbstract(this).UpperBound.prefix.Length)
-                    { 
+                    {
                         // If this string contains the other, then it must begin with a longer prefix 
-                        return StringAbstractionPredicate.ForTrue(selfVariable, new PrefixInterval(selfInterval.lowerBound, Wrap(selfInterval.lowerBound.prefix.Substring(0, index+length))));
+                        return StringAbstractionPredicate.ForTrue(selfVariable, new PrefixInterval(selfInterval.lowerBound, Wrap(selfInterval.lowerBound.prefix.Substring(0, index + length))));
                     }
                 }
 
@@ -479,7 +480,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
 
             }
-    
+
             ///<inheritdoc/>
             public IStringPredicate Equals(WithConstants<PrefixInterval> self, Variable selfVariable,
               WithConstants<PrefixInterval> other, Variable otherVariable)
@@ -556,7 +557,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                         // Definitely out of range
                         return Top.Bottom;
 
-                    string newLower = oldLower.Substring(0, indexInt) + value.LowerBound + oldLower.Substring(indexInt+1);
+                    string newLower = oldLower.Substring(0, indexInt) + value.LowerBound + oldLower.Substring(indexInt + 1);
                     string newPrefix = newLower.Substring(0, Math.Max(indexInt + 1, self.upperBound.prefix.Length));
                     return For(newLower, newPrefix);
                 }
@@ -573,7 +574,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     return prefixOperations.GetCharAt(self.upperBound, index);
                 }
-                else if(index.LowerBound >= self.lowerBound.prefix.Length)
+                else if (index.LowerBound >= self.lowerBound.prefix.Length)
                 {
                     //Lowest index is after the maximum length
                     return CharInterval.Unreached;
@@ -588,13 +589,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     }
                     return interval;
                 }
-                
+
             }
         }
 
-#endregion
+        #endregion
 
-#region Object
+        #region Object overrides
         public override string ToString()
         {
             if (IsBottom)
@@ -606,9 +607,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return upperBound.prefix.ToString();
             }
             else
+            {
                 return string.Format("{0}[{1}]", upperBound.prefix, lowerBound.prefix.Substring(upperBound.prefix.Length));
-
-
+            }
         }
 
         public override bool Equals(object obj)
@@ -620,7 +621,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             return lowerBound.GetHashCode() + 33 * upperBound.GetHashCode();
         }
-#endregion
+        #endregion
+        #region IntervalBase overrides
         ///<inheritdoc/>
         public PrefixInterval Constant(string cst)
         {
@@ -650,7 +652,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             return new PrefixInterval(lowerBound, upperBound);
         }
+        #endregion
 
+        #region IStringInterval<PrefixInterval> implementation
         public bool CheckMustBeLessEqualThan(PrefixInterval greaterEqual)
         {
             return upperBound.LessThanEqual(greaterEqual.lowerBound);
@@ -681,6 +685,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return false;
             }
         }
+        #endregion
     }
 
 }

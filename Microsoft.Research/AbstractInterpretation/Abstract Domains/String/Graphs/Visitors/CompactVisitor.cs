@@ -26,6 +26,12 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
     /// <summary>
     /// Compacts a string graph.
     /// </summary>
+    /// <remarks>
+    /// Compacting a string graph means:
+    /// Concat nodes with one child are replaced by their child.
+    /// Concat nodes with all child being max nodes are replaced by a max node.
+    /// Concat nodes that are children of a concat node are merged with their parents.
+    /// </remarks>
     class CompactVisitor : CopyVisitor<Void>
     {
         public Node Compact(Node root)

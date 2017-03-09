@@ -42,5 +42,15 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
         {
             get { return new Label(NodeKind.Concat, children.Count); }
         }
+
+        public Node Compact()
+        {
+            if (indegree != 1)
+                return this;
+            if (children.Count == 1)
+                return children[0];
+
+            return this;
+        }
     }
 }

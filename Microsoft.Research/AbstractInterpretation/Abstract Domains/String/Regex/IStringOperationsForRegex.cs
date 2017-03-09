@@ -52,7 +52,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
         /// <param name="under">If true, underapproximate the state.</param>
         /// <param name="widen">If true, ensure convergence.</param>
         /// <returns>The join of left and right.</returns>
-        D Join(SD input, D left, D right, bool under, bool widen);
+        D Join(SD input, D left, D right, bool widen, bool under);
 
         /// <summary>
         /// Assumes that we are at the start of the string.

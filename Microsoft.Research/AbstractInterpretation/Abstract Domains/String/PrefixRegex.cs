@@ -31,7 +31,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <summary>
     /// Generates prefix from the back
     /// </summary>
-    public class PrefixGeneratingOperations : LinearGeneratingOperations<Prefix>
+    internal class PrefixGeneratingOperations : LinearGeneratingOperations<Prefix>
     {
         protected override Prefix Extend(Prefix prev, char single)
         {
@@ -39,7 +39,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
     }
 
-    public class PrefixMatchingOperations : LinearMatchingOperations<Prefix>
+    internal class PrefixMatchingOperations : LinearMatchingOperations<Prefix>
     {
         protected override Prefix Extend(Prefix prev, char single)
         {
@@ -52,6 +52,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
         protected override bool IsCompatible(Prefix element, int index, CharRanges ranges)
         {
             return ranges.Contains(element.prefix[index]);
+        }
+        protected override Prefix JoinUnder(Prefix prev, Prefix next)
+        {
+            if (prev.IsBottom)
+                return next;
+            if (next.IsBottom)
+                return prev;
+            return prev.prefix.Length > next.prefix.Length ? next : prev;
         }
     }
 

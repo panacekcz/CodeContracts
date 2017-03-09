@@ -23,12 +23,12 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
-    struct Void { }
+    internal struct Void { }
 
     /// <summary>
     /// Generates a readable string representation of the string graph.
     /// </summary>
-    class ToStringVisitor : Visitor<string, Void>
+    internal class ToStringVisitor : Visitor<string, Void>
     {
         private readonly StringBuilder builder;
         private readonly NodeLabels nameGenerator;
@@ -39,6 +39,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
             nameGenerator = new NodeLabels();
         }
 
+        /// <summary>
+        /// Generates the string representatio of a string graph.
+        /// </summary>
+        /// <param name="node">Root node of the string graph.</param>
         public void Generate(Node node)
         {
             Void unusedData;

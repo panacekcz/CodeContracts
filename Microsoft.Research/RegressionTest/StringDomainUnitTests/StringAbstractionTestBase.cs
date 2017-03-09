@@ -31,7 +31,7 @@ namespace StringDomainUnitTests
   /// </summary>
   /// <typeparam name="StringAbstraction">The tested implementation type.</typeparam>
   public abstract class StringAbstractionTestBase<StringAbstraction>
-  where StringAbstraction : IStringAbstraction<StringAbstraction, string>
+  where StringAbstraction : IStringAbstraction<StringAbstraction>
   {
 
     protected WithConstants<StringAbstraction> Arg(StringAbstraction abst)

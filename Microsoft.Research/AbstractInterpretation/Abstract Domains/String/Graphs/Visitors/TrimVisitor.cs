@@ -23,13 +23,37 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
+    /// <summary>
+    /// State of <see cref="TrimVisitor"/>.
+    /// </summary>
     internal enum TrimVisitorState
     {
-        Trimmed, Unknown, Preserved, Bottom
+        /// <summary>
+        /// The following characters should be trimmed if they are in the set.
+        /// </summary>
+        Trimmed,
+        /// <summary>
+        /// The following characters may be trimmed or not, if they are in the set.
+        /// </summary>
+        Unknown,
+        /// <summary>
+        /// No following characters may be trimmed.
+        /// </summary>
+        Preserved,
+        /// <summary>
+        /// Invalid trim state.
+        /// </summary>
+        Bottom
     }
 
-    abstract class TrimVisitor : CopyVisitor<TrimVisitorState>
+    /// <summary>
+    /// Produces a string graph with characters from a set trimmed.
+    /// </summary>
+    internal abstract class TrimVisitor : CopyVisitor<TrimVisitorState>
     {
+        /// <summary>
+        /// Set of the characters that will be trimmed.
+        /// </summary>
         private readonly HashSet<char> trimmedChars;
 
         protected TrimVisitor(HashSet<char> trimmedChars)
@@ -37,6 +61,11 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
             this.trimmedChars = trimmedChars;
         }
 
+        /// <summary>
+        /// Trims the specified characters from a string graph.
+        /// </summary>
+        /// <param name="root">Root node of the string graph.</param>
+        /// <returns>Root node of a string graph with the characters trimmed.</returns>
         public Node Trim(Node root)
         {
             TrimVisitorState state = TrimVisitorState.Trimmed;

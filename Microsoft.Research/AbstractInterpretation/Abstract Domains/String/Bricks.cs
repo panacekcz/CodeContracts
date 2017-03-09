@@ -29,7 +29,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <summary>
     /// Represents an element of the Bricks abstract domain.
     /// </summary>
-    public class Bricks : IStringAbstraction<Bricks, string>, IEquatable<Bricks>
+    public class Bricks : IStringAbstraction<Bricks>, IEquatable<Bricks>
     {
         #region Element state
         /// <summary>
@@ -278,11 +278,17 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #region Domain operations
         public Bricks Join(Bricks other)
         {
+            if (IsBottom)
+                return other;
+            if (other.IsBottom)
+                return this;
+
             Bricks result = Zip(other, (a, b) => a.Join(b));
 
             return result.Normalize(BrickNormalizationLocation.Join);
         }
 
+        //TODO: VD: add comments
         private bool TryLeftDerivation(Brick self, Brick left, out Brick right)
         {
             if (self.IsTop)

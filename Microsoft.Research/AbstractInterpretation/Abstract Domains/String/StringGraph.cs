@@ -27,7 +27,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <summary>
     /// Elements of the "string graph" abstract domain for strings.
     /// </summary>
-    public class StringGraph : IStringAbstraction<StringGraph, string>
+    public class StringGraph : IStringAbstraction<StringGraph>
     {
         #region Private state
         /// <summary>
@@ -240,7 +240,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             if (!meetSuffix.IsTop)
             {
-                return thisPrefix.LessThanEqual(otherPrefix) ? this : other;
+                return thisSuffix.LessThanEqual(otherSuffix) ? this : other;
             }
             if (otherLength.LessEqual(thisLength))
             {
@@ -687,8 +687,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             ///<inheritdoc/>
             public IStringPredicate RegexIsMatch(StringGraph self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
-                throw new NotImplementedException();
-                /*
                 StringGraphRegex stringGraphRegexConverter = new StringGraphRegex(self);
 
                 ProofOutcome isMatchOutcome = stringGraphRegexConverter.IsMatch(regex);
@@ -702,7 +700,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     StringGraph graph = stringGraphRegexConverter.StringGraphForRegex(regex);
 
                     return StringAbstractionPredicate.ForTrue(selfVariable, graph);
-                }*/
+                }
             }
 
             #region Factory methods

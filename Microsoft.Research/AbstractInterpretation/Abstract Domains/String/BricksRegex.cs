@@ -30,7 +30,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 {
 
     /// <summary>
-    /// Converts regexes to bricks.
+    /// Provides regex-related functionality to <see cref="Bricks"/>.
     /// </summary>
     public class BricksRegex
     {
@@ -43,9 +43,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         private class BrickGeneratingState
         {
-            public Brick brick;
-            public BrickGeneratingState previous;
-            public int index;
+            internal Brick brick;
+            internal BrickGeneratingState previous;
+            internal int index;
 
             public BrickGeneratingState(Brick b, BrickGeneratingState previous = null)
             {
@@ -116,66 +116,78 @@ namespace Microsoft.Research.AbstractDomains.Strings
         
         private class BricksGeneratingOperations : IGeneratingOperationsForRegex<BrickGeneratingState>
         {
-
             private IBricksPolicy bricksPolicy;
-            private bool overapproximate;
+            private readonly bool underapproximate;
 
-            public BricksGeneratingOperations(IBricksPolicy bricksPolicy, bool overapproximate)
+            public BricksGeneratingOperations(IBricksPolicy bricksPolicy, bool underapproximate)
             {
                 this.bricksPolicy = bricksPolicy;
-                this.overapproximate = overapproximate;
+                this.underapproximate = underapproximate;
             }
 
             public bool IsUnderapproximating
             {
-                get { return !overapproximate; }
+                get { return underapproximate; }
             }
     
+            private BrickGeneratingState CutToLength(BrickGeneratingState longer, BrickGeneratingState shorter, List<Brick> removed)
+            {
+                while (longer.index > shorter.index)
+                {
+                    removed.Add(longer.brick);
+                    longer = longer.previous;
+                }
+                return longer;
+            }
+
+            private BrickGeneratingState CommonStatePrefix(BrickGeneratingState prev, BrickGeneratingState next, List<Brick> prevChange, List<Brick> nextChange)
+            {
+                prev = CutToLength(prev, next, prevChange);
+                next = CutToLength(next, prev, nextChange);
+
+                while (prev != next)
+                {
+                    prevChange.Add(prev.brick);
+                    nextChange.Add(next.brick);
+
+                    prev = prev.previous;
+                    next = next.previous;
+                }
+
+                return prev;
+            }
+
+            private static bool IsListSetOfConstants(List<Brick> bricks)
+            {
+                return bricks.Count == 1 && bricks[0].min == 1 && bricks[0].max == 1;
+            }
+
             public BrickGeneratingState Join(BrickGeneratingState prev, BrickGeneratingState next, bool widen)
             {
-                List<Brick> prevDif = new List<Brick>();
-                List<Brick> nextDif = new List<Brick>();
+                List<Brick> prevChange = new List<Brick>();
+                List<Brick> nextChange = new List<Brick>();
+                
+                BrickGeneratingState common = CommonStatePrefix(prev, next, prevChange, nextChange);
 
-
-                BrickGeneratingState prevf = prev, nextf = next;
-                while (prevf.index > nextf.index)
+                if (IsListSetOfConstants(prevChange) && IsListSetOfConstants(nextChange))
                 {
-                    prevDif.Add(prevf.brick);
-                    prevf = prevf.previous;
+                    return new BrickGeneratingState(prevChange[0].Join(nextChange[0]), common);
                 }
-                while (nextf.index > prevf.index)
-                {
-                    nextDif.Add(nextf.brick);
-                    nextf = nextf.previous;
-                }
-
-                while (prevf != nextf) {
-                    nextDif.Add(nextf.brick);
-                    prevDif.Add(prevf.brick);
-
-                    prevf = prevf.previous;
-                    nextf = nextf.previous;
-                }
-
-                if(prevDif.Count == 1 && nextDif.Count == 1 && prevDif[0].min == 1 && prevDif[0].max == 1 && nextDif[0].min == 1 && nextDif[0].max == 1)
-                {
-                    return new BrickGeneratingState(prevDif[0].Join(nextDif[0]));
-                }
-                else if (!overapproximate)
+                else if (underapproximate)
                 {
                     // If we are underapproximating, do not allow joining lists
                     return Bottom;
                 }
                 else
                 {
-                    prevDif.Reverse();
-                    nextDif.Reverse();
+                    prevChange.Reverse();
+                    nextChange.Reverse();
 
-                    Bricks joinded = new Bricks(prevDif, bricksPolicy).Join(new Bricks(nextDif, bricksPolicy));
+                    Bricks joined = new Bricks(prevChange, bricksPolicy).Join(new Bricks(nextChange, bricksPolicy));
 
-                    foreach (Brick b in joinded.bricks)
-                        prevf = new BrickGeneratingState(b, prevf);
-                    return prevf;
+                    foreach (Brick b in joined.bricks)
+                        common = new BrickGeneratingState(b, common);
+                    return common;
                 }
 
             }
@@ -226,7 +238,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 else
                 {
                     // Cannot represent the loop
-                    return new BrickGeneratingState(new Brick(overapproximate));
+                    return new BrickGeneratingState(new Brick(!underapproximate));
                 }
             }
 
@@ -241,8 +253,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                         chars.Add(character.ToString());
                     }
                 }
+
                 BrickGeneratingState r;
-                
                 if (chars.Count == 1 && prev.TryAppend(chars.First(), out r))
                 {
                  
@@ -252,14 +264,30 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     r = new BrickGeneratingState(new Brick(chars), prev.NotEmpty());
                 }
 
-                if(!closed)
+                if (!closed)
+                {
                     r = new BrickGeneratingState(new Brick(true), r);
+                }
 
                 return r;
             }
         }
 
+        private ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>> CreateInterpreter(bool underapproximate)
+        {
+            BricksGeneratingOperations operations = new BricksGeneratingOperations(element.Policy, underapproximate);
+            GeneratingInterpretation<BrickGeneratingState> interpretation = new GeneratingInterpretation<BrickGeneratingState>(operations);
+            ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>>(interpretation);
+            return interpreter;
+        }
 
+        private Bricks BricksForRegex(Element regex, bool underapproximate)
+        {
+            var interpreter = CreateInterpreter(underapproximate);
+            var result = interpreter.Interpret(regex);
+
+            return new Bricks(result.Open.ToBrickList(), element.Policy);
+        }
 
         /// <summary>
         /// Constructs a Bricks abstract element that overapproximates
@@ -269,13 +297,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <returns>An abstract element overapproximating <paramref name="regex"/>.</returns>
         public Bricks BricksForRegex(Element regex)
         {
-            BricksGeneratingOperations operations = new BricksGeneratingOperations(element.Policy, true);
-            GeneratingInterpretation<BrickGeneratingState> interpretation = new GeneratingInterpretation<BrickGeneratingState>(operations);
-            ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>>(interpretation);
-
-            var result = interpreter.Interpret(regex);
-
-            return new Bricks(result.Open.ToBrickList(), element.Policy);
+            return BricksForRegex(regex, false);
         }
 
 
@@ -288,16 +310,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             Bricks overapproximation = BricksForRegex(regex);
             Bricks canMatchBricks = element.Meet(overapproximation);
+            bool canMatch = !canMatchBricks.IsBottom;
 
-            BricksGeneratingOperations operations = new BricksGeneratingOperations(element.Policy, false);
-            GeneratingInterpretation<BrickGeneratingState> interpretation = new GeneratingInterpretation<BrickGeneratingState>(operations);
-            ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<BrickGeneratingState>>(interpretation);
-            var result = interpreter.Interpret(regex);
-            Bricks underapproximation = new Bricks(result.Open.ToBrickList(), element.Policy);
-
+            Bricks underapproximation = BricksForRegex(regex, true);
             bool mustMatch = element.LessThanEqual(underapproximation);
 
-            return ProofOutcomeUtils.Build(!canMatchBricks.IsBottom, !mustMatch);
+            return ProofOutcomeUtils.Build(canMatch, !mustMatch);
         }
 
     }

@@ -83,7 +83,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     public class StringAbstractDomain<Variable, Expression, StringAbstraction> :
       IAbstractDomainForEnvironments<Variable, Expression>,
       IStringAbstractDomain<Variable, Expression>
-      where StringAbstraction : class, IStringAbstraction<StringAbstraction, string>
+      where StringAbstraction : class, IStringAbstraction<StringAbstraction>
       where Variable : class, IEquatable<Variable>
       where Expression : class
     {

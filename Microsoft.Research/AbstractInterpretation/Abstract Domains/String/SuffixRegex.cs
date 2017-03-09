@@ -31,7 +31,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <summary>
     /// Generates suffix from the front
     /// </summary>
-    public class SuffixOperationsForRegex : LinearGeneratingOperations<Suffix>
+    internal class SuffixOperationsForRegex : LinearGeneratingOperations<Suffix>
     {
         protected override Suffix Extend(Suffix prev, char single)
         {
@@ -39,7 +39,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
     }
 
-    public class SuffixMatchingOperations : LinearMatchingOperations<Suffix>
+    internal class SuffixMatchingOperations : LinearMatchingOperations<Suffix>
     {
         protected override Suffix Extend(Suffix prev, char single)
         {
@@ -52,6 +52,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
         protected override bool IsCompatible(Suffix element, int index, CharRanges ranges)
         {
             return ranges.Contains(element.suffix[element.suffix.Length - index - 1]);
+        }
+
+        protected override Suffix JoinUnder(Suffix prev, Suffix next)
+        {
+            if (prev.IsBottom)
+                return next;
+            if (next.IsBottom)
+                return prev;
+            return prev.suffix.Length > next.suffix.Length ? next : prev;
         }
     }
 

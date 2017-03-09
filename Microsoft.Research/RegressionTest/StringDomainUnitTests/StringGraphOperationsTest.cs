@@ -26,95 +26,95 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class StringGraphOperationsTest : StringAbstractionTestBase<StringGraph>
-  {
-    protected StringGraph.Operations<TestVariable> operations = new StringGraph.Operations<TestVariable>();
-
-    [TestMethod]
-    public void Contains()
+    [TestClass]
+    public class StringGraphOperationsTest : StringAbstractionTestBase<StringGraph>
     {
-      StringGraph abc = StringGraph.ForString("abc");
-      StringGraph d = StringGraph.ForString("d");
+        protected StringGraph.Operations<TestVariable> operations = new StringGraph.Operations<TestVariable>();
 
-      Assert.AreEqual(ProofOutcome.True, operations.Contains(Arg(abc), null, Arg("c"), null).ProofOutcome);
+        [TestMethod]
+        public void Contains()
+        {
+            StringGraph abc = StringGraph.ForString("abc");
+            StringGraph d = StringGraph.ForString("d");
+
+            Assert.AreEqual(ProofOutcome.True, operations.Contains(Arg(abc), null, Arg("c"), null).ProofOutcome);
+        }
+
+        [TestMethod]
+        public void StartsEndsWith()
+        {
+            StringGraph abc = StringGraph.ForString("abcdefgh");
+            StringGraph d = StringGraph.ForString("d");
+
+            Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("abc"), null, false).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("fgh"), null, true).ProofOutcome);
+
+            Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("fgh"), null, false).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("abc"), null, true).ProofOutcome);
+        }
+
+        [TestMethod]
+        public void TestConcat()
+        {
+            StringGraph graph = StringGraph.ForString("one");
+            StringGraph other = StringGraph.ForString("two");
+
+            Assert.AreEqual("<[o][n][e][c]>", operations.Concat(Arg(graph), Arg("c")).ToString());
+            Assert.AreEqual("<[c][o][n][e]>", operations.Concat(Arg("c"), Arg(graph)).ToString());
+            Assert.AreEqual("<[o][n][e][t][w][o]>", operations.Concat(Arg(graph), Arg(other)).ToString());
+
+        }
+
+        [TestMethod]
+        public void TestSubstring()
+        {
+            StringGraph graph = StringGraph.ForString("constant");
+
+            Assert.AreEqual("<[s][t][a][n][t]>", operations.Substring(graph, IndexInterval.For(3), IndexInterval.Infinity).ToString());
+            Assert.AreEqual("<[s][t]>", operations.Substring(graph, IndexInterval.For(3), IndexInterval.For(2)).ToString());
+
+        }
+
+        [TestMethod]
+        public void Pad()
+        {
+            StringGraph graph = StringGraph.ForString("abc");
+
+            // Not padded
+            Assert.AreEqual("<[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 3), CharInterval.For('x'), false).ToString());
+            Assert.AreEqual("<[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 3), CharInterval.For('x'), true).ToString());
+
+            // Padded
+            Assert.AreEqual("<a:{<><[x]a>}[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 1000), CharInterval.For('x'), false).ToString());
+            Assert.AreEqual("<[a][b][c]a:{<><[x]a>}>", operations.PadLeftRight(graph, IndexInterval.For(0, 1000), CharInterval.For('x'), true).ToString());
+        }
+
+
+        [TestMethod]
+        public void Trim()
+        {
+            StringGraph trimmed = StringGraph.ForString("x");
+            StringGraph constant = StringGraph.ForString("xxxabcxxx");
+
+            Assert.AreEqual("<[a][b][c][x][x][x]>", operations.TrimStartEnd(Arg(constant), Arg(trimmed), false).ToString());
+            Assert.AreEqual("<[x][x][x][a][b][c]>", operations.TrimStartEnd(Arg(constant), Arg(trimmed), true).ToString());
+            Assert.AreEqual("<[a][b][c]>", operations.Trim(Arg(constant), Arg(trimmed)).ToString());
+
+            Assert.AreEqual("<[b]>", operations.Trim(Arg(constant), Arg("xac")).ToString());
+
+        }
+
+        [TestMethod]
+        public void CharAt()
+        {
+            StringGraph constant = StringGraph.ForString("abcdefg");
+
+            Assert.AreEqual(CharInterval.For('a'), operations.GetCharAt(constant, IndexInterval.For(0)));
+            Assert.AreEqual(CharInterval.For('g'), operations.GetCharAt(constant, IndexInterval.For(6)));
+
+            Assert.AreEqual(CharInterval.For('g'), operations.GetCharAt(constant, IndexInterval.For(6, 100)));
+
+            Assert.AreEqual(CharInterval.For('b', 'f'), operations.GetCharAt(constant, IndexInterval.For(1, 5)));
+        }
     }
-
-    [TestMethod]
-    public void StartsEndsWith()
-    {
-      StringGraph abc = StringGraph.ForString("abcdefgh");
-      StringGraph d = StringGraph.ForString("d");
-
-      Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("abc"), null, false).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("fgh"), null, true).ProofOutcome);
-
-      Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("fgh"), null, false).ProofOutcome);
-      Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(abc), null, Arg("abc"), null, true).ProofOutcome);
-    }
-
-    [TestMethod]
-    public void TestConcat()
-    {
-      StringGraph graph = StringGraph.ForString("one");
-      StringGraph other = StringGraph.ForString("two");
-
-      Assert.AreEqual("<[o][n][e][c]>", operations.Concat(Arg(graph), Arg("c")).ToString());
-      Assert.AreEqual("<[c][o][n][e]>", operations.Concat(Arg("c"), Arg(graph)).ToString());
-      Assert.AreEqual("<[o][n][e][t][w][o]>", operations.Concat(Arg(graph), Arg(other)).ToString());
-
-    }
-
-    [TestMethod]
-    public void TestSubstring()
-    {
-      StringGraph graph = StringGraph.ForString("constant");
-
-      Assert.AreEqual("<[s][t][a][n][t]>", operations.Substring(graph, IndexInterval.For(3), IndexInterval.Infinity).ToString());
-      Assert.AreEqual("<[s][t]>", operations.Substring(graph, IndexInterval.For(3), IndexInterval.For(2)).ToString());
-
-    }
-
-    [TestMethod]
-    public void Pad()
-    {
-      StringGraph graph = StringGraph.ForString("abc");
-
-      // Not padded
-      Assert.AreEqual("<[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 3), CharInterval.For('x'), false).ToString());
-      Assert.AreEqual("<[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 3), CharInterval.For('x'), true).ToString());
-
-      // Padded
-      Assert.AreEqual("<a:{<><[x]a>}[a][b][c]>", operations.PadLeftRight(graph, IndexInterval.For(0, 1000), CharInterval.For('x'), false).ToString());
-      Assert.AreEqual("<[a][b][c]a:{<><[x]a>}>", operations.PadLeftRight(graph, IndexInterval.For(0, 1000), CharInterval.For('x'), true).ToString());
-    }
-
-
-    [TestMethod]
-    public void Trim()
-    {
-      StringGraph trimmed = StringGraph.ForString("x");
-      StringGraph constant = StringGraph.ForString("xxxabcxxx");
-
-      Assert.AreEqual("<[a][b][c][x][x][x]>", operations.TrimStartEnd(Arg(constant), Arg(trimmed), false).ToString());
-      Assert.AreEqual("<[x][x][x][a][b][c]>", operations.TrimStartEnd(Arg(constant), Arg(trimmed), true).ToString());
-      Assert.AreEqual("<[a][b][c]>", operations.Trim(Arg(constant), Arg(trimmed)).ToString());
-
-      Assert.AreEqual("<[b]>", operations.Trim(Arg(constant), Arg("xac")).ToString());
-
-    }
-
-    [TestMethod]
-    public void CharAt()
-    {
-      StringGraph constant = StringGraph.ForString("abcdefg");
-
-      Assert.AreEqual(CharInterval.For('a'), operations.GetCharAt(constant, IndexInterval.For(0)));
-      Assert.AreEqual(CharInterval.For('g'), operations.GetCharAt(constant, IndexInterval.For(6)));
-
-      Assert.AreEqual(CharInterval.For('g'), operations.GetCharAt(constant, IndexInterval.For(6, 100)));
-
-      Assert.AreEqual(CharInterval.For('b', 'f'), operations.GetCharAt(constant, IndexInterval.For(1, 5)));
-    }
-  }
 }

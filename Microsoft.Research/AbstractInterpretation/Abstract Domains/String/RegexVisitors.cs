@@ -28,7 +28,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings
 {
     public abstract class LinearGeneratingOperations<D> : IGeneratingOperationsForRegex<D>
-    where D : IStringAbstraction<D, string>
+    where D : IStringAbstraction<D>
     {
         private const bool under = false;
         D factoryElement;
@@ -146,7 +146,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
     }
 
-    public struct LinearMatchingState<D>
+    internal struct LinearMatchingState<D>
     {
         internal D currentElement;
         internal IndexInt currentIndex;
@@ -162,8 +162,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <summary>
     /// Matches prefix against regex
     /// </summary>
-    public abstract class LinearMatchingOperations<D> : IMatchingOperationsForRegex<LinearMatchingState<D>, D>
-        where D : IStringAbstraction<D, string>
+    internal abstract class LinearMatchingOperations<D> : IMatchingOperationsForRegex<LinearMatchingState<D>, D>
+        where D : IStringAbstraction<D>
     {
         public LinearMatchingState<D> GetBottom(D input)
         {
@@ -181,7 +181,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         protected abstract D Extend(D prev, char single);
         protected abstract int GetLength(D element);
         protected abstract bool IsCompatible(D element, int index, CharRanges ranges);
-
+        protected abstract D JoinUnder(D prev, D next);
 
         public LinearMatchingState<D> MatchChar(D input, LinearMatchingState<D> data, CharRanges range, bool under)
         {
@@ -287,7 +287,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
             var index = under ? IndexUtils.MeetIndices(prev.currentIndex, next.currentIndex) :
                 IndexUtils.JoinIndices(prev.currentIndex, next.currentIndex);
 
-            return new LinearMatchingState<D>(prev.currentElement.Join(next.currentElement), index);
+            var str = under ? JoinUnder(prev.currentElement, next.currentElement) : prev.currentElement.Join(next.currentElement);
+
+            return new LinearMatchingState<D>(str, index);
         }
 
         public LinearMatchingState<D> BeginLoop(D input, LinearMatchingState<D> prev, bool under)

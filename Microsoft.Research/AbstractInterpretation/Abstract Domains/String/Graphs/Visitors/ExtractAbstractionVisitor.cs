@@ -28,7 +28,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
     /// </summary>
     /// <typeparam name="Abstraction">Type of the target abstraction.</typeparam>
     internal abstract class ExtractAbstractionVisitor<Abstraction> : Visitor<Abstraction, Void>
-      where Abstraction : IStringAbstraction<Abstraction, string>
+      where Abstraction : IStringAbstraction<Abstraction>
     {
         protected readonly ConstantsVisitor constants;
         protected readonly Abstraction top;

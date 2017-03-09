@@ -27,7 +27,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
     /// Extracts a string graph corresponding to substrings beginning
     /// at (after) an index from an interval.
     /// </summary>
-    class SliceAfterVisitor : SliceVisitor
+    internal class SliceAfterVisitor : SliceVisitor
     {
         public SliceAfterVisitor(LengthVisitor lengths) :
           base(lengths)
@@ -38,14 +38,20 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
         {
             if (data.IsBottom || data.UpperBound == 0)
             {
+                // We are at a position in the graph where for all strings we are at or after the 
+                // upper bound of the index, that means the character is always after the index,
+                // so it is unconditionally included.
                 return charNode;
             }
             else if (data.LowerBound > 0)
             {
+                // We are at a position in the graph before the lower bound of the index,
+                // that means the character is never after the index, so it is excluded.
                 return NodeBuilder.CreateEmptyNode();
             }
             else
             {
+                // In other cases, the character may be included or not.
                 return NodeBuilder.CreateOptionalNode(charNode);
             }
         }

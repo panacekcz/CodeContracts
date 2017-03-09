@@ -15,9 +15,10 @@
 // Created by Vlastimil Dort (2016)
 
 using Microsoft.Research.AbstractDomains.Strings.PrefixTree;
+using Microsoft.Research.AbstractDomains.Strings.Regex;
 using Microsoft.Research.CodeAnalysis;
 using Microsoft.Research.Regex;
-using Microsoft.Research.Regex.AST;
+using Microsoft.Research.Regex.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,8 +28,17 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings
 {
 
+    internal struct TRState
+    {
+        internal InnerNode root;
 
-#if vdfalse
+        public TRState(InnerNode root)
+        {
+            this.root = root;
+        }
+    }
+
+
     /// <summary>
     /// Visitis a regular expression AST and builds a prefix tree.
     /// </summary>
@@ -37,7 +47,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// due to the fact, that this domain cannot represent any pattern that contains an entirely unknown part (that means all unanchored patterns),
     /// it really suffices to interpret the closed part, and if it is open, TOP is always returnet (if overapproximating)
     /// </remarks>
-    class TokensFromRegex : OpenClosedRegexVisitor<InnerNode, InnerNode>
+    class TokensFromRegex : IGeneratingOperationsForRegex<TRState>
     {
         private bool underapproximate;
         public TokensFromRegex(bool underapprox)
@@ -45,89 +55,74 @@ namespace Microsoft.Research.AbstractDomains.Strings
             this.underapproximate = underapprox;
         }
 
-        protected override InnerNode VisitConcatenation(Concatenation element, int startIndex, int endIndex, RegexEndsData ends, ref InnerNode data)
+        public bool IsUnderapproximating
         {
-            throw new NotImplementedException();
-
+            get { return underapproximate; }
         }
 
-        protected override InnerNode Unsupported(Element regex, ref InnerNode data)
+        public TRState Loop(TRState prev, TRState loop, TRState last, IndexInt min, IndexInt max)
         {
-            return data = PrefixTreeBuilder.Unknown();
-        }
-
-        protected override InnerNode Visit(Loop element, ref InnerNode data)
-        {
-            InnerNode inner = VisitSimpleRegex(element.Content, ref data);
+            
             PrefixTreeMerger merger = new PrefixTreeMerger();
-            new RepeatVisitor(merger).Repeat(inner);
+            new RepeatVisitor(merger).Repeat(loop.root);
 
-            return merger.Build();
+            return new TRState(merger.Build());
         }
 
-        protected override InnerNode Visit(Concatenation element, ref InnerNode data)
+        public TRState AddChar(TRState prev, CharRanges ranges, bool closed)
         {
-            foreach (var c in element.Parts)
+            
+            return new TRState(PrefixTreeBuilder.CharIntervalsNode(ranges.ToIntervals(), prev.root));
+        }
+
+        public bool CanBeEmpty(TRState state)
+        {
+            //TODO:
+            return true;
+        }
+
+        public TRState Empty
+        {
+            get
             {
-                VisitElement(c, ref data);
+                return new TRState(PrefixTreeBuilder.Empty());
             }
-            return data;
         }
 
-        protected override InnerNode Visit(Anchor element, ref InnerNode data)
+        public TRState Top
         {
-            //TODO:what about start-of string???
-
-            if (element.IsStartAnchor())
+            get
             {
-                return data = PrefixTreeBuilder.Empty();
+                return new TRState(PrefixTreeBuilder.Unknown());
             }
-
-            throw new NotImplementedException();
         }
-
-        protected override InnerNode Visit(SingleElement element, ref InnerNode data)
+        public TRState Bottom
         {
-            CharRanges ci;
-            if (underapproximate)
-                ci = element.MustMatchRanges;
-            else
-                ci = element.CanMatchRanges;
-
-            return data = PrefixTreeBuilder.CharIntervalsNode(ci.ToIntervals(), data);
+            get
+            {
+                return new TRState(PrefixTreeBuilder.Unreached());
+            }
         }
 
-        protected override InnerNode Visit(Empty element, ref InnerNode data)
-        {
-            return data = PrefixTreeBuilder.Empty();
-        }
-
-        protected override InnerNode Visit(Alternation element, ref InnerNode data)
+        public TRState Join(TRState prev, TRState next, bool widen)
         {
             //TODO: underapproximate
             //InnerNode bot = PrefixTreeBuilder.Unreached();
 
             PrefixTreeMerger merger = new PrefixTreeMerger();
 
-            foreach (var e in element.Patterns)
+            /*foreach (var e in element.Patterns)
             {
                 InnerNode inn = data;
                 merger.Cutoff(VisitElement(e, ref inn));
-            }
+            }*/
 
-            return data = merger.Build();
-        }
-
-
-        public InnerNode Build(Element element)
-        {
-            InnerNode end = PrefixTreeBuilder.Unknown();
-            return VisitSimpleRegex(element, ref end);
+            return new TRState(merger.Build());
         }
 
 
     }
-
+#if false
     internal class TokensFromNegativeRegex : OpenClosedRegexVisitor<InnerNode, bool>
     {
         public TokensFromNegativeRegex(bool u) { }
@@ -163,22 +158,31 @@ namespace Microsoft.Research.AbstractDomains.Strings
             throw new NotImplementedException();
         }
     }
+#endif
 
     internal class TokensRegex
     {
         public static Tokens FromRegex(Element regex, bool underapproximate)
         {
             TokensFromRegex tfr = new TokensFromRegex(underapproximate);
+            GeneratingInterpretation<TRState> interpretation = new GeneratingInterpretation<TRState>(tfr);
+            ForwardRegexInterpreter<GeneratingState<TRState>> interpreter = new ForwardRegexInterpreter<GeneratingState<TRState>>(interpretation);
 
-            return new Tokens(tfr.Build(regex));
+            var result = interpreter.Interpret(regex);
+
+            return new Tokens(result.Open.root);
         }
 
         public static Tokens FromNegativeRegex(Element regex, bool underapproximate)
         {
-            TokensFromNegativeRegex tfr = new TokensFromNegativeRegex(underapproximate);
+            //TODO:
 
-            return new Tokens(tfr.Build(regex));
+            /*TokensFromNegativeRegex tfr = new TokensFromNegativeRegex(underapproximate);
+
+            return new Tokens(tfr.Build(regex));*/
+            return new Tokens(underapproximate ? PrefixTreeBuilder.Unreached() : PrefixTreeBuilder.Unknown());
         }
+
     }
-#endif
+
 }

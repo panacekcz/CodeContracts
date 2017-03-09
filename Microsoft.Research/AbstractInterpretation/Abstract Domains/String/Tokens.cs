@@ -27,7 +27,7 @@ using Microsoft.Research.CodeAnalysis;
 namespace Microsoft.Research.AbstractDomains.Strings
 {
 
-    public class Tokens : IStringAbstraction<Tokens, string>
+    public class Tokens : IStringAbstraction<Tokens>
     {
         private readonly InnerNode root;
 
@@ -538,7 +538,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
 
             public IStringPredicate RegexIsMatch(Tokens self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
-            {/*
+            {
                 //regex underapprox less equal self -> return true
                 //self meet regex overapprox is bottom -> return false
                 // else return overapprox predicate.
@@ -555,8 +555,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 if (self.Meet(regexOver).IsBottom || self.LessThanEqual(negRegexUnder))
                     return FlatPredicate.False;
 
-                return StringAbstractionPredicate.For(selfVariable, regexOver, negRegexOver);*/
-                throw new NotImplementedException();
+                return StringAbstractionPredicate.For(selfVariable, regexOver, negRegexOver);
             }
 
             public Tokens Constant(string constant)

@@ -29,7 +29,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// Elements of the suffix abstract domain for strings.
     /// Represents a set of strings ending with a specified suffix.
     /// </summary>
-    public class Suffix : IEquatable<Suffix>, IStringAbstraction<Suffix, string>
+    public class Suffix : IEquatable<Suffix>, IStringAbstraction<Suffix>
     {
         /// <summary>
         /// The suffix which the represented strings end with.

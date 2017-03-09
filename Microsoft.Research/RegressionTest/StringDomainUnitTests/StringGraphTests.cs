@@ -28,71 +28,71 @@ using Microsoft.Research.AbstractDomains.Strings;
 namespace StringDomainUnitTests
 {
 
-  [TestClass]
-  public class StringGraphTests
-  {
-
-    [TestMethod]
-    public void TestConstant()
+    [TestClass]
+    public class StringGraphTests
     {
-      StringGraph node = StringGraph.ForString("constant");
-      Assert.AreEqual("<[c][o][n][s][t][a][n][t]>", node.ToString());
+
+        [TestMethod]
+        public void TestConstant()
+        {
+            StringGraph node = StringGraph.ForString("constant");
+            Assert.AreEqual("<[c][o][n][s][t][a][n][t]>", node.ToString());
+        }
+
+
+
+        [TestMethod]
+        public void TestComparison()
+        {
+            StringGraph oneConst = StringGraph.ForString("one");
+            StringGraph top = oneConst.Top;
+            StringGraph onePrefix = StringGraph.ForConcat(oneConst, top);
+
+
+            Assert.IsTrue(oneConst.LessThanEqual(top));
+            Assert.IsTrue(onePrefix.LessThanEqual(top));
+
+            Assert.IsTrue(top.LessThanEqual(top));
+            Assert.IsTrue(oneConst.LessThanEqual(oneConst));
+            Assert.IsTrue(onePrefix.LessThanEqual(onePrefix));
+
+            Assert.IsFalse(top.LessThanEqual(oneConst));
+            Assert.IsFalse(top.LessThanEqual(onePrefix));
+
+        }
+
+        [TestMethod]
+        public void ToStringTest()
+        {
+            Assert.AreEqual("[c]", StringGraph.ForChar('c').ToString());
+            Assert.AreEqual("_|_", StringGraph.ForBottom.ToString());
+            Assert.AreEqual("T", StringGraph.ForMax.ToString());
+
+            StringGraph[] chars = new[] { StringGraph.ForChar('a'), StringGraph.ForChar('b') };
+
+            Assert.AreEqual("<[a][b]>", StringGraph.ForConcat(chars).ToString());
+            Assert.AreEqual("{[a][b]}", StringGraph.ForUnion(chars).ToString());
+        }
+
+        [TestMethod]
+        public void Intersection()
+        {
+            StringGraph cstC1 = StringGraph.ForChar('c'), cstC2 = StringGraph.ForChar('c');
+
+            StringGraph c = cstC1.Meet(cstC2);
+            Assert.AreEqual("[c]", c.ToString());
+
+            StringGraph max = StringGraph.ForMax;
+
+            c = cstC1.Meet(max);
+            Assert.AreEqual("[c]", c.ToString());
+
+            StringGraph cstD = StringGraph.ForChar('d');
+
+            c = cstC1.Meet(cstD);
+            Assert.AreEqual("_|_", c.ToString());
+
+        }
+
     }
-
-
-
-    [TestMethod]
-    public void TestComparison()
-    {
-      StringGraph oneConst = StringGraph.ForString("one");
-      StringGraph top = oneConst.Top;
-      StringGraph onePrefix = StringGraph.ForConcat(oneConst, top);
-
-
-      Assert.IsTrue(oneConst.LessThanEqual(top));
-      Assert.IsTrue(onePrefix.LessThanEqual(top));
-
-      Assert.IsTrue(top.LessThanEqual(top));
-      Assert.IsTrue(oneConst.LessThanEqual(oneConst));
-      Assert.IsTrue(onePrefix.LessThanEqual(onePrefix));
-
-      Assert.IsFalse(top.LessThanEqual(oneConst));
-      Assert.IsFalse(top.LessThanEqual(onePrefix));
-
-    }
-
-    [TestMethod]
-    public void ToStringTest()
-    {
-      Assert.AreEqual("[c]", StringGraph.ForChar('c').ToString());
-      Assert.AreEqual("_|_", StringGraph.ForBottom.ToString());
-      Assert.AreEqual("T", StringGraph.ForMax.ToString());
-
-      StringGraph[] chars = new[] { StringGraph.ForChar('a'), StringGraph.ForChar('b') };
-
-      Assert.AreEqual("<[a][b]>", StringGraph.ForConcat(chars).ToString());
-      Assert.AreEqual("{[a][b]}", StringGraph.ForUnion(chars).ToString());
-    }
-
-    [TestMethod]
-    public void Intersection()
-    {
-      StringGraph cstC1 = StringGraph.ForChar('c'), cstC2 = StringGraph.ForChar('c');
-
-      StringGraph c = cstC1.Meet(cstC2);
-      Assert.AreEqual("[c]", c.ToString());
-
-      StringGraph max = StringGraph.ForMax;
-
-      c = cstC1.Meet(max);
-      Assert.AreEqual("[c]", c.ToString());
-
-      StringGraph cstD = StringGraph.ForChar('d');
-
-      c = cstC1.Meet(cstD);
-      Assert.AreEqual("_|_", c.ToString());
-
-    }
-
-  }
 }

@@ -27,6 +27,7 @@ using Microsoft.Research.AbstractDomains.Numerical;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
+    //TODO: VD: remove file
 #if false
     /// <summary>
     /// Elements of the prefix abstract domain for strings.

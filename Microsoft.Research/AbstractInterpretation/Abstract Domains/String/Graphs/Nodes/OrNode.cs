@@ -24,31 +24,24 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
     /// <summary>
-    /// Extracts a string graph corresponding to substrings ending
-    /// at (before) an index from an interval.
+    /// Represents an OR node in a string graph.
     /// </summary>
-    class SliceBeforeVisitor : SliceVisitor
+    internal class OrNode : InnerNode
     {
-        public SliceBeforeVisitor(LengthVisitor lengths) :
-          base(lengths)
+        internal OrNode() :
+          base()
         {
         }
 
-
-        protected override Node Visit(CharNode charNode, VisitContext context, ref IndexInterval data)
+        public OrNode(IEnumerable<Node> node) :
+          base(node)
         {
-            if (data.IsBottom || data.UpperBound == 0)
-            {
-                return NodeBuilder.CreateEmptyNode();
-            }
-            else if (data.LowerBound > 0)
-            {
-                return charNode;
-            }
-            else
-            {
-                return NodeBuilder.CreateOptionalNode(charNode);
-            }
         }
+
+        public override Label Label
+        {
+            get { return new Label(NodeKind.Or); }
+        }
+
     }
 }
