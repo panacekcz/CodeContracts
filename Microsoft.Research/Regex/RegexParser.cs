@@ -540,7 +540,7 @@ namespace Microsoft.Research.Regex
                         builder.CatElement(new AST.Anchor(AST.AnchorKind.LineEnd));
                         break;
                     case '{':
-                        //TODO: quantifiers cannot be nested
+                        //TODO: VD: quantifiers cannot be nested
                         builder.currentElement = ParseRepeats(builder.currentElement);
                         break;
                     case '.':

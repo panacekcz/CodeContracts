@@ -829,7 +829,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     }
                     else
                     {
-                        //TODO: values == null
+                        //TODO: VD: values == null
                         HashSet<string> trimmed = Trim(brick, trim, reverse);
                         if (!trimmed.Contains(""))
                         {

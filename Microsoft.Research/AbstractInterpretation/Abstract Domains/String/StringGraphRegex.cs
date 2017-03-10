@@ -133,7 +133,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     {
                         OrNode orNode = new OrNode();
                         orNode.children.Add(last);
-                        //TODO: closed/open
+                        //TODO: VD: closed/open
                         orNode.children.Add(NodeBuilder.CreateEmptyNode());
                         return orNode;
                     }
@@ -145,7 +145,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
                 else if (min == 0)
                 {
-                    //TODO: here we do not consider open/closed
+                    //TODO: VD: here we do not consider open/closed
                     return prev;
                 }
                 else if (min == 1 && max >= 1)
@@ -166,7 +166,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             public bool CanBeEmpty(Node node)
             {
                 //We dont know
-                //TODO: what if underapproximating
+                //TODO: VD: what if underapproximating
                 return true;
             }
             public Node Empty

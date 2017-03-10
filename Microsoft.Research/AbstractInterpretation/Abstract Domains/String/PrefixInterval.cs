@@ -363,8 +363,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 if (needleAbstraction.IsSingleton)
                 {
-                    //TODO: when needle not singleton but upper bound known, at least some interval
-                    //TODO: when self lower bound known, can be -1
+                    //TODO: VD: when needle not singleton but upper bound known, at least some interval
+                    //TODO: VD: when self lower bound known, can be -1
 
                     int index;
                     if (last)

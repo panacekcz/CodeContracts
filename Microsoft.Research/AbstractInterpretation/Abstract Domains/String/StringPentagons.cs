@@ -151,7 +151,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public override void Contains(Expression targetExp, Expression valueExp, Expression partExp)
         {
-            //TODO: this is a copy, not adding anything
+            //TODO: VD: this is a copy, not adding anything
             Variable partVar, valueVar;
             WithConstants<StringAbstraction> partAbstraction = EvalStringArgument(partExp, out partVar, NullHandling.Exception);
             WithConstants<StringAbstraction> valueAbstraction = EvalStringArgument(valueExp, out valueVar, NullHandling.Exception);

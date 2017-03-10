@@ -110,7 +110,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             }
             else if(state == State.INSIDE)
             {
-                //TODO: escaping?
+                //TODO: VD: escaping?
                 if (c == '}')
                 {
                     state = State.END;

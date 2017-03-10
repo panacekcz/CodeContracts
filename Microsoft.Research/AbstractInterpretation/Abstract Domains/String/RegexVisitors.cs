@@ -109,7 +109,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             if (min == 0)
                 return prev;
             else
-                //TODO: here could return more if there would be BeginLoop...
+                //TODO: VD: here could return more if there would be BeginLoop...
                 return prev;
         }
     }
@@ -311,7 +311,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             else
             {
-                //TODO: could be better, use widneing
+                //TODO: VD: could be better, use widneing
                 return GetTop(input);
             }
         }

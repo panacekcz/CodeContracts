@@ -83,7 +83,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public bool CanBeEmpty(CharacterInclusion<CharacterSet> prev)
         {
-            //TODO: verify:
+            //TODO: VD: verify:
             // Here the meaning is "the non-matching MUST be empty"
             return prev.MustBeEmpty;
         }
@@ -237,7 +237,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
            public CharacterInclusionMatchingOperations()
            {
-               //TODO:...
+               //TODO: VD: ...
            }
            */
         public CharacterInclusionMatchingState<CharacterSet> AssumeEnd(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
@@ -346,7 +346,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return right;
             if (right.bottom)
                 return left;
-            // TODO: check under-join
+            // TODO: VD:  check under-join
             return new CharacterInclusionMatchingState<CharacterSet>
             {
                 encountered = left.encountered.Union(right.encountered),
@@ -362,7 +362,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             if (prev.bottom)
                 return prev;
 
-            //TODO: convert charranges to set
+            //TODO: VD:  convert charranges to set
             CharacterSet cs = input.CreateCharacterSetFor(next.ToIntervals());
 
             if (under)

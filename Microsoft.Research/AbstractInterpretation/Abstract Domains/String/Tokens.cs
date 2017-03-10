@@ -129,13 +129,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public Tokens Substring(Tokens tokens, IndexInterval index, IndexInterval length)
             {
-                //TODO: cutoff at various places
+                //TODO: VD: cutoff at various places
                 return tokens.Top;
             }
 
             public Tokens Remove(Tokens tokens, IndexInterval index, IndexInterval length)
             {
-                //TODO: cutoff at various places
+                //TODO: VD: cutoff at various places
                 return tokens.Top;
             }
 
@@ -176,7 +176,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 
                 if(imv.Nodes.Count == 1)
                 {
-                    //TODO:
+                    //TODO: VD: 
                 }
 
                 //Split at the index, merge with the inserted part
@@ -299,7 +299,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public Tokens Trim(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
             {
-                //TODO:
+                //TODO: VD: 
                 //return Top;
                 return AnyTrim(self, trimmed);
             }
@@ -307,7 +307,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             public Tokens TrimStartEnd(WithConstants<Tokens> self, WithConstants<Tokens> trimmed, bool end)
             {
                 return AnyTrim(self, trimmed);
-                //TODO:
+                //TODO: VD: 
                 //START:
                 // if does not contain repeat nodes,
                 // then trim the characters from the root, merge the cutted subtrees with root
@@ -332,7 +332,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 if (imv.Nodes.Count == 1)
                 {
-                    //TODO:
+                    //TODO:VD: 
                 }
 
                 HashSet<InnerNode> union = new HashSet<InnerNode>(imv.Nodes);
@@ -435,7 +435,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 // Even if other is a single constant, then if we tried to represent te suffix, due to the fact that all characters are
                 // possible in the first part, there must be a repeat node after each character, which will collapse anything joined to it
                 // That means, any string that may contain an entirely unknown part, is automatically TOP in this domain.
-                //TODO: if other is constant return true if possible
+                //TODO: VD:  if other is constant return true if possible
 
                 Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
 
@@ -508,7 +508,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 Tokens selfAbstraction = self.ToAbstract(this);
                 Tokens needleAbstraction = needle.ToAbstract(this);
-                //TODO: use offset and count to limit the beginnings/ends
+                //TODO: VD:  use offset and count to limit the beginnings/ends
                 PrefixTreeBackwardSearch ptbs = new PrefixTreeBackwardSearch(selfAbstraction.root, needleAbstraction.root, true);
                 ptbs.Solve();
                 ptbs.BackwardStage(true);
@@ -596,7 +596,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public Tokens Meet(Tokens other)
         {
-            //TODO: intersection
+            //TODO:  VD: intersection
             return this;
         }
 
@@ -627,7 +627,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             rv.Repeat(root);
             rv.Repeat((prev as Tokens).root);
 
-            //TODO: this is not enough i think
+            //TODO: VD: this is not enough i think
             return new Tokens(merger.Build());
 
         }

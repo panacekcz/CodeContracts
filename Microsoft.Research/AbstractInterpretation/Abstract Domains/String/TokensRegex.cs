@@ -77,7 +77,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public bool CanBeEmpty(TRState state)
         {
-            //TODO:
+            //TODO: VD: 
             return true;
         }
 
@@ -106,7 +106,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public TRState Join(TRState prev, TRState next, bool widen)
         {
-            //TODO: underapproximate
+            //TODO: VD:  underapproximate
             //InnerNode bot = PrefixTreeBuilder.Unreached();
 
             PrefixTreeMerger merger = new PrefixTreeMerger();
@@ -175,7 +175,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public static Tokens FromNegativeRegex(Element regex, bool underapproximate)
         {
-            //TODO:
+            //TODO: VD: 
 
             /*TokensFromNegativeRegex tfr = new TokensFromNegativeRegex(underapproximate);
 

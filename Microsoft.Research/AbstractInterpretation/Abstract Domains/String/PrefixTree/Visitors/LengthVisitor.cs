@@ -95,7 +95,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             else if (other.IsBottom)
                 return this;
 
-            //TODO: maybe not the simplest expression
+            //TODO: VD: maybe not the simplest expression
             int newDivisor = GreatestCommonDivisor(divisor, other.divisor);
             int newLeft = remainder % newDivisor;
             int newRight = other.remainder % newDivisor;
