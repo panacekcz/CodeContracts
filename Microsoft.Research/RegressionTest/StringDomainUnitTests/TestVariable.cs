@@ -15,6 +15,7 @@
 // Created by Vlastimil Dort (2015-2016)
 // Master thesis String Analysis for Code Contracts
 
+using Microsoft.Research.AbstractDomains.Expressions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,20 +24,25 @@ using System.Threading.Tasks;
 
 namespace StringDomainUnitTests
 {
-  /// <summary>
-  /// A class used as a type of variable in tests of 
-  /// predicate methods.
-  /// </summary>
-  public class TestVariable : IEquatable<TestVariable>
-  {
-    public static readonly TestVariable Var1 = new TestVariable();
-    public static readonly TestVariable Var2 = new TestVariable();
-
-    private TestVariable() { }
-
-    public bool Equals(TestVariable other)
+    /// <summary>
+    /// A class used as a type of variable in tests of 
+    /// predicate methods.
+    /// </summary>
+    public class TestVariable : IEquatable<TestVariable>
     {
-      return object.ReferenceEquals(this, other);
+        public static readonly TestVariable Var1 = new TestVariable(ExpressionType.String);
+        public static readonly TestVariable Var2 = new TestVariable(ExpressionType.String);
+        public static readonly TestVariable Var3 = new TestVariable(ExpressionType.String);
+
+        public static readonly TestVariable BoolVar = new TestVariable(ExpressionType.Bool);
+
+        internal ExpressionType expressionType;
+
+        private TestVariable(ExpressionType type) { expressionType = type; }
+
+        public bool Equals(TestVariable other)
+        {
+            return object.ReferenceEquals(this, other);
+        }
     }
-  }
 }

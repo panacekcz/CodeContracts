@@ -21,6 +21,7 @@ using System.Text;
 using Microsoft.Research.AbstractDomains.Expressions;
 using System.Diagnostics;
 using Microsoft.Research.DataStructures;
+using System.Diagnostics.Contracts;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
@@ -525,10 +526,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             Debug.Assert(targetExp != null && valueExp != null && indexExp != null);
             WithConstants<StringAbstraction> valueAbstraction = EvalStringArgument(valueExp, NullHandling.Exception);
-            IndexInterval indexAbstraction = EvalIndexInterval(indexExp, numericalDomain);
-            indexAbstraction = indexAbstraction.Meet(IndexInterval.UnknownNonNegative);
-            IndexInterval lengthAbstraction = EvalIndexIntervalOrDefault(lengthExp, numericalDomain, IndexInt.Infinity);
-            lengthAbstraction = lengthAbstraction.Meet(IndexInterval.UnknownNonNegative);
+            IndexInterval indexAbstraction = EvalIndexArgumentInterval(indexExp, numericalDomain);
+            IndexInterval lengthAbstraction = EvalLengthArgumentInterval(lengthExp, numericalDomain);
+            
 
             StringAbstraction targetAbstraction;
 
@@ -1303,11 +1303,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return CharInterval.Unknown;
             }
         }
-
-
-        private IndexInterval EvalIndexInterval(Expression expr, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        protected IndexInterval EvalLengthArgumentInterval(Expression lengthExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
-            System.Diagnostics.Debug.Assert(expr != null);
+            var lengthInterval = EvalIndexIntervalOrDefault(lengthExp, numericalDomain, IndexInt.Infinity);
+            return lengthInterval.Meet(IndexInterval.UnknownNonNegative);
+        }
+        protected IndexInterval EvalIndexArgumentInterval(Expression indexExp, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        {
+            return EvalIndexInterval(indexExp, numericalDomain).Meet(IndexInterval.UnknownNonNegative);
+        }
+        protected IndexInterval EvalIndexInterval(Expression expr, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        {
+            Contract.Requires(expr != null);
 
             int constant;
             if (TryEvalIntConstant(expr, out constant))

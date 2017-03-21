@@ -271,6 +271,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="needle">Abstraction or constant value of the needle argument.</param>
         /// <param name="offset">Abstraction of the offset argument.</param>
         /// <param name="count">Abstraction of the count argument.</param>
+        /// <param name="last">If true, evaluates <see cref="String.LastIndexOf"/>, if false, evaluates <see cref="String.IndexOf"/>.</param>
         /// <returns>Abstraction of the return value.</returns>
         IndexInterval IndexOf(WithConstants<StringAbstraction> self, WithConstants<StringAbstraction> needle, IndexInterval offset, IndexInterval count, bool last);
 
@@ -314,6 +315,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <returns>Abstraction of the return value.</returns>
         IStringPredicate StartsEndsWithOrdinal(WithConstants<StringAbstraction> self, Variable selfVariable, WithConstants<StringAbstraction> other, Variable otherVariable, bool ends, IStringOrderQuery<Variable> orderQuery);
 
+
+        /// <summary>
+        /// Evaluates the Equals method in abstract.
+        /// </summary>
+        /// <param name="self">Abstraction or constant value of the first argument.</param>
+        /// <param name="selfVariable">Variable containing the value of the first argument, or <see langword="null"/>.</param>
+        /// <param name="other">Abstraction or constant value of the second argument.</param>
+        /// <param name="otherVariable">Variable containing the value of the second argument, or <see langword="null"/>.</param>
         /// <param name="orderQuery">Provides information about ordering of variables.</param>
         IStringPredicate Equals(WithConstants<StringAbstraction> self, Variable selfVariable,
           WithConstants<StringAbstraction> other, Variable otherVariable, IStringOrderQuery<Variable> orderQuery);
@@ -338,6 +347,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="rightVariable">The right argument variable</param>
         /// <returns>Collection of order predicates inferred from the call.</returns>
         IEnumerable<OrderPredicate<Variable>> ConcatOrder(Variable targetVariable, Variable leftVariable, Variable rightVariable);
+
+        /// <summary>
+        /// Gets order predicates determined from the fact that a variable is a result of substring of another variable.
+        /// </summary>
+        /// <param name="targetVariable">The variable of the result.</param>
+        /// <param name="selfVariable">The this variable.</param>
+        /// <param name="index">The substring index.</param>
+        /// <param name="length">The substring length.</param>
+        /// <returns>Collection of order predicates inferred from the call.</returns>
+        IEnumerable<OrderPredicate<Variable>> SubstringRemoveOrder(Variable targetVariable, Variable selfVariable, IndexInterval index, IndexInterval length, bool remove);
     }
 
 

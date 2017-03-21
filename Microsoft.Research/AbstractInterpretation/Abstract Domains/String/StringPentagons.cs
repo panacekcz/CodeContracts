@@ -124,11 +124,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public override void Copy(Expression targetExp, Expression sourceExp)
         {
+            base.Copy(targetExp, sourceExp);
+
             Variable targetVariable = decoder.UnderlyingVariable(targetExp);
             Variable sourceVariable = decoder.UnderlyingVariable(sourceExp);
 
-            TestTrueLessEqualThan(targetVariable, sourceVariable);
-            TestTrueLessEqualThan(sourceVariable, targetVariable);
+            if (targetVariable != null && sourceVariable != null)
+            {
+                TestTrueLessEqualThan(targetVariable, sourceVariable);
+                TestTrueLessEqualThan(sourceVariable, targetVariable);
+            }
         }
 
         public override void Concat(Expression targetExp, Expression leftExp, Expression rightExp)
@@ -146,6 +151,27 @@ namespace Microsoft.Research.AbstractDomains.Strings
             foreach (var order in IntervalOperations.ConcatOrder(targetVariable, leftVariable, rightVariable))
             {
                 TestTruePredicate(order);
+            }
+        }
+
+        public override void SubstringRemove(Expression targetExp, Expression valueExp, Expression indexExp, Expression lengthExp, bool remove, INumericalAbstractDomain<Variable, Expression> numericalDomain)
+        {
+            base.SubstringRemove(targetExp, valueExp, indexExp, lengthExp, remove, numericalDomain);
+
+            Variable targetVariable = decoder.UnderlyingVariable(targetExp);
+            Variable sourceVariable = decoder.UnderlyingVariable(valueExp);
+
+            if (targetVariable != null && sourceVariable != null)
+            {
+                IndexInterval indexInterval = EvalIndexArgumentInterval(indexExp, numericalDomain);
+                IndexInterval lengthInterval = EvalLengthArgumentInterval(lengthExp, numericalDomain);
+                
+                // Get predicates about variables
+                foreach (var order in IntervalOperations.SubstringRemoveOrder(targetVariable, sourceVariable, indexInterval, lengthInterval, remove))
+                {
+                    TestTruePredicate(order);
+                }
+
             }
         }
 
@@ -476,12 +502,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public override void Assign(Expression x, Expression exp)
         {
-            strings.ResetToNormal();
-            strings[this.decoder.UnderlyingVariable(x)] = EvalInterval(exp);
-            upperBounds.ResetToNormal();
-            upperBounds[this.decoder.UnderlyingVariable(x)] = EvalConstraints(exp);
-            predicates.ResetToNormal();
-            predicates[this.decoder.UnderlyingVariable(x)] = EvalBoolExpression(exp);
+            Variable variable = this.decoder.UnderlyingVariable(x);
+            if (variable != null)
+            {
+                strings.ResetToNormal();
+                strings[variable] = EvalInterval(exp);
+                upperBounds.ResetToNormal();
+                upperBounds[variable] = EvalConstraints(exp);
+                predicates.ResetToNormal();
+                predicates[variable] = EvalBoolExpression(exp);
+            }
         }
 
         public override void ProjectVariable(Variable var)
@@ -813,7 +843,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         private StringAbstraction EvalInterval(Variable v)
         {
             StringAbstraction abs;
-            if (!strings.TryGetValue(v, out abs))
+            if (v == null || !strings.TryGetValue(v, out abs))
             {
                 abs = operations.Top;
             }
@@ -825,7 +855,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             Variable variable = decoder.UnderlyingVariable(exp);
             SetOfConstraints<Variable> s;
-            if (upperBounds.TryGetValue(variable, out s))
+            if(variable != null && upperBounds.TryGetValue(variable, out s))
             {
                 return s;
             }
@@ -849,7 +879,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         private IStringPredicate EvalBoolVariable(Variable variable)
         {
-            if (predicates.ContainsKey(variable))
+            if (variable != null && predicates.ContainsKey(variable))
             {
                 return predicates[variable];
             }

@@ -230,6 +230,17 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
 
+            public IEnumerable<OrderPredicate<Variable>> SubstringRemoveOrder(Variable targetVariable, Variable sourceVariable, IndexInterval index, IndexInterval length, bool remove)
+            {
+                if((!remove && index.IsFiniteConstant && index.LowerBound == 0) || (!remove && index.IsInfinity))
+                {
+                    return new OrderPredicate<Variable>[]
+                    {
+                        OrderPredicate.For(sourceVariable, targetVariable)
+                    };
+                }
+                return Enumerable.Empty<OrderPredicate<Variable>>();
+            }
             public IEnumerable<OrderPredicate<Variable>> ConcatOrder(Variable targetVariable, Variable selfVariable, Variable otherVariable)
             {
                 if (selfVariable != null)

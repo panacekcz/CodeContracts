@@ -55,6 +55,8 @@
     <Compile Include="BricksOperationsTest.cs" />
     <Compile Include="BricksTest.cs" />
     <Compile Include="BricksTestBase.cs" />
+    <Compile Include="StringPentagonsTest.cs" />
+    <Compile Include="TestDecoders.cs" />
     <Compile Include="TokensRegexTest.cs" />
     <Compile Include="CharacterInclusionRegexTest.cs" />
     <Compile Include="CharacterInclusionOperationsTest.cs" />
@@ -83,6 +85,22 @@
     <ProjectReference Include="..\..\AnalysisTypes\AnalysisTypes.csproj">
       <Project>{ea595150-c741-411a-940e-4a9d5fdae4fa}</Project>
       <Name>AnalysisTypes</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Analyzers\Analyzers.csproj">
+      <Project>{93b9248c-d3b5-4b05-9172-b9436e3c2a54}</Project>
+      <Name>Analyzers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CodeAnalysis\CodeAnalysis.csproj">
+      <Project>{91b4c2f9-5cd7-47ce-bdca-1c1cf02d6605}</Project>
+      <Name>CodeAnalysis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ControlFlow\ControlFlow.csproj">
+      <Project>{c8af1b1d-3a71-40b7-9b40-5391b783d9d6}</Project>
+      <Name>ControlFlow</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DataStructures\DataStructures.csproj">
+      <Project>{35d2ef6d-ddb0-481b-a21d-9bd2634f503a}</Project>
+      <Name>DataStructures</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Regex\Regex.csproj">
       <Project>{2fa8edcf-ee48-4b8d-b980-41f31b725956}</Project>
