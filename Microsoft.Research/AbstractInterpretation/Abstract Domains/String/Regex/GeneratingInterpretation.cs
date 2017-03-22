@@ -8,20 +8,36 @@ using Microsoft.Research.Regex.Model;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Regex
 {
-    internal struct GeneratingState<D>
+    /// <summary>
+    /// Abstract state for generating regex interpretations.
+    /// </summary>
+    /// <typeparam name="TState">Abstract state representing the generated language.</typeparam>
+    internal struct GeneratingState<TState>
     {
-        public D Open { get; set; }
-        public D Closed { get; set; }
+        /// <summary>
+        /// The abstract state representing a language of strings where a match exists.
+        /// </summary>
+        public TState Open { get; set; }
+        /// <summary>
+        /// The abstract state representing a language of strings where the match ends at
+        /// the current position.
+        /// </summary>
+        public TState Closed { get; set; }
 
-        public GeneratingState(D open, D closed)
+        public GeneratingState(TState open, TState closed)
         {
             Open = open;
             Closed = closed;
         }
-        public GeneratingState(D both)
+        public GeneratingState(TState both)
         {
             Open = both;
             Closed = both;
+        }
+
+        public override string ToString()
+        {
+            return Open.ToString() + ";" + Closed.ToString();
         }
     }
 
@@ -29,86 +45,101 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
     /// <summary>
     /// Interpretation of regex that generates a corresponding abstract element.
     /// </summary>
-    /// <typeparam name="D">Typef of the abstract element.</typeparam>
-    internal class GeneratingInterpretation<D> : IRegexInterpretation<GeneratingState<D>>
+    /// <typeparam name="TState">Type of the abstract element.</typeparam>
+    internal class GeneratingInterpretation<TState> : IRegexInterpretation<GeneratingState<TState>>
     {
-        private readonly IGeneratingOperationsForRegex<D> operations;
+        private readonly IGeneratingOperationsForRegex<TState> operations;
 
-        public GeneratingInterpretation(IGeneratingOperationsForRegex<D> operations)
+        public GeneratingInterpretation(IGeneratingOperationsForRegex<TState> operations)
         {
             this.operations = operations;
         }
 
-        public GeneratingState<D> Bottom
+        #region IRegexInterpretation<GeneratingState<TState>> implementation
+        public GeneratingState<TState> Bottom
         {
             get
             {
-                return new GeneratingState<D>(operations.Bottom);
+                return new GeneratingState<TState>(operations.Bottom);
             }
         }
 
-        public GeneratingState<D> Top
+        public GeneratingState<TState> Top
         {
             get
             {
-                return new GeneratingState<D>(operations.Top);
+                return new GeneratingState<TState>(operations.Top);
             }
         }
 
-        public GeneratingState<D> AddChar(GeneratingState<D> prev, CharRanges must, CharRanges can)
+        public GeneratingState<TState> AddChar(GeneratingState<TState> prev, CharRanges must, CharRanges can)
         {
             CharRanges ranges = operations.IsUnderapproximating ? must : can;
-            return new GeneratingState<D>(operations.AddChar(prev.Closed, ranges, false), operations.AddChar(prev.Closed, ranges, true));
+            return new GeneratingState<TState>(operations.AddChar(prev.Closed, ranges, false), operations.AddChar(prev.Closed, ranges, true));
         }
 
-        public GeneratingState<D> AssumeEnd(GeneratingState<D> prev)
+        public GeneratingState<TState> AssumeEnd(GeneratingState<TState> prev)
         {
-            return new GeneratingState<D>(prev.Closed);
+            //TODO: VD: if underapprox, should check that nothing else follows
+            return new GeneratingState<TState>(prev.Closed);
         }
 
-        public GeneratingState<D> AssumeStart(GeneratingState<D> prev)
+        public GeneratingState<TState> AssumeStart(GeneratingState<TState> prev)
         {
-            D d = prev.Closed;
+            TState d = prev.Closed;
 
             if (operations.CanBeEmpty(d))
             {
-                return new GeneratingState<D>(operations.Top, operations.Empty);
+                return new GeneratingState<TState>(operations.Top, operations.Empty);
             }
             else
             {
-                D bot = operations.Bottom;
-                return new GeneratingState<D>(bot, bot);
+                return Bottom;
             }
         }
 
-        public GeneratingState<D> BeginLoop(GeneratingState<D> prev, IndexInt min, IndexInt max)
+        public GeneratingState<TState> BeginLookaround(GeneratingState<TState> prev, bool behind)
         {
-            return new GeneratingState<D>(operations.Top, operations.Empty);
-            //throw new NotImplementedException();
+            return Bottom;
         }
 
-        public GeneratingState<D> EndLoop(GeneratingState<D> prev, GeneratingState<D> next, IndexInt min, IndexInt max)
+        public GeneratingState<TState> BeginLoop(GeneratingState<TState> prev, IndexInt min, IndexInt max)
         {
-            D loopedOpen = operations.Loop(prev.Closed, next.Closed, next.Open, min, max);
-            D loopedClosed = operations.Loop(prev.Closed, next.Closed, next.Closed, min, max);
+            return new GeneratingState<TState>(operations.Top, operations.Empty);
+        }
+
+        public GeneratingState<TState> EndLookaround(GeneratingState<TState> prev, GeneratingState<TState> next, bool behind)
+        {
+            if (operations.IsUnderapproximating)
+                return Bottom;
+            else
+                return prev;
+        }
+
+        public GeneratingState<TState> EndLoop(GeneratingState<TState> prev, GeneratingState<TState> next, IndexInt min, IndexInt max)
+        {
+            TState loopedOpen = operations.Loop(prev.Closed, next.Closed, next.Open, min, max);
+            TState loopedClosed = operations.Loop(prev.Closed, next.Closed, next.Closed, min, max);
 
             if (min == 0 || operations.CanBeEmpty(next.Closed))
             {
                 loopedOpen = operations.Join(prev.Open, loopedOpen, false);
             }
 
-            return new GeneratingState<D>(loopedOpen, loopedClosed);
+            return new GeneratingState<TState>(loopedOpen, loopedClosed);
+            //TODO: VD: check code above
             //throw new NotImplementedException();
         }
 
-        public GeneratingState<D> Join(GeneratingState<D> left, GeneratingState<D> right, bool widen)
+        public GeneratingState<TState> Join(GeneratingState<TState> left, GeneratingState<TState> right, bool widen)
         {
-            return new GeneratingState<D>(operations.Join(left.Open, right.Open, widen), operations.Join(left.Closed, right.Closed, widen));
+            return new GeneratingState<TState>(operations.Join(left.Open, right.Open, widen), operations.Join(left.Closed, right.Closed, widen));
         }
 
-        public GeneratingState<D> Unknown(GeneratingState<D> data)
+        public GeneratingState<TState> Unknown(GeneratingState<TState> data)
         {
             return operations.IsUnderapproximating ? Bottom : data;
         }
+        #endregion
     }
 }

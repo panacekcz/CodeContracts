@@ -37,6 +37,8 @@ namespace Microsoft.Research.Regex.Model
                 return VisitUnknown((Unknown)element, ref data);
             else if (element is Loop)
                 return VisitLoop((Loop)element, ref data);
+            else if (element is Lookaround)
+                return VisitLookaround((Lookaround)element, ref data);
             else
                 throw new InvalidOperationException();
         }
@@ -89,6 +91,13 @@ namespace Microsoft.Research.Regex.Model
         /// <param name="data">Data passed from the caller.</param>
         /// <returns>Result returned to the caller.</returns>
         protected abstract Result VisitLoop(Loop loop, ref Data data);
+        /// <summary>
+        /// Visits a positive lookaround model element.
+        /// </summary>
+        /// <param name="lookaround">The lookaround element in the regex model.</param>
+        /// <param name="data">Data passed from the caller.</param>
+        /// <returns>Result returned to the caller.</returns>
+        protected abstract Result VisitLookaround(Lookaround lookaround, ref Data data);
 
     }
 }

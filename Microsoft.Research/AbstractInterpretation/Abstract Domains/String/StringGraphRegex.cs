@@ -81,6 +81,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public SGGeneratingState Join(SGGeneratingState prev, SGGeneratingState next, bool widen)
             {
+                // The join does not by itself introduce approximation
+                if (prev is BottomNode)
+                    return next;
+                if (next is BottomNode)
+                    return prev;
+
                 List<Node> nxDif = new List<SGGeneratingState>(), prDif = new List<SGGeneratingState>();
                 if (prev is ConcatNode)
                     prDif.AddRange(((ConcatNode)prev).children);
@@ -101,11 +107,19 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 cn.children.AddRange(nxDif.Take(common));
 
                 ConcatNode c1 = new ConcatNode();
-                c1.children.AddRange(nxDif.Skip(common));
+                c1.children.AddRange(prDif.Skip(common));
                 ConcatNode c2 = new ConcatNode();
                 c2.children.AddRange(nxDif.Skip(common));
 
-                OrNode orNode = new OrNode(new[] { c1.Compact(), c2.Compact() });
+                OrNode orNode = new OrNode();
+                Node n1 =  c1.Compact();
+                if (n1 is OrNode)
+                    orNode.children.AddRange(((OrNode)n1).children);
+                else orNode.children.Add(n1);
+                Node n2 = c2.Compact();
+                if (n2 is OrNode)
+                    orNode.children.AddRange(((OrNode)n2).children);
+                else orNode.children.Add(n2);
                 cn.children.Add(orNode);
 
                 return cn.Compact();
@@ -116,9 +130,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 var charIntervals = ranges.ToIntervals();
                 Node closedNode = NodeBuilder.CreateNodeForIntervals(charIntervals);
 
-                ConcatNode concatNode = new ConcatNode(new[] { prev, closedNode });
+                ConcatNode concatNode = new ConcatNode();
+                if (prev is ConcatNode)
+                    concatNode.children.AddRange(((ConcatNode)prev).children);
+                else
+                    concatNode.children.Add(prev);
+                concatNode.children.Add(closedNode);
 
-                return Wrap(concatNode, closed);
+                return Wrap(concatNode.Compact(), closed);
             }
 
             public SGGeneratingState Loop(SGGeneratingState prev, SGGeneratingState loop, SGGeneratingState last, IndexInt min, IndexInt max)
@@ -165,9 +184,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public bool CanBeEmpty(Node node)
             {
-                //We dont know
-                //TODO: VD: what if underapproximating
-                return true;
+                LengthVisitor lengths = new LengthVisitor();
+                lengths.ComputeLengthsFor(node);
+                IndexInterval length = lengths.GetLengthFor(node);
+                return length.LowerBound == 0;
             }
             public Node Empty
             {

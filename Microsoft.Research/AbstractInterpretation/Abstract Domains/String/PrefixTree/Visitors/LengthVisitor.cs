@@ -24,165 +24,26 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
 
-    internal struct Congruence
-    {
-        private readonly int divisor, remainder;
-
-        private static int GreatestCommonDivisor(int a, int b)
-        {
-            Contract.Requires(a >= 0);
-            Contract.Requires(b >= 0);
-
-            while(b > 0)
-            {
-                int next = a % b;
-                a = b;
-                b = next;
-            }
-
-            return b;
-        }
-
-        private Congruence(int divisor, int remainder)
-        {
-            this.divisor = divisor;
-            this.remainder = remainder;
-        }
-
-        public bool IsBottom
-        {
-            get
-            {
-                return divisor != 0 && remainder >= divisor;
-            }
-        }
-        public bool IsConstant
-        {
-            get
-            {
-                return divisor == 0;
-            }
-        }
-        public Congruence Add(int constant)
-        {
-            checked
-            {
-                if (IsBottom)
-                    return this;
-                if (IsConstant)
-                    return For(remainder + 1);
-                return For(divisor, remainder + constant);
-            }
-        }
-        public Congruence Add(Congruence other)
-        {
-            checked
-            {
-                if (IsBottom)
-                    return other;
-                else if (other.IsBottom)
-                    return this;
-
-                int newDivisor = GreatestCommonDivisor(divisor, other.divisor);
-
-                return For(newDivisor, remainder + other.remainder);
-            }
-        }
-        public Congruence Join(Congruence other)
-        {
-            if (IsBottom)
-                return other;
-            else if (other.IsBottom)
-                return this;
-
-            //TODO: VD: maybe not the simplest expression
-            int newDivisor = GreatestCommonDivisor(divisor, other.divisor);
-            int newLeft = remainder % newDivisor;
-            int newRight = other.remainder % newDivisor;
-
-            newDivisor = GreatestCommonDivisor(newDivisor, Math.Abs(newLeft - newRight));
-            return For(newDivisor, newLeft);
-        }
-
-        public static Congruence For(int divider, int remainder)
-        {
-            if (divider <= 0 || remainder < 0)
-                throw new ArgumentOutOfRangeException();
-
-            return new Congruence(divider, remainder % divider);
-        }
-
-        public static Congruence For(int constant)
-        {
-            if (constant < 0)
-                throw new ArgumentOutOfRangeException();
-            return new Congruence(0, constant);
-        }
-
-        public static Congruence Unreached
-        {
-            get
-            {
-                return new Congruence(1, 1);
-            }
-        }
-
-        public int CommonDivisor
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
-    }
-
-    internal struct CongruencePair
-    {
-        private readonly Congruence repeat, suffix;
-
-        public CongruencePair(Congruence repeat, Congruence suffix)
-        {
-            this.repeat = repeat;
-            this.suffix = suffix;
-        }
-
-        public CongruencePair Add(int offset)
-        {
-            return new CongruencePair(repeat.Add(offset), suffix.Add(offset));
-        }
-
-        public CongruencePair Join(CongruencePair other)
-        {
-            return new CongruencePair(repeat.Join(other.repeat), suffix.Join(other.suffix));
-        }
-
-        /// <summary>
-        /// Congruence for the whole string including repeating and suffix part
-        /// </summary>
-        public Congruence Total
-        {
-            get
-            {
-                Congruence repeated = repeat.Join(Congruence.For(0));
-                return repeated.Add(suffix);
-            }
-        }
-    }
-
     internal class LengthCongruenceVisitor : CachedPrefixTreeVisitor<CongruencePair>
     {
-
-        public IndexInt GetLengthCommonDivisor(InnerNode tree)
+        public int GetRepeatCommonDivisor(InnerNode tree)
+        {
+            CongruencePair cp = VisitNodeCached(tree);
+            if (cp.Repeat.IsBottom)
+                return 0;
+            return cp.Repeat.CommonDivisor;
+        }
+        public int GetLengthCommonDivisor(InnerNode tree)
         {
             CongruencePair cp = VisitNodeCached(tree);
             Congruence total = cp.Total;
-            return IndexInt.For(total.CommonDivisor);
+            return total.CommonDivisor;
         }
-        protected override CongruencePair VisitInnerNode(InnerNode inn)
+        protected override CongruencePair VisitInnerNode(InnerNode innerNode)
         {
-            CongruencePair cp = new CongruencePair(Congruence.Unreached, inn.Accepting ? Congruence.For(0) : Congruence.Unreached);
+            CongruencePair cp = new CongruencePair(Congruence.Unreached, innerNode.Accepting ? Congruence.For(0) : Congruence.Unreached);
 
-            foreach (var child in inn.children)
+            foreach (var child in innerNode.children)
             {
                 CongruencePair innerCp = VisitNodeCached(child.Value);
                 cp = cp.Join(innerCp.Add(1));
@@ -190,35 +51,48 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             return cp;
         }
-        protected override CongruencePair VisitRepeatNode(RepeatNode inn)
+        protected override CongruencePair VisitRepeatNode(RepeatNode repeatNode)
         {
             return new CongruencePair(Congruence.For(0), Congruence.Unreached);
         }
     }
 
-    class LengthIntervalVisitor : CachedPrefixTreeVisitor<IndexInterval>
-    {
 
+    /// <summary>
+    /// Computes possible lengths of strings represented by a token tree.
+    /// </summary>
+    internal class LengthIntervalVisitor : CachedPrefixTreeVisitor<IndexInterval>
+    {
+        /// <summary>
+        /// Gets the interval of lengths of string represented by a token tree.
+        /// </summary>
+        /// <param name="tree">Root node of the token tree.</param>
+        /// <returns>Interval containing lengths of all strings represented by <paramref name="tree"/>.</returns>
         public IndexInterval GetLengthInterval(InnerNode tree)
         {
             return VisitNodeCached(tree);
         }
 
-        protected override IndexInterval VisitInnerNode(InnerNode inn)
+        protected override IndexInterval VisitInnerNode(InnerNode innerNode)
         {
-            IndexInterval r = inn.Accepting ? IndexInterval.For(0) : IndexInterval.Unreached;
+            IndexInterval interval = innerNode.Accepting ? IndexInterval.For(0) : IndexInterval.Unreached;
 
-            foreach (var child in inn.children)
+            foreach (var child in innerNode.children)
             {
                 IndexInterval childInterval = VisitNodeCached(child.Value);
-                r = r.Join(childInterval.Add(1));
+                interval = interval.Join(childInterval.Add(1));
             }
 
-            return r;
+            return interval;
         }
-        protected override IndexInterval VisitRepeatNode(RepeatNode inn)
+        protected override IndexInterval VisitRepeatNode(RepeatNode repeatNode)
         {
-            return IndexInterval.For(IndexInt.For(0), IndexInt.Infinity);
+            // Occurence of a repeat node means that the upper bound is infinity
+            // because the part can be repeated any number of times
+
+            // The lower bound is also infinity, because the minimum length is only dependent on
+            // accepting inner nodes.
+            return IndexInterval.Infinity;
         }
     }
 

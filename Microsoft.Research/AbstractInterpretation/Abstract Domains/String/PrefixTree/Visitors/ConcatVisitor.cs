@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
 
-    class RepeatVisitor : PrefixTreeTransformer
+    internal class RepeatVisitor : PrefixTreeTransformer
     {
         private InnerNode root;
 
@@ -39,18 +39,29 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
+        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
         {
-            InnerNode ninn = (InnerNode)base.VisitInnerNode(inn);
+            InnerNode newNode = (InnerNode)base.VisitInnerNode(innerNode);
 
-            if (ninn.Accepting &&ninn != root)
-                return Cutoff(ninn);
+            if (innerNode.Accepting)
+            {
+                InnerNode notAccepting = new InnerNode(newNode);
+                notAccepting.accepting = false;
+                if (innerNode == root)
+                {
+                    return notAccepting;
+                }
+                else
+                {
+                    return Cutoff(notAccepting);
+                }
+            }
             else
-                return ninn;
+                return newNode;
         }
-        protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
+        protected override PrefixTreeNode VisitRepeatNode(RepeatNode repeatNode)
         {
-            return inn;
+            return repeatNode;
         }
     }
 
@@ -70,14 +81,12 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             Transform(left);
         }
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
+        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
         {
-            //TODO: VD: here it could go quadratic!!
-
             // Concat to children first
-            PrefixTreeNode newInn = base.VisitInnerNode(inn);
+            PrefixTreeNode newInn = base.VisitInnerNode(innerNode);
 
-            if (inn.Accepting)
+            if (innerNode.Accepting)
             {
                 //TODO: VD: not optimal
                 InnerNode newInnNotAccepting = new InnerNode((InnerNode)newInn);

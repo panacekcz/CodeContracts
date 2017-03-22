@@ -10,36 +10,32 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
     /// <summary>
     /// Interprets a regex model.
     /// </summary>
-    /// <typeparam name="D">Interpreter state</typeparam>
-    abstract class RegexInterpreter<D> : ModelVisitor<Void, D>
+    /// <typeparam name="TState">Interpreter state</typeparam>
+    internal abstract class RegexInterpreter<TState> : ModelVisitor<Void, TState>
     {
-        protected readonly IRegexInterpretation<D> operations;
+        protected readonly IRegexInterpretation<TState> operations;
 
-        public RegexInterpreter(IRegexInterpretation<D> operations)
+        /// <summary>
+        /// Creates an interpreter using specified interpretation operations.
+        /// </summary>
+        /// <param name="operations">Interpretation operations.</param>
+        public RegexInterpreter(IRegexInterpretation<TState> operations)
         {
             this.operations = operations;
         }
 
-        public D Interpret(Element model)
+        /// <summary>
+        /// Interprets a regex model.
+        /// </summary>
+        /// <param name="model">The regex model to be interpreted.</param>
+        /// <returns>The final state of the interpretation.</returns>
+        public TState Interpret(Element model)
         {
-            D data = operations.Top;
+            TState data = operations.Top;
             VisitElement(model, ref data);
             return data;
         }
 
-        protected override Void VisitUnknown(Unknown regex, ref D data)
-        {
-            VisitElement(regex.Pattern, ref data);
-
-            data = operations.Unknown(data);
-            return null;
-        }
-
-        protected override Void VisitCharacter(Character element, ref D data)
-        {
-            data = operations.AddChar(data, element.MustMatch, element.CanMatch);
-            return null;
-        }
 
         private IndexInt LoopBoundIndexInt(int loopBound)
         {
@@ -49,26 +45,44 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
                 return IndexInt.ForNonNegative(loopBound);
         }
 
-        protected override Void VisitLoop(Loop element, ref D data)
+        #region ModelVisitor<Void, D> overrides
+
+        protected override Void VisitUnknown(Unknown regex, ref TState data)
         {
-            D next = data;
+            VisitElement(regex.Pattern, ref data);
+
+            data = operations.Unknown(data);
+            return null;
+        }
+
+        protected override Void VisitCharacter(Character element, ref TState data)
+        {
+            data = operations.AddChar(data, element.MustMatch, element.CanMatch);
+            return null;
+        }
+
+
+        protected override Void VisitLoop(Loop element, ref TState data)
+        {
+            TState next = data;
             next = operations.BeginLoop(data, LoopBoundIndexInt(element.Min), LoopBoundIndexInt(element.Max));
             VisitElement(element.Pattern, ref next);
             data = operations.EndLoop(data, next, LoopBoundIndexInt(element.Min), LoopBoundIndexInt(element.Max));
             return null;
         }
 
-        protected override Void VisitUnion(Union element, ref D data)
+        protected override Void VisitUnion(Union element, ref TState data)
         {
-            D joined = operations.Bottom;
+            TState joined = operations.Bottom;
             foreach (var part in element.Patterns)
             {
-                D next = data;
+                TState next = data;
                 VisitElement(part, ref next);
                 joined = operations.Join(joined, next, false);
             }
             data = joined;
             return null;
         }
+        #endregion
     }
 }

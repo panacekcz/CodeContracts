@@ -7,34 +7,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-    class NodeCollectVisitor : PrefixTreeVisitor<Void>
-    {
-        private HashSet<InnerNode> nodes = new HashSet<InnerNode>();
 
-        public HashSet<InnerNode> Nodes { get { return nodes; } }
-        public void Collect(PrefixTreeNode node)
-        {
-            VisitNode(node);
-        }
-        protected override Void VisitInnerNode(InnerNode inn)
-        {
-            if (!nodes.Contains(inn))
-            {
-                nodes.Add(inn);
-                foreach(var child in inn.children)
-                {
-                    VisitNode(child.Value);
-                }
-            }
-
-            return Void.Value;
-        }
-
-        protected override Void VisitRepeatNode(RepeatNode inn)
-        {
-            return Void.Value;
-        }
-    }
 
     class PrefixTreeBackwardSearch : PrefixTreeForwardSearch
     {
@@ -52,13 +25,13 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             InnerNodePair ch = new InnerNodePair(leftChild.ToInner(leftRoot), rightChild.ToInner(rightRoot));
 
             List<InnerNodePair> lst;
-            if(predecesors.TryGetValue(fr, out lst))
+            if(predecesors.TryGetValue(ch, out lst))
             {
-                lst.Add(ch);
+                lst.Add(fr);
             }
             else
             {
-                predecesors[fr] = new List<InnerNodePair> { ch };
+                predecesors[ch] = new List<InnerNodePair> { fr };
             }
         }
 
@@ -93,15 +66,17 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
                     RequestBackward(pr);
                 }
             }
+
             //Solve
-
-
             while (!pendingBackwardPairs.IsEmpty)
             {
                 var pair = pendingBackwardPairs.Pull();
-                foreach(var npr in predecesors[pair])
+                if (predecesors.ContainsKey(pair))
                 {
-                    RequestBackward(npr);
+                    foreach (var npr in predecesors[pair])
+                    {
+                        RequestBackward(npr);
+                    }
                 }
 
             }
@@ -120,7 +95,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return endpoints;
         }
 
-        public HashSet<InnerNode> GetEndpoints()
+        public HashSet<InnerNode> GetStartsAndEnds()
         {
             HashSet<InnerNode> endpoints = new HashSet<InnerNode>();
             foreach(var pr in knownPairs)
@@ -138,17 +113,24 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
     }
-
+    /// <summary>
+    /// Finds all nodes in a graph, where an occurence of a strings from the other graph CAN possibly end.
+    /// </summary>
+    /// <remarks>
+    /// Works by starting that the occurence can start anywhere and then working forward
+    /// the complexity is quadratic if the size of alphabet is constant.
+    /// That is, for each pair, we do constant amount of work.
+    /// </remarks>
     class PrefixTreeForwardSearch : PrefixTreeRelation
     {
-        //Finds all nodes in a graph, where an occurence of a strings from the other graph CAN possibly end
-        //by starting that the occurence can start anywhere and then working forward
-        //the complexity is quadratic if the size of alphabet is constant
+        private readonly bool allStarts;
 
-            //That is, for each pair, we do constant amount of work
-
-        bool allStarts;
-
+        /// <summary>
+        /// Initializes search of a language in another language.
+        /// </summary>
+        /// <param name="leftRoot">Root of the left tree.</param>
+        /// <param name="rightRoot">Root of the right tree.</param>
+        /// <param name="allStarts">Whether the occurence can start at any node.</param>
         public PrefixTreeForwardSearch(InnerNode leftRoot, InnerNode rightRoot, bool allStarts) : base(leftRoot, rightRoot)
         {
             this.allStarts = allStarts;
@@ -174,7 +156,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             }
         }
 
-        public bool AnyEnd()
+        public bool FoundAnyEnd()
         {
             foreach(var c in this.knownPairs)
             {
@@ -184,7 +166,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return false;
         }
 
-        public bool AlignedEnd()
+        public bool FoundAlignedEnd()
         {
             foreach (var c in this.knownPairs)
             {
@@ -208,99 +190,4 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return true;
         }
     }
-
-
-
-#if false
-    class AhoCorassick : ForwardVisitor<InnerNode>
-    {
-        //        private readonly Dictionary<InnerNode, InnerNode> backEdges = new Dictionary<InnerNode, InnerNode>();
-
-        InnerNode root;
-
-        Dictionary<InnerNode, PrefixTreeNode> fixup = new Dictionary<InnerNode, PrefixTreeNode>();
-        List<InnerNode> roots = new List<InnerNode>();
-
-        public AhoCorassick(InnerNode root)
-        {
-            //Traverse the tree
-            //root back is root
-            this.root = root;
-            // for each child, the child back is Next(self.back, c)
-
-            //If the child already has a DIFFERENT back, we need to merge somehow..
-            // well basically we need to cut it off which means put a repeat node here and merge with root. While merging, we simply do the same thing for the newly merged edges. This will not affect nodes which already have their back (except for further sharing).
-            // Perhaps if we use ForwardVisitor, we can know what are all the back edges - well this will not help us since the problem is how to tell the first parent that something has changed...
-
-        }
-
-
-        public InnerNode Next(InnerNode n, char c)
-        {
-            PrefixTreeNode next;
-            if (n.children.TryGetValue(c, out next))
-            {
-                return next.ToInner(root);
-            }
-            else
-            {
-                return Next(Get(n), c);
-            }
-
-        }
-
-        protected override void VisitInnerNode(InnerNode node)
-        {
-            //At this point we have the back edge from node,
-            // we want to set back edges for children
-
-            InnerNode bk = Get(node);
-            if (bk != null)
-            {
-
-                foreach (var child in node.children)
-                {
-                    Push(child.Value, Next(bk, child.Key));
-                }
-            }
-            else
-            {
-                //Merge with root...
-                roots.Add(node);
-                fixup.Add(node, RepeatNode.Repeat);
-            }
-        }
-
-        protected override InnerNode Merge(InnerNode oldData, InnerNode newData)
-        {
-            if (oldData == newData)
-                return oldData;
-            else
-                return null;
-            //throw new NotImplementedException();
-        }
-
-        protected override InnerNode Default()
-        {
-            throw new InvalidOperationException();
-        }
-    }
-
-
-    public class AhoCorassickFinder{
-
-        AhoCorassick automaton;
-        HashSet<InnerNode> beginnings;
-        HashSet<InnerNode> ends;
-        Dictionary<InnerNode, InnerNode> assignment;
-
-        public void FindIn(InnerNode haystack)
-        {
-            // Interprets haystack, possibly modifying the ahoc tree
-            // Finds all possible ends and beginings
-
-
-        }
-    }
-#endif
 }

@@ -27,94 +27,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-    public abstract class LinearGeneratingOperations<D> : IGeneratingOperationsForRegex<D>
-    where D : IStringAbstraction<D>
-    {
-        private const bool under = false;
-        D factoryElement;
-
-        protected abstract D Extend(D prev, char single);
-
-        public bool IsUnderapproximating
-        {
-            get
-            {
-                return under;
-            }
-        }
-        public D Bottom
-        {
-            get
-            {
-                return factoryElement.Bottom;
-            }
-        }
-
-        public D Top
-        {
-            get
-            {
-                return factoryElement.Top;
-            }
-        }
-
-        public D AddChar(D prev, CharRanges next, bool closed)
-        {
-            if (closed && (under || prev.IsBottom))
-                return prev.Bottom;
-            else if (prev.IsBottom)
-                return prev;
-
-            char single;
-            if (next.TryGetSingleton(out single))
-            {
-                return Extend(prev, single);
-            }
-            else
-            {
-                return (!closed && under) ? prev.Bottom : prev;
-            }
-        }
-
-        public D AssumeStart(D prev)
-        {
-            if (under || !prev.IsTop)
-                return prev.Bottom;
-            else
-                return prev;
-        }
-
-        public D Empty
-        {
-            get
-            {
-                if (under)
-                    return factoryElement.Bottom;
-                else
-                    return factoryElement.Top;
-            }
-        }
-        public bool CanBeEmpty(D p)
-        {
-            return p.IsTop;
-        }
-
-        public D Join(D left, D right, bool widen)
-        {
-            return left.Join(right);
-        }
-
-        public D Loop(D prev, D loop, D last, IndexInt min, IndexInt max)
-        {
-            if (min == 0)
-                return prev;
-            else
-                //TODO: VD: here could return more if there would be BeginLoop...
-                return prev;
-        }
-    }
-
-
     /// <summary>
     /// Utility methods for working with <see cref="IndeInt"/>.
     /// </summary>
@@ -146,12 +58,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
     }
 
-    internal struct LinearMatchingState<D>
+    /// <summary>
+    /// Regex matching abstract state for Prefix and Suffix domains.
+    /// </summary>
+    /// <typeparam name="TAbstraction">Type of the abstraction (prefix or suffix).</typeparam>
+    internal struct LinearMatchingState<TAbstraction>
     {
-        internal D currentElement;
+        internal TAbstraction currentElement;
         internal IndexInt currentIndex;
 
-        public LinearMatchingState(D element, IndexInt index)
+        public LinearMatchingState(TAbstraction element, IndexInt index)
         {
             currentElement = element;
             currentIndex = index;
@@ -160,30 +76,31 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
 
     /// <summary>
-    /// Matches prefix against regex
+    /// Implements common regex matching operations for Prefix and Suffix domains.
     /// </summary>
-    internal abstract class LinearMatchingOperations<D> : IMatchingOperationsForRegex<LinearMatchingState<D>, D>
-        where D : IStringAbstraction<D>
+    /// <typeparam name="TAbstraction">Type of the abstraction (prefix or suffix).</typeparam>
+    internal abstract class LinearMatchingOperations<TAbstraction> : IMatchingOperationsForRegex<LinearMatchingState<TAbstraction>, TAbstraction>
+        where TAbstraction : IStringAbstraction<TAbstraction>
     {
-        public LinearMatchingState<D> GetBottom(D input)
+        public LinearMatchingState<TAbstraction> GetBottom(TAbstraction input)
         {
             // In over, We guarantee no match
-            return new LinearMatchingState<D>(input.Bottom, IndexInt.Negative);
+            return new LinearMatchingState<TAbstraction>(input.Bottom, IndexInt.Negative);
 
         }
 
-        public LinearMatchingState<D> GetTop(D input)
+        public LinearMatchingState<TAbstraction> GetTop(TAbstraction input)
         {
             // In under, We guarantee match on all inputs on all indices
-            return new LinearMatchingState<D>(input, IndexInt.Infinity);
+            return new LinearMatchingState<TAbstraction>(input, IndexInt.Infinity);
         }
 
-        protected abstract D Extend(D prev, char single);
-        protected abstract int GetLength(D element);
-        protected abstract bool IsCompatible(D element, int index, CharRanges ranges);
-        protected abstract D JoinUnder(D prev, D next);
+        protected abstract TAbstraction Extend(TAbstraction prev, char single);
+        protected abstract int GetLength(TAbstraction element);
+        protected abstract bool IsCompatible(TAbstraction element, int index, CharRanges ranges);
+        protected abstract TAbstraction JoinUnder(TAbstraction prev, TAbstraction next);
 
-        public LinearMatchingState<D> MatchChar(D input, LinearMatchingState<D> data, CharRanges range, bool under)
+        public LinearMatchingState<TAbstraction> MatchChar(TAbstraction input, LinearMatchingState<TAbstraction> data, CharRanges range, bool under)
         {
             if (data.currentIndex.IsInfinite)
             {
@@ -196,7 +113,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     {
                         if (IsCompatible(input, i, range))
                         {
-                            return new LinearMatchingState<D> (data.currentElement, IndexInt.For(i));
+                            return new LinearMatchingState<TAbstraction> (data.currentElement, IndexInt.For(i));
                         }
                     }
 
@@ -234,29 +151,29 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
                 else
                 {
-                    return new LinearMatchingState<D>(data.currentElement, data.currentIndex.Add(1));
+                    return new LinearMatchingState<TAbstraction>(data.currentElement, data.currentIndex.Add(1));
                 }
             }
             else if (GetLength(data.currentElement) == index && (under ? range.TryGetFirst(out singleton) : range.TryGetSingleton(out singleton)))
             {
                 // We cannot gurantee match for the prefix, but we can guarantee it if the input has a longer prefix
                 // If there are more chars guaranteed to match, we can select any of them
-                return new LinearMatchingState<D>(Extend(data.currentElement, singleton), data.currentIndex.Add(1));
+                return new LinearMatchingState<TAbstraction>(Extend(data.currentElement, singleton), data.currentIndex.Add(1));
             }
             else
             {
                 // Again - we cannot guarantee match because we do not know whether there are more characters and which ones.
-                return under ? GetBottom(input) : new LinearMatchingState<D>(data.currentElement, data.currentIndex.Add(1));
+                return under ? GetBottom(input) : new LinearMatchingState<TAbstraction>(data.currentElement, data.currentIndex.Add(1));
             }
         }
 
-        public LinearMatchingState<D> AssumeEnd(D input, LinearMatchingState<D> data, bool under)
+        public LinearMatchingState<TAbstraction> AssumeEnd(TAbstraction input, LinearMatchingState<TAbstraction> data, bool under)
         {
             if (under)
             {
                 // If match is guaranteed on all indices, it is guaranteed on some index
                 if (data.currentIndex.IsInfinite)
-                    return new LinearMatchingState<D>(data.currentElement, IndexInt.Negative);
+                    return new LinearMatchingState<TAbstraction>(data.currentElement, IndexInt.Negative);
                 else
                     // No guarantee
                     return GetBottom(input);
@@ -268,16 +185,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public LinearMatchingState<D> AssumeStart(D input, LinearMatchingState<D> data, bool under)
+        public LinearMatchingState<TAbstraction> AssumeStart(TAbstraction input, LinearMatchingState<TAbstraction> data, bool under)
         {
             // In under: If guranteed on all indices, it is guranteed at the start
             if (data.currentIndex.IsInfinite || data.currentIndex == 0)
-                return new LinearMatchingState<D>(data.currentElement, IndexInt.For(0));
+                return new LinearMatchingState<TAbstraction>(data.currentElement, IndexInt.For(0));
             else
                 return GetBottom(input);
         }
 
-        public LinearMatchingState<D> Join(D input, LinearMatchingState<D> prev, LinearMatchingState<D> next, bool widen, bool under)
+        public LinearMatchingState<TAbstraction> Join(TAbstraction input, LinearMatchingState<TAbstraction> prev, LinearMatchingState<TAbstraction> next, bool widen, bool under)
         {
             // In under:
             // If one of them is infinite index, then we return JOIN of strings and the other index
@@ -289,15 +206,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             var str = under ? JoinUnder(prev.currentElement, next.currentElement) : prev.currentElement.Join(next.currentElement);
 
-            return new LinearMatchingState<D>(str, index);
+            return new LinearMatchingState<TAbstraction>(str, index);
         }
 
-        public LinearMatchingState<D> BeginLoop(D input, LinearMatchingState<D> prev, bool under)
+        public LinearMatchingState<TAbstraction> BeginLoop(TAbstraction input, LinearMatchingState<TAbstraction> prev, bool under)
         {
             return prev;
         }
 
-        public LinearMatchingState<D> EndLoop(D input, LinearMatchingState<D> prev, LinearMatchingState<D> next, IndexInt min, IndexInt max, bool under)
+        public LinearMatchingState<TAbstraction> EndLoop(TAbstraction input, LinearMatchingState<TAbstraction> prev, LinearMatchingState<TAbstraction> next, IndexInt min, IndexInt max, bool under)
         {
             if (under)
             {

@@ -26,6 +26,7 @@ using Microsoft.Research.Regex.AST;
 using Microsoft.Research.CodeAnalysis;
 using System.Collections;
 using Microsoft.Research.AbstractDomains.Strings.Regex;
+using System.Diagnostics.Contracts;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
@@ -37,13 +38,25 @@ namespace Microsoft.Research.AbstractDomains.Strings
     class CharacterInclusionComplementGeneratingOperations<CharacterSet> : IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>>
         where CharacterSet : ICharacterSet<CharacterSet>
     {
-        private readonly CharacterInclusion<CharacterSet> factory;
+        private readonly CharacterInclusion<CharacterSet> factoryElement;
+
+        /// <summary>
+        /// Creates a instance which uses a specified element to create other elements.
+        /// </summary>
+        /// <param name="factoryElement">Abstract element used as a factory to create other elements.</param>
+        public CharacterInclusionComplementGeneratingOperations(CharacterInclusion<CharacterSet> factoryElement)
+        {
+            this.factoryElement = factoryElement;
+        }
+
+        #region IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>> implementation
+
         public CharacterInclusion<CharacterSet> Bottom
         {
             get
             {
                 //No matching means all are non-matching
-                return factory.Top;
+                return factoryElement.Top;
             }
         }
 
@@ -51,8 +64,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                //All matching means no non-matching
-                return factory.Bottom;
+                // All matching means no non-matching
+                return factoryElement.Bottom;
             }
         }
 
@@ -60,14 +73,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                // returns top
+                // All non-empty strings are matching
                 return Bottom;
             }
-        }
-
-        public CharacterInclusionComplementGeneratingOperations(CharacterInclusion<CharacterSet> factory)
-        {
-            this.factory = factory;
         }
 
         public CharacterInclusion<CharacterSet> AddChar(CharacterInclusion<CharacterSet> prev, CharRanges next, bool closed)
@@ -100,11 +108,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-
         public CharacterInclusion<CharacterSet> Loop(CharacterInclusion<CharacterSet> prev, CharacterInclusion<CharacterSet> loop, CharacterInclusion<CharacterSet> last, IndexInt min, IndexInt max)
         {
             return Bottom;
         }
+        #endregion
     }
 
 
@@ -116,7 +124,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
         where CharacterSet : ICharacterSet<CharacterSet>
     {
         private readonly CharacterInclusion<CharacterSet> factory;
+        /// <summary>
+        /// Creates a instance which uses a specified element to create other elements.
+        /// </summary>
+        /// <param name="factoryElement">Abstract element used as a factory to create other elements.</param>
+        public CharacterInclusionGeneratingOperations(CharacterInclusion<CharacterSet> factory)
+        {
+            this.factory = factory;
+        }
 
+        #region IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>> implementation
         public CharacterInclusion<CharacterSet> Bottom
         {
             get
@@ -146,11 +163,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 return false;
             }
-        }
-
-        public CharacterInclusionGeneratingOperations(CharacterInclusion<CharacterSet> factory)
-        {
-            this.factory = factory;
         }
 
         public CharacterInclusion<CharacterSet> AddChar(CharacterInclusion<CharacterSet> prev, CharRanges next, bool closed)
@@ -183,6 +195,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return prev.Combine(last);
             }
         }
+        #endregion
     }
 
 
@@ -232,14 +245,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
     internal class CharacterInclusionMatchingOperations<CharacterSet> : IMatchingOperationsForRegex<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>
         where CharacterSet : ICharacterSet<CharacterSet>
     {
-        /*   private readonly ICharacterSetFactory<CharacterSet> setFactory;
-           private readonly ICharacterClassification classification;
-
-           public CharacterInclusionMatchingOperations()
-           {
-               //TODO: VD: ...
-           }
-           */
         public CharacterInclusionMatchingState<CharacterSet> AssumeEnd(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
         {
             if (prev.bottom)
@@ -708,8 +713,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
 
             var operations = new CharacterInclusionMatchingOperations<CharacterSet>();
-            MatchingInterpretation<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>> interpretation = new MatchingInterpretation<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>(operations, this.value);
-            ForwardRegexInterpreter<MatchingState<CharacterInclusionMatchingState<CharacterSet>>> interpreter = new ForwardRegexInterpreter<MatchingState<CharacterInclusionMatchingState<CharacterSet>>>(interpretation);
+            var interpretation = new MatchingInterpretation<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>(operations, this.value);
+            var interpreter = new ForwardRegexInterpreter<MatchingState<CharacterInclusionMatchingState<CharacterSet>>>(interpretation);
 
             var result = interpreter.Interpret(regex);
 
@@ -730,8 +735,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
             else
                 operations = new CharacterInclusionComplementGeneratingOperations<CharacterSet>(value);
 
-            GeneratingInterpretation<CharacterInclusion<CharacterSet>> interpretation = new GeneratingInterpretation<CharacterInclusion<CharacterSet>>(operations);
-            ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>> interpreter = new ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>>(interpretation);
+            var interpretation = new GeneratingInterpretation<CharacterInclusion<CharacterSet>>(operations);
+            var interpreter = new ForwardRegexInterpreter<GeneratingState<CharacterInclusion<CharacterSet>>>(interpretation);
 
             var result = interpreter.Interpret(regex);
             return result.Open;
@@ -742,8 +747,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public IStringPredicate PredicateFromRegex<Variable>(Microsoft.Research.Regex.Model.Element regex, Variable thisVar)
                 where Variable : class, IEquatable<Variable>
         {
-
-            System.Diagnostics.Contracts.Contract.Requires(thisVar != null);
+            Contract.Requires(thisVar != null);
+            Contract.Requires(regex != null);
 
             CharacterInclusion<CharacterSet> matchSet = Assume(regex, true);
             CharacterInclusion<CharacterSet> nonMatchSet = Assume(regex, false);

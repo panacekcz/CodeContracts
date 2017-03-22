@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Research.AbstractDomains.Strings;
 using Microsoft.Research.CodeAnalysis;
+using Microsoft.Research.AbstractDomains.Strings.PrefixTree;
 
 namespace StringDomainUnitTests
 {
@@ -30,8 +31,6 @@ namespace StringDomainUnitTests
     public class TokensTests : TokensTestBase
     {
         Tokens constant;
-        //Tokens constantSet;
-        //Tokens repeatedConstant;
   
         public TokensTests()
         {
@@ -44,17 +43,25 @@ namespace StringDomainUnitTests
         {
             Assert.AreEqual("{c{o{n{s{t{}!}.}.}.}.}.", constant.ToString());
             Assert.AreEqual("{}.", bottom.ToString());
-            //TODO: VD: toString should be more sensible and not be used for tests really
-            //Assert.AreEqual("", top.ToString());
         }
+
+        [TestMethod]
+        public void TestParse()
+        {
+            Tokens t = ParseTokens("{c{o{n{s{t{}!}.}.}.}.}.");
+            Assert.AreEqual("{c{o{n{s{t{}!}.}.}.}.}.", t.ToString());
+
+            t = ParseTokens("{a{}!b{}!c{}!}.");
+            Assert.AreEqual("{a{}!b{}!c{}!}.", t.ToString());
+
+            t = ParseTokens("{a*}!");
+            Assert.AreEqual("{a*}!", t.ToString());
+        }
+
 
         [TestMethod]
         public void TestJoin()
         {
-            /* Assert.AreEqual(some, something.Join(somePrefix));
-             Assert.AreEqual(some, some.Join(somePrefix));
-             Assert.AreEqual(some, something.Join(some));*/
-
             AssertAreEqual(bottom, bottom.Join(bottom));
 
             AssertAreEqual(constant, constant.Join(constant));
@@ -72,6 +79,10 @@ namespace StringDomainUnitTests
             Tokens otherConstant = operations.Constant("other");
 
             Assert.AreEqual("{c{o{n{s{t{}!}.}.}.}.o{t{h{e{r{}!}.}.}.}.}.", constant.Join(otherConstant).ToString());
+
+            Assert.AreEqual("{a*b*}!", ParseTokens("{a*}!").Join(ParseTokens("{b*}!")).ToString());
+            Assert.AreEqual("{a*}!", ParseTokens("{a*}!").Join(ParseTokens("{a{a{}!}.}.")).ToString());
+            Assert.AreEqual("{a*b{c{}!}.}!", ParseTokens("{a*}!").Join(ParseTokens("{a{b{c{}!}.}.}.")).ToString());
         }
         
         [TestMethod]
@@ -86,8 +97,16 @@ namespace StringDomainUnitTests
             AssertAreEqual(bottom, bottom.Meet(constant));
             AssertAreEqual(bottom, constant.Meet(bottom));
 
-            AssertAreEqual(constant, top.Meet(constant));
             AssertAreEqual(constant, constant.Meet(top));
+
+            Assert.AreEqual("{a{b{c{d{}!}.}.}.}.", ParseTokens("{a{b{c{d{}!}.}.}!}.").Meet(ParseTokens("{a{b{c{d{}!}.}!}.}.")).ToString());
+            Assert.AreEqual("{a{}!}.", ParseTokens("{a{b{c{d{}!}.}!}!}.").Meet(ParseTokens("{a{b{c{d{}.}.}.}!}.")).ToString());
+            Assert.AreEqual("{a{}!}.", ParseTokens("{a{}!b{}!}.").Meet(ParseTokens("{a{}!c{}!}.")).ToString());
+            Assert.AreEqual("{a{}!}.", ParseTokens("{a{}!b{}!}.").Meet(ParseTokens("{a*}!")).ToString());
+            Assert.AreEqual("{a{}!b{}!}.", ParseTokens("{a{}!b{}!}.").Meet(ParseTokens("{a*b*}!")).ToString());
+
+            Assert.AreEqual("{b*}!", ParseTokens("{a*b*}!").Meet(ParseTokens("{b*c*}!")).ToString());
+            Assert.AreEqual("{b*d{}!}.", ParseTokens("{a*b*d{}!}.").Meet(ParseTokens("{b*c*d{}!}.")).ToString());
         }
 
         [TestMethod]
@@ -112,7 +131,6 @@ namespace StringDomainUnitTests
             Tokens longConstant = operations.Constant("constant");
 
             Assert.IsTrue(constant.LessThanEqual(constant));
-            /*Assert.IsTrue(somePrefix.LessThanEqual(some));*/
             Assert.IsFalse(constant.LessThanEqual(longConstant));
             Assert.IsFalse(longConstant.LessThanEqual(constant));
 
@@ -121,6 +139,15 @@ namespace StringDomainUnitTests
             Assert.IsTrue(bottom.LessThanEqual(bottom));
             Assert.IsTrue(bottom.LessThanEqual(constant));
             Assert.IsFalse(constant.LessThanEqual(bottom));
+
+
+            Assert.IsTrue(ParseTokens("{a*}!").LessThanEqual(ParseTokens("{a{a*}!}!")));
+            Assert.IsTrue(ParseTokens("{a{a*}.}!").LessThanEqual(ParseTokens("{a*}!")));
+
+            Assert.IsTrue(ParseTokens("{a*}!").LessThanEqual(ParseTokens("{a*b*}!")));
+            Assert.IsFalse(ParseTokens("{a*b*}!").LessThanEqual(ParseTokens("{a*}!")));
+            Assert.IsTrue(ParseTokens("{a{a*}.}!").LessThanEqual(ParseTokens("{a*b*}!")));
+            Assert.IsTrue(ParseTokens("{a{}!}.").LessThanEqual(ParseTokens("{a*}!")));
         }
         [TestMethod]
         public void TestEqual()
@@ -133,7 +160,7 @@ namespace StringDomainUnitTests
             AssertAreNotEqual(constant, top);
             AssertAreNotEqual(constant, bottom);
 
-            AssertAreEqual(constant, sameConstant);
+            Assert.AreEqual(constant, sameConstant);
             Assert.AreEqual(top, top);
             Assert.AreEqual(bottom, bottom);
         }

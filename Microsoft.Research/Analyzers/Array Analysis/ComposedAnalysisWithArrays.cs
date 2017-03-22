@@ -634,7 +634,6 @@ namespace Microsoft.Research.CodeAnalysis
             resultState = additionalAnalysis.Calli(pc, returnType, argTypes, tail, isInstance, dest, fp, args, resultState);
           }
 
-                    // TODO: VD:  we want to add a string analysis, and then propagate the information to this analysis to the others
 
                     return resultState;
         }

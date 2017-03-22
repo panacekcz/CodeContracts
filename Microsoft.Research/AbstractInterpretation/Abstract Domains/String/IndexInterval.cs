@@ -305,6 +305,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return new IndexInterval(lowerBound.Add(offset), upperBound.Add(offset));
 
         }
+
+        public static IndexInterval operator+(IndexInterval left, IndexInterval right)
+        {
+            return new IndexInterval(left.lowerBound + right.LowerBound, left.upperBound + right.upperBound);
+        }
+
         public bool ContainsValue(int value)
         {
             return lowerBound <= value && upperBound >= value;

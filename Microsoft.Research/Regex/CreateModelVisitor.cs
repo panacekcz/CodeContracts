@@ -38,7 +38,7 @@ namespace Microsoft.Research.Regex
     }
 
     /// <summary>
-    /// Collects group captures from a regex ast.
+    /// Collects group captures from a regex AST.
     /// </summary>
     internal class CollectCapturesVisitor : RegexVisitor<bool, Void>
     {
@@ -150,17 +150,26 @@ namespace Microsoft.Research.Regex
     /// </summary>
     internal class CreateModelVisitor : RegexVisitor<Model.Element, Void>
     {
-        
+        /// <summary>
+        /// Creates regex model from regex AST.
+        /// </summary>
         public Model.Element CreateModelForAST(AST.Element ast)
         {
             Void data;
             return VisitElement(ast, ref data);
         }
 
-
         protected override Model.Element Visit(Assertion element, ref Void data)
         {
-            throw new NotImplementedException();
+            if (element.Negative)
+            {
+                // Negative assertions not supported
+                return new Model.Unknown(new Model.Concatenation());
+            }
+            else
+            {
+                return new Model.Lookaround(VisitElement(element.Content, ref data), element.Behind);
+            }
         }
 
         protected override Model.Element Visit(Capture element, ref Void data)
@@ -238,8 +247,7 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(OptionsGroup element, ref Void data)
         {
-            // This should not happen, because AST with such elements should be rejected
-            throw new InvalidOperationException();
+            return VisitUnsupported(element, ref data);
         }
 
         protected override Model.Element Visit(NonBacktracking element, ref Void data)
@@ -277,7 +285,7 @@ namespace Microsoft.Research.Regex
                 // End of string
                 return Model.Anchor.End;
             }
-            else if(element.Kind== AnchorKind.LineEnd || element.Kind ==AnchorKind.StringEnd) {
+            else if(element.Kind == AnchorKind.LineEnd || element.Kind == AnchorKind.StringEnd) {
                 // End of string or 
                 return new Model.Union(Model.Anchor.End, new Model.Unknown(new Model.Concatenation()));
             }

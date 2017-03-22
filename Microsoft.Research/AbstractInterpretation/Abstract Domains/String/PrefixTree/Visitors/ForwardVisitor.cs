@@ -15,48 +15,59 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     {
         private readonly Dictionary<InnerNode, int> inputDegree = new Dictionary<InnerNode, int>();
         private readonly Dictionary<InnerNode, T> data = new Dictionary<InnerNode, T>();
-        private readonly List<InnerNode> accessible = new List<InnerNode>();
+        private readonly List<InnerNode> ready = new List<InnerNode>();
 
-        private void Collect(InnerNode node)
+        private void ComputeInputDegrees(InnerNode node)
         {
-            int i;
-            if(!inputDegree.TryGetValue(node, out i))
+            int degree;
+            if(!inputDegree.TryGetValue(node, out degree))
             {
-                //children
+                // The node is visited for the first time, 
+                // traverse the subtree
                 foreach(var c in node.children)
                 {
                     if (c.Value is InnerNode)
-                        Collect((InnerNode)c.Value);
+                        ComputeInputDegrees((InnerNode)c.Value);
                 }
             }
 
-            inputDegree[node] = i + 1;
+            // Increase the degree of this node
+            inputDegree[node] = degree + 1;
         }
-        /*private void FindRoots()
-        {
-            foreach(var c in inputDegree)
-            {
-                if (c.Value == 0)
-                    accessible.Add(c.Key);
-            }
-        }*/
-        private void Discount(InnerNode node)
+
+        private void DecreaseChildDegrees(InnerNode node)
         {
             foreach (var c in node.children)
             {
-                var cn = c.Value;
-                if (cn is InnerNode)
+                var childNode = c.Value;
+                if (childNode is InnerNode)
                 {
-                    if(--inputDegree[(InnerNode)cn] == 0)
+                    // Decrease the input degree
+                    if(--inputDegree[(InnerNode)childNode] == 0)
                     {
-                        accessible.Add((InnerNode)cn);
+                        // All edges to the node were processed, add the 
+                        ready.Add((InnerNode)childNode);
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Performs a specific action on a node, which has its final value.
+        /// </summary>
+        /// <param name="node">A node of the tree.</param>
         protected abstract void VisitInnerNode(InnerNode node);
+        /// <summary>
+        /// Merges the value associated with a node with a new value.
+        /// </summary>
+        /// <param name="oldData">Old data associated with a node.</param>
+        /// <param name="newData">New data added to the value.</param>
+        /// <returns>The result of combining <paramref name="oldData"/> with <paramref name="newData"/>.</returns>
         protected abstract T Merge(T oldData, T newData);
+        /// <summary>
+        /// Gets the default value for nodes not accessed.
+        /// </summary>
+        /// <returns>A result value for not accessed nodes.</returns>
         protected abstract T Default();
 
         /// <summary>
@@ -72,17 +83,23 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return value;
         }
 
+        /// <summary>
+        /// Adds a value to the data associated with a node.
+        /// </summary>
+        /// <param name="node">Node of the tree.</param>
+        /// <param name="nextData">Value added to the node data.</param>
         protected void Push(PrefixTreeNode node, T nextData)
         {
+            // Repeat nodes not considered
             if (!(node is InnerNode))
                 return;
 
             InnerNode innerNode = (InnerNode)node;
 
-            T old;
-            if(data.TryGetValue(innerNode,out old))
+            T oldData;
+            if(data.TryGetValue(innerNode, out oldData))
             {
-                data[innerNode] = Merge(old, nextData);
+                data[innerNode] = Merge(oldData, nextData);
             }
             else
             {
@@ -96,17 +113,15 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// <param name="root">Root of the graph.</param>
         protected void Traverse(InnerNode root)
         {
-            Collect(root);
-            //FindRoots();
+            ComputeInputDegrees(root);
+            ready.Add(root);
 
-            accessible.Add(root);
-
-            while(accessible.Count > 0){
-                InnerNode next = accessible[accessible.Count - 1];
-                accessible.RemoveAt(accessible.Count - 1);
+            while(ready.Count > 0){
+                InnerNode next = ready[ready.Count - 1];
+                ready.RemoveAt(ready.Count - 1);
 
                 VisitInnerNode(next);
-                Discount(next);
+                DecreaseChildDegrees(next);
             }
         }
     }

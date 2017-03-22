@@ -8,17 +8,17 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
     public abstract class PrefixTreeTransformer : CachedPrefixTreeVisitor<PrefixTreeNode>
     {
-        private readonly TrieShare share = new TrieShare();
+        private readonly NodeSharing sharing = new NodeSharing();
         private readonly PrefixTreeMerger merger;
 
         public PrefixTreeTransformer(PrefixTreeMerger merger)
         {
-            this.merger = merger;//?? new PrefixTreeMerger();
+            this.merger = merger;
         }
 
         protected PrefixTreeNode Share(PrefixTreeNode tn)
         {
-            return share.Share(tn);
+            return sharing.Share(tn);
         }
         protected PrefixTreeNode Cutoff(PrefixTreeNode tn)
         {
@@ -29,37 +29,38 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return merger.Merge(left, right);
         }
 
-        public void Transform(PrefixTreeNode root)
+        protected InnerNode TransformTree(PrefixTreeNode root)
         {
-
             root = VisitNodeCached(root);
-
-            InnerNode newRoot = (root is RepeatNode) ? PrefixTreeBuilder.Empty() : (InnerNode)root;
-            merger.Cutoff(newRoot);
-            //return merger.MergeOffcuts(newRoot);
+            return (root is RepeatNode) ? PrefixTreeBuilder.Empty() : (InnerNode)root;
         }
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
+        protected void Transform(PrefixTreeNode root)
+        {
+            merger.Cutoff(TransformTree(root));
+        }
+
+        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
         {
             InnerNode newNode = null;
-            foreach (var kv in inn.children)
+            foreach (var kv in innerNode.children)
             {
                 PrefixTreeNode tn = VisitNodeCached(kv.Value);
                 if (tn != kv.Value) // Reference comparison
                 {
                     if (newNode == null)
                     {
-                        newNode = new InnerNode(inn);
+                        newNode = new InnerNode(innerNode);
                     }
                     newNode.children[kv.Key] = tn;
                 }
             }
 
-            return Share(newNode ?? inn);
+            return Share(newNode ?? innerNode);
         }
-        protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
+        protected override PrefixTreeNode VisitRepeatNode(RepeatNode repeatNode)
         {
-            return inn;
+            return repeatNode;
         }
     }
 }

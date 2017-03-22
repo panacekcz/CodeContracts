@@ -29,18 +29,11 @@ using Microsoft.Research.AbstractDomains.Strings.Regex;
 namespace Microsoft.Research.AbstractDomains.Strings
 {
     /// <summary>
-    /// Generates suffix from the front
+    /// Implements regex matching operations for the Suffix domain.
     /// </summary>
-    internal class SuffixOperationsForRegex : LinearGeneratingOperations<Suffix>
-    {
-        protected override Suffix Extend(Suffix prev, char single)
-        {
-            return new Suffix(prev.suffix + single);
-        }
-    }
-
     internal class SuffixMatchingOperations : LinearMatchingOperations<Suffix>
     {
+        #region LinearMatchingOperations<Suffix> overrides
         protected override Suffix Extend(Suffix prev, char single)
         {
             return new Suffix(single + prev.suffix);
@@ -62,20 +55,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return prev;
             return prev.suffix.Length > next.suffix.Length ? next : prev;
         }
+        #endregion
     }
 
 
-
+    /// <summary>
+    /// Provides regex-related functionality for the Suffix domain.
+    /// </summary>
     public class SuffixRegex
     {
-        private Suffix self;
+        private Suffix value;
 
         public SuffixRegex(Suffix suffix)
         {
-            self = suffix;
+            value = suffix;
         }
 
-        // 
         /// <summary>
         /// Computes a suffix which overapproximates all strings matching a regex.
         /// </summary>
@@ -83,9 +78,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <returns>The suffix overapproximating <paramref name="regex"/>.</returns>
         public Suffix AssumeMatch(Element regex)
         {
-            SuffixMatchingOperations operations = new SuffixMatchingOperations();
-            MatchingInterpretation<LinearMatchingState<Suffix>, Suffix> interpretation = new MatchingInterpretation<LinearMatchingState<Suffix>, Suffix>(operations, this.self);
-            BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>> interpreter = new BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>>(interpretation);
+            var operations = new SuffixMatchingOperations();
+            var interpretation = new MatchingInterpretation<LinearMatchingState<Suffix>, Suffix>(operations, this.value);
+            var interpreter = new BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>>(interpretation);
 
             var result = interpreter.Interpret(regex);
             return result.Over.currentElement;
@@ -93,24 +88,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
 
         /// <summary>
-        /// Verifies whether the suffix matches the specified regex expression.
+        /// Verifies whether the suffix matches the specified regex.
         /// </summary>
         /// <param name="regex">The model of the regex.</param>
         /// <returns>Proven result of the match.</returns>
         public ProofOutcome IsMatch(Element regex)
         {
             var operations = new SuffixMatchingOperations();
-            MatchingInterpretation<LinearMatchingState<Suffix>, Suffix> interpretation = new MatchingInterpretation<LinearMatchingState<Suffix>, Suffix>(operations, this.self);
-            BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>> interpreter = new BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>>(interpretation);
+            var interpretation = new MatchingInterpretation<LinearMatchingState<Suffix>, Suffix>(operations, this.value);
+            var interpreter = new BackwardRegexInterpreter<MatchingState<LinearMatchingState<Suffix>>>(interpretation);
 
             var result = interpreter.Interpret(regex);
 
             bool canMatch = !result.Over.currentElement.IsBottom;
-            bool mustMatch = self.LessThanEqual(result.Under.currentElement);
+            bool mustMatch = value.LessThanEqual(result.Under.currentElement);
 
             return ProofOutcomeUtils.Build(canMatch, !mustMatch);
-
         }
-
     }
 }

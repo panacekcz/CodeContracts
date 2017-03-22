@@ -20,7 +20,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Research.AbstractDomains.Strings;
 using Microsoft.Research.CodeAnalysis;
 using Microsoft.Research.Regex;
-
+using Microsoft.Research.Regex.Model;
 
 namespace StringDomainUnitTests
 {
@@ -37,6 +37,61 @@ namespace StringDomainUnitTests
             top = operations.Top;
 
         }
+
+        private Tokens TokensForRegex(string regexString, bool negative)
+        {
+            Element regex = RegexUtil.ModelForRegex(regexString);
+            
+            return negative ? TokensRegex.TokensForNegativeRegex(regex, false) : TokensRegex.TokensForRegex(regex, false);
+        }
+
+        private void AssertTokensForRegex(string testRegexString, string expectedTokensString)
+        {
+            AssertTokensForRegex(testRegexString, expectedTokensString, false);
+        }
+        private void AssertTokensForNegativeRegex(string testRegexString, string expectedTokensString)
+        {
+            AssertTokensForRegex(testRegexString, expectedTokensString, true);
+        }
+        private void AssertTokensForRegex(string testRegexString, string expectedTokensString, bool negative)
+        {
+            Tokens tokens = TokensForRegex(testRegexString, negative);
+
+            string regexTokensString = tokens.ToString();
+            Assert.AreEqual(expectedTokensString, regexTokensString);
+        }
+
+        [TestMethod]
+        public void TestTokensForRegex()
+        {
+            AssertTokensForRegex(@"^A\z", "{A{}!}.");
+            AssertTokensForRegex(@"^[a-f]\z", "{a{}!b{}!c{}!d{}!e{}!f{}!}.");
+            AssertTokensForRegex(@"^[a-f]*\z", "{a*b*c*d*e*f*}!");
+            AssertTokensForRegex(@"^(?:a*|b)\z", "{a*b{}!}!");
+            AssertTokensForRegex(@"^(?:abc|def|ghi)*\z", "{a{b{c*}.}.d{e{f*}.}.g{h{i*}.}.}!");
+            AssertTokensForRegex(@"^(?:abc|def|ghi)\z", "{a{b{c{}!}.}.d{e{f{}!}.}.g{h{i{}!}.}.}.");
+            AssertTokensForRegex(@"^(?:abc|abd|abe)*\z", "{a{b{c*d*e*}.}.}!");
+            AssertTokensForRegex(@"^(?:abc|abd|abe)*ghi\z", "{a{b{c*d*e*}.}.g{h{i{}!}.}.}.");
+
+            Assert.IsTrue(TokensForRegex("$a", false).IsTop);
+            Assert.IsTrue(TokensForRegex("$a+", false).IsTop);
+        }
+
+        [TestMethod]
+        public void TestTokensForNegativeRegex()
+        {
+            AssertTokensForNegativeRegex(@"[^a]", "{a*}!");
+            AssertTokensForNegativeRegex(@"[^ab]", "{a*b*}!");
+            AssertTokensForNegativeRegex(@"[^ab]|a[^c]", "{a{c*}.b*}!");
+
+            Assert.IsFalse(TokensForRegex("a", true).IsTop);
+
+            // These do nothing
+            Assert.IsTrue(TokensForRegex("^a", true).IsTop);
+            Assert.IsTrue(TokensForRegex("a$", true).IsTop);
+            Assert.IsTrue(TokensForRegex("^$", true).IsTop);
+        }
+
 
         [TestMethod]
         public void TestIsMatch()
@@ -55,14 +110,14 @@ namespace StringDomainUnitTests
             Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexUtil.ModelForRegex("b")));
             Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexUtil.ModelForRegex("[b-f]")));
             Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexUtil.ModelForRegex("bcd|ghi")));
-            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("const"), null, RegexUtil.ModelForRegex("^c$")));
+            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("const"), null, RegexUtil.ModelForRegex("^c\\z")));
         }
         [TestMethod]
         public void TestUnknownMatch()
         {
-            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(top, null, RegexUtil.ModelForRegex("a")));
-            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(top, null, RegexUtil.ModelForRegex("[a-f]")));
-            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(top, null, RegexUtil.ModelForRegex("a|bcd")));
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(top, TestVariable.Var1, RegexUtil.ModelForRegex("a")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(top, TestVariable.Var1, RegexUtil.ModelForRegex("[a-f]")).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(top, TestVariable.Var1, RegexUtil.ModelForRegex("a|bcd")).ProofOutcome);
 
             /*Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexUtil.ModelForRegex("a\\z")));
             Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("a")));

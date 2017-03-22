@@ -29,18 +29,11 @@ using Microsoft.Research.AbstractDomains.Strings.Regex;
 namespace Microsoft.Research.AbstractDomains.Strings
 {
     /// <summary>
-    /// Generates prefix from the back
+    /// Implements regex matching operations for the Prefix domain.
     /// </summary>
-    internal class PrefixGeneratingOperations : LinearGeneratingOperations<Prefix>
-    {
-        protected override Prefix Extend(Prefix prev, char single)
-        {
-            return new Prefix(single + prev.prefix);
-        }
-    }
-
     internal class PrefixMatchingOperations : LinearMatchingOperations<Prefix>
     {
+        #region LinearMatchingOperations<Prefix> overrides
         protected override Prefix Extend(Prefix prev, char single)
         {
             return new Prefix(prev.prefix + single);
@@ -61,55 +54,57 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return prev;
             return prev.prefix.Length > next.prefix.Length ? next : prev;
         }
+        #endregion
     }
 
-
-
     /// <summary>
-    /// Converts between <see cref="Prefix"/> and regexes.
+    /// Provides regex-related functionality for the <see cref="Prefix"/> domain.
     /// </summary>
     public class PrefixRegex
     {
 
         #region Private state
-        private readonly Prefix self;
+        private readonly Prefix value;
         #endregion
 
-        public PrefixRegex(Prefix self)
+        public PrefixRegex(Prefix value)
         {
-            this.self = self;
-        }
-
-        public Prefix AssumeMatch(Microsoft.Research.Regex.Model.Element regex)
-        {
-            PrefixMatchingOperations operations = new PrefixMatchingOperations();
-            MatchingInterpretation<LinearMatchingState<Prefix>, Prefix> interpretation = new MatchingInterpretation<LinearMatchingState<Prefix>, Prefix>(operations, this.self);
-            ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>> interpreter = new ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>>(interpretation);
-
-            var result = interpreter.Interpret(regex);
-            return result.Over.currentElement;
-
+            this.value = value;
         }
 
         /// <summary>
-        /// Verifies whether the prefix matches the specified regex expression.
+        /// Computes a prefix which overapproximates all strings matching a regex.
         /// </summary>
-        /// <param name="regex">AST of the regex.</param>
+        /// <param name="regex">The model of the regex.</param>
+        /// <returns>The suffix overapproximating <paramref name="regex"/>.</returns>
+        public Prefix AssumeMatch(Microsoft.Research.Regex.Model.Element regex)
+        {
+            PrefixMatchingOperations operations = new PrefixMatchingOperations();
+            var interpretation = new MatchingInterpretation<LinearMatchingState<Prefix>, Prefix>(operations, this.value);
+            var interpreter = new ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>>(interpretation);
+
+            var result = interpreter.Interpret(regex);
+            return result.Over.currentElement;
+        }
+
+        /// <summary>
+        /// Verifies whether the prefix matches the specified regex.
+        /// </summary>
+        /// <param name="regex">Model of the regex.</param>
         /// <returns>Proven result of the match.</returns>
         public ProofOutcome IsMatch(Microsoft.Research.Regex.Model.Element regex)
         {
             var operations = new PrefixMatchingOperations();
-            MatchingInterpretation<LinearMatchingState<Prefix>, Prefix> interpretation = new MatchingInterpretation<LinearMatchingState<Prefix>, Prefix>(operations, this.self);
-            ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>> interpreter = new ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>>(interpretation);
+            var interpretation = new MatchingInterpretation<LinearMatchingState<Prefix>, Prefix>(operations, this.value);
+            var interpreter = new ForwardRegexInterpreter<MatchingState<LinearMatchingState<Prefix>>>(interpretation);
 
             var result = interpreter.Interpret(regex);
 
             bool canMatch = !result.Over.currentElement.IsBottom;
-            bool mustMatch = self.LessThanEqual(result.Under.currentElement);
+            bool mustMatch = value.LessThanEqual(result.Under.currentElement);
 
             return ProofOutcomeUtils.Build(canMatch, !mustMatch);
 
         }
     }
-
-    }
+}

@@ -7,15 +7,21 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Regex
 {
-    class BackwardRegexInterpreter<D> : RegexInterpreter<D>
+    /// <summary>
+    /// Interprets regular expressions in a backward direction.
+    /// </summary>
+    /// <typeparam name="TState">Interpreter data (abstract state).</typeparam>
+    internal class BackwardRegexInterpreter<TState> : RegexInterpreter<TState>
     {
-        public BackwardRegexInterpreter(IRegexInterpretation<D> operations) :
+        public BackwardRegexInterpreter(IRegexInterpretation<TState> operations) :
             base(operations)
         {
         }
 
-        protected override Void VisitConcatenation(Concatenation element, ref D data)
+        #region ModelVisitor<Void, TState> overrides
+        protected override Void VisitConcatenation(Concatenation element, ref TState data)
         {
+            // Visit the parts in reverse order
             foreach (var part in Enumerable.Reverse(element.Parts))
             {
                 VisitElement(part, ref data);
@@ -23,16 +29,23 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
             return null;
         }
 
-        protected override Void VisitAnchor(Begin element, ref D data)
+        protected override Void VisitAnchor(Begin element, ref TState data)
         {
             data = operations.AssumeEnd(data);
             return null;
         }
-        protected override Void VisitAnchor(End element, ref D data)
+        protected override Void VisitAnchor(End element, ref TState data)
         {
             data = operations.AssumeStart(data);
             return null;
         }
-
+        protected override Void VisitLookaround(Lookaround lookaround, ref TState data)
+        {
+            TState nextData = operations.BeginLookaround(data, !lookaround.Behind);
+            VisitElement(lookaround.Pattern, ref nextData);
+            data = operations.EndLookaround(data, nextData, !lookaround.Behind);
+            return null;
+        }
+        #endregion
     }
 }

@@ -288,17 +288,27 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return result.Normalize(BrickNormalizationLocation.Join);
         }
 
-        //TODO: VD: add comments
+        /// <summary>
+        /// Tries to create a Bricks element representing (an overapproximation of) a language of strings that,
+        /// if concatenated with some string from left, make a string from self.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="left"></param>
+        /// <param name="right"></param>
+        /// <returns>True </returns>
         private bool TryLeftDerivation(Brick self, Brick left, out Brick right)
         {
             if (self.IsTop)
             {
+                // Self contains all strings, so the derivation contains all strings.
                 right = self;
                 return true;
             }
 
             if (left.min == 1 && left.max == 1 && left.values != null)
             {
+                // The left brick is a set of constants
+
                 HashSet<string> rightValues = new HashSet<string>();
                 foreach (string value in self.values)
                 {

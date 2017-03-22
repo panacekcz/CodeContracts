@@ -6,31 +6,35 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
+    /// <summary>
+    /// Deep comparison of prefix tree subtrees.
+    /// </summary>
     public class PrefixTreeNodeComparer : IEqualityComparer<PrefixTreeNode>
     {
         public static readonly PrefixTreeNodeComparer Comparer = new PrefixTreeNodeComparer();
 
         private PrefixTreeNodeComparer() { }
 
-        public bool Equals(PrefixTreeNode x, PrefixTreeNode y)
+        #region IEqualityComparer<PrefixTreeNode> implementation
+        public bool Equals(PrefixTreeNode leftNode, PrefixTreeNode rightNode)
         {
-            if (x == y)
+            if (leftNode == rightNode)
                 return true;
-            if (!(x is InnerNode && y is InnerNode))
+            if (!(leftNode is InnerNode && rightNode is InnerNode))
                 return false;
 
-            InnerNode xinn = (InnerNode)x;
-            InnerNode yinn = (InnerNode)y;
+            InnerNode leftInner = (InnerNode)leftNode;
+            InnerNode rightInner = (InnerNode)rightNode;
 
-            if (xinn.children.Count != yinn.children.Count)
+            if (leftInner.children.Count != rightInner.children.Count)
                 return false;
 
-            foreach (var xchild in xinn.children)
+            foreach (var leftChild in leftInner.children)
             {
-                PrefixTreeNode ychild;
-                if (!yinn.children.TryGetValue(xchild.Key, out ychild))
+                PrefixTreeNode rightChild;
+                if (!rightInner.children.TryGetValue(leftChild.Key, out rightChild))
                     return false;
-                if (!Equals(xchild.Value, ychild))
+                if (!Equals(leftChild.Value, rightChild))
                     return false;
             }
 
@@ -41,22 +45,21 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         {
             if (obj is InnerNode)
             {
-                InnerNode inn = (InnerNode)obj;
-                int hc = inn.Accepting ? 111 : 222;
-                foreach (var x in inn.children)
+                InnerNode innerNode = (InnerNode)obj;
+                int hashCode = innerNode.Accepting ? 111 : 222;
+
+                foreach (var x in innerNode.children)
                 {
-                    hc += x.Key * x.Value.GetHashCode();
+                    hashCode += x.Key * x.Value.GetHashCode();
                 }
 
-                return hc;
+                return hashCode;
             }
             else if (obj != null)
                 return obj.GetHashCode();
             else
                 return 0;
         }
-
-
-
+        #endregion
     }
 }

@@ -62,11 +62,14 @@ namespace StringDomainUnitTests
         public void TestSGForRegex()
         {
             AssertSGForRegex(@"^A\z", "[A]");
+            AssertSGForRegex(@"^(?:[ab][cd]|[ef][gh])\z", "{<{[a][b]}{[c][d]}><{[e][f]}{[g][h]}>}");
             AssertSGForRegex(@"^(?:A|B|C)\z", "{[A][B][C]}");
             AssertSGForRegex(@"^[ab][cd][ef]\z", "<{[a][b]}{[c][d]}{[e][f]}>");
-            AssertSGForRegex(@"^(?:ab|cd){3,8}\z", "{ab,cd}[3,8]");
-            AssertSGForRegex(@"^(?:ab|cd){3,8}(?:ef|gh){4,7}\z", "{ab,cd}[3,8]{ef,gh}[4,7]");
-            AssertSGForRegex(@"^(?:ab|cd)?\z", "{ab,cd}[0,1]");
+            AssertSGForRegex(@"a", "<T[a]T>");
+            AssertSGForRegex(@"^a", "<[a]T>");
+            AssertSGForRegex(@"^a*\z", "a:{<><[a]a>}");
+            AssertSGForRegex(@"^(?:ab|cd)*\z", "a:{<><{<[a][b]><[c][d]>}a>}");
+            
         }
 
         [TestMethod]
@@ -81,8 +84,6 @@ namespace StringDomainUnitTests
             AssertSGIsMatch(ProofOutcome.Top, @"A", @"B");
             AssertSGIsMatch(ProofOutcome.False, @"^A", @"^B");
             AssertSGIsMatch(ProofOutcome.True, @"^A", @"^A");
-            AssertSGIsMatch(ProofOutcome.True, @"^[a]+[b]+[c]+\z", @"^[a]+[b]+[c]+\z");
-
         }
     }
 }

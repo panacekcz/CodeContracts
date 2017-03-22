@@ -10,10 +10,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// Generates a string representation of a prefix tree.
     /// </summary>
     /// <remarks>
-    /// Repeat node is *, inner node is {cX...}. or {cX...}! if accepting.
+    /// Repeat node is *, inner node is {cX...}. (if the nodes is not accepting) or {cX...}! if accepting.
     /// For str it is {s{t{r{}!}.}.}.
     /// </remarks>
-    class ToStringVisitor : PrefixTreeVisitor<string>
+    internal class ToStringVisitor : PrefixTreeVisitor<string>
     {
         public string ToString(PrefixTreeNode node)
         {
@@ -26,7 +26,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             sb.Append('{');
 
-            foreach (var child in inn.children)
+            foreach (var child in inn.children.OrderBy(child => child.Key))
             {
                 sb.Append(child.Key);
                 sb.Append(VisitNode(child.Value));
@@ -45,27 +45,27 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
     }
 
-    class PrefixTreeParser
+    /// <summary>
+    /// Parses string representations of prefix trees.
+    /// </summary>
+    public class PrefixTreeParser
     {
         private enum State
         {
             OUTSIDE, INSIDE, END
         }
 
-        private readonly Dictionary<int, PrefixTreeNode> indexedNodes;
-        private readonly Stack<InnerNode> openedNodes;
+        private readonly Stack<InnerNode> openedNodes = new Stack<InnerNode>();
+        private State state;
+        private char current;
 
-        string s;
-        int i;
-
-        State state;
-        char current;
-
+        public Tokens ParseTokens(string s)
+        {
+            return new Tokens((InnerNode)Parse(s));
+        }
 
         public PrefixTreeNode Parse(string s)
         {
-            this.s = s;
-            this.i = 0;
             this.state = State.OUTSIDE;
 
             InnerNode preRoot = new InnerNode(false);
@@ -83,7 +83,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return preRoot.children['\0'];
         }
 
-        void Next(char c)
+        private void Next(char c)
         {
             if (state == State.OUTSIDE)
             {
@@ -110,7 +110,6 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             }
             else if(state == State.INSIDE)
             {
-                //TODO: VD: escaping?
                 if (c == '}')
                 {
                     state = State.END;

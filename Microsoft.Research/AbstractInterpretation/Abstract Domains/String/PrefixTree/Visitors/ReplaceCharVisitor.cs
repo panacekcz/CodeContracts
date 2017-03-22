@@ -25,8 +25,8 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
     struct InnerNodeBuilder
     {
-        InnerNode newNode;
-        InnerNode oldNode;
+        private InnerNode newNode;
+        private InnerNode oldNode;
 
         public InnerNodeBuilder(InnerNode oldNode)
         {
@@ -75,29 +75,29 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
 
-        protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
+        protected override PrefixTreeNode VisitRepeatNode(RepeatNode repeatNode)
         {
-            return inn;
+            return repeatNode;
 
         }
-        protected override PrefixTreeNode VisitInnerNode(InnerNode inn)
+        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
         {
               
-            InnerNode newInn = null;
+            InnerNode newInnerNode = null;
             PrefixTreeNode next = PrefixTreeBuilder.Unreached(); //could be optinized
 
             bool canReplace = false;
             
-            foreach(var child in inn.children)
+            foreach(var child in innerNode.children)
             {
                 PrefixTreeNode newChild = VisitNodeCached(child.Value);
 
                 if (newChild != child.Value)
                 {
-                    if (newInn == null)
-                        newInn = new InnerNode(inn);
+                    if (newInnerNode == null)
+                        newInnerNode = new InnerNode(innerNode);
 
-                    newInn.children[child.Key] = newChild;
+                    newInnerNode.children[child.Key] = newChild;
                 }
 
                 if (from.Contains(child.Key))
@@ -113,19 +113,19 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             if (canReplace)
             {
-                if (newInn == null)
-                    newInn = new InnerNode(inn);
+                if (newInnerNode == null)
+                    newInnerNode = new InnerNode(innerNode);
 
                 if (from.IsConstant)
-                    newInn.children.Remove(from.LowerBound);
+                    newInnerNode.children.Remove(from.LowerBound);
 
                 for (int i = to.LowerBound; i <= to.UpperBound; ++i)
                 {
-                    newInn.children[(char)i] = next;
+                    newInnerNode.children[(char)i] = next;
                 }
             }
             
-            return newInn ?? inn;
+            return newInnerNode ?? innerNode;
 
         }
     }

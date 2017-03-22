@@ -74,6 +74,7 @@
     <Compile Include="AST\Wildcard.cs" />
     <Compile Include="CharRange.cs" />
     <Compile Include="CreateModelVisitor.cs" />
+    <Compile Include="Model\Lookaround.cs" />
     <Compile Include="Model\Anchor.cs" />
     <Compile Include="Model\Character.cs" />
     <Compile Include="Model\Concatenation.cs" />

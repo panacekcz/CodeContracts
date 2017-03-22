@@ -23,11 +23,11 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
     /// <summary>
-    /// Tries to extract a constant string.
+    /// Tries to extract a constant string from a tree.
     /// </summary>
     class ConstantVisitor : PrefixTreeVisitor<bool>
     {
-        private StringBuilder sb;
+        private StringBuilder stringBuilder;
 
         /// <summary>
         /// Gets the constant string represented by prefix tree
@@ -37,36 +37,38 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// <returns>The constant or null.</returns>
         public string GetConstant(PrefixTreeNode root)
         {
-            sb = new StringBuilder();
+            stringBuilder = new StringBuilder();
             if (VisitNode(root))
-                return sb.ToString();
+                return stringBuilder.ToString();
             else
                 return null;
         }
 
-        protected override bool VisitRepeatNode(RepeatNode inn)
+        #region PrefixTreeVisitor<bool> overrides
+        protected override bool VisitRepeatNode(RepeatNode repeatNode)
         {
             return false;
 
         }
-        protected override bool VisitInnerNode(InnerNode inn)
+        protected override bool VisitInnerNode(InnerNode innerNode)
         {
-            if (inn.Accepting)
+            if (innerNode.Accepting)
             {
-                return inn.children.Count == 0;
+                return innerNode.children.Count == 0;
             }
             else
             {
-                if (inn.children.Count != 1)
+                if (innerNode.children.Count != 1)
                     return false;
-                foreach (var child in inn.children)
+                foreach (var child in innerNode.children)
                 {
-                    sb.Append(child.Key);
+                    stringBuilder.Append(child.Key);
                     return VisitNode(child.Value);
                 }
                 return false;
             }
         }
+        #endregion
     }
 
 }

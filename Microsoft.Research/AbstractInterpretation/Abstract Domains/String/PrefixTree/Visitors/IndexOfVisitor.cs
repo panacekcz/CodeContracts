@@ -6,18 +6,20 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-    class IndexOfVisitor : IntervalVisitor
+    internal class IndexOfVisitor : IntervalVisitor
     {
         private IndexInterval index = IndexInterval.Unreached;
         private HashSet<InnerNode> nodes;
+
+        public IndexInterval Interval { get { return index; } }
 
         public IndexOfVisitor(HashSet<InnerNode> nodes)
         {
             this.nodes = nodes;
         }
 
-        public IndexInterval Interval { get { return index; } }
 
+        #region IntervalVisitor overrides
         protected override void VisitInnerNode(InnerNode node)
         {
             IndexInterval ii = Get(node);
@@ -27,7 +29,6 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             PushChildren(node, ii);
         }
-
-
+        #endregion
     }
 }

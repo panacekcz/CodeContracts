@@ -24,81 +24,81 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  /// <summary>
-  /// Povides methods to manipulate <see cref="ProofOutcome"/> values.
-  /// </summary>
-  internal static class ProofOutcomeUtils
-  {
     /// <summary>
-    /// Builds a <see cref="ProofOutcome"/> enumeration from the possible truth values.
+    /// Povides methods to manipulate <see cref="ProofOutcome"/> values.
     /// </summary>
-    /// <param name="canBeTrue">Whether the outcome can be true.</param>
-    /// <param name="canBeFalse">Whether the outcome can be false.</param>
-    /// <returns>The proof outcome corresponding to the possible values
-    /// <paramref name="canBeTrue"/> and <paramref name="canBeFalse"/>. </returns>
-    public static ProofOutcome Build(bool canBeTrue, bool canBeFalse)
+    internal static class ProofOutcomeUtils
     {
-      return canBeFalse ? (canBeTrue ? ProofOutcome.Top : ProofOutcome.False) : (canBeTrue ? ProofOutcome.True : ProofOutcome.Bottom);
-    }
+        /// <summary>
+        /// Builds a <see cref="ProofOutcome"/> enumeration from the possible truth values.
+        /// </summary>
+        /// <param name="canBeTrue">Whether the outcome can be true.</param>
+        /// <param name="canBeFalse">Whether the outcome can be false.</param>
+        /// <returns>The proof outcome corresponding to the possible values
+        /// <paramref name="canBeTrue"/> and <paramref name="canBeFalse"/>. </returns>
+        public static ProofOutcome Build(bool canBeTrue, bool canBeFalse)
+        {
+            return canBeFalse ? (canBeTrue ? ProofOutcome.Top : ProofOutcome.False) : (canBeTrue ? ProofOutcome.True : ProofOutcome.Bottom);
+        }
 
-    /// <summary>
-    /// Computes a disjunction of proof outcomes.
-    /// </summary>
-    /// <param name="a">The first outcome.</param>
-    /// <param name="b">The second outcome.</param>
-    /// <returns>Disjunction of <paramref name="a"/> and <paramref name="b"/>.</returns>
-    public static ProofOutcome Or(ProofOutcome a, ProofOutcome b)
-    {
-      if (a == ProofOutcome.Bottom || b == ProofOutcome.True)
-      {
-        return b;
-      }
-      else if (b == ProofOutcome.Bottom || a == ProofOutcome.True)
-      {
-        return a;
-      }
-      else if (a == ProofOutcome.Top || b == ProofOutcome.Top)
-      {
-        return ProofOutcome.Top;
-      }
-      else
-      {
-        return ProofOutcome.False;
-      }
-    }
+        /// <summary>
+        /// Computes a disjunction of proof outcomes.
+        /// </summary>
+        /// <param name="a">The first outcome.</param>
+        /// <param name="b">The second outcome.</param>
+        /// <returns>Disjunction of <paramref name="a"/> and <paramref name="b"/>.</returns>
+        public static ProofOutcome Or(ProofOutcome a, ProofOutcome b)
+        {
+            if (a == ProofOutcome.Bottom || b == ProofOutcome.True)
+            {
+                return b;
+            }
+            else if (b == ProofOutcome.Bottom || a == ProofOutcome.True)
+            {
+                return a;
+            }
+            else if (a == ProofOutcome.Top || b == ProofOutcome.Top)
+            {
+                return ProofOutcome.Top;
+            }
+            else
+            {
+                return ProofOutcome.False;
+            }
+        }
 
-    /// <summary>
-    /// Computes a conjunction of proof outcomes.
-    /// </summary>
-    /// <param name="a">The first outcome.</param>
-    /// <param name="b">The second outcome.</param>
-    /// <returns>Conjunction of <paramref name="a"/> and <paramref name="b"/>.</returns>
-    public static ProofOutcome And(ProofOutcome a, ProofOutcome b)
-    {
-      if (a == ProofOutcome.Bottom || b == ProofOutcome.False)
-      {
-        return b;
-      }
-      else if (b == ProofOutcome.Bottom || a == ProofOutcome.False)
-      {
-        return a;
-      }
-      else if (a == ProofOutcome.Top || b == ProofOutcome.Top)
-      {
-        return ProofOutcome.Top;
-      }
-      else
-      {
-        return ProofOutcome.True;
-      }
+        /// <summary>
+        /// Computes a conjunction of proof outcomes.
+        /// </summary>
+        /// <param name="a">The first outcome.</param>
+        /// <param name="b">The second outcome.</param>
+        /// <returns>Conjunction of <paramref name="a"/> and <paramref name="b"/>.</returns>
+        public static ProofOutcome And(ProofOutcome a, ProofOutcome b)
+        {
+            if (a == ProofOutcome.Bottom || b == ProofOutcome.False)
+            {
+                return b;
+            }
+            else if (b == ProofOutcome.Bottom || a == ProofOutcome.False)
+            {
+                return a;
+            }
+            else if (a == ProofOutcome.Top || b == ProofOutcome.Top)
+            {
+                return ProofOutcome.Top;
+            }
+            else
+            {
+                return ProofOutcome.True;
+            }
+        }
+        public static bool CanBeTrue(ProofOutcome outcome)
+        {
+            return outcome == ProofOutcome.Top || outcome == ProofOutcome.True;
+        }
+        public static bool CanBeFalse(ProofOutcome outcome)
+        {
+            return outcome == ProofOutcome.Top || outcome == ProofOutcome.False;
+        }
     }
-    public static bool CanBeTrue(ProofOutcome outcome)
-    {
-      return outcome == ProofOutcome.Top || outcome == ProofOutcome.True;
-    }
-    public static bool CanBeFalse(ProofOutcome outcome)
-    {
-      return outcome == ProofOutcome.Top || outcome == ProofOutcome.False;
-    }
-  }
 }

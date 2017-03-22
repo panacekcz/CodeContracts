@@ -31,11 +31,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
         private readonly int[] back;
         private readonly string needle;
 
-        private int Next(int current, char c)
+        internal int Next(int current, char c)
         {
             while (current >= 0 && needle[current] != c)
                 current = back[current];
             return current + 1;
+        }
+
+        internal int End
+        {
+            get { return needle.Length; }
         }
 
         /// <summary>
@@ -75,7 +80,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 start += current + 1 - next;
                 current = next;
 
-                if (current == needle.Length)
+                if (current == End)
                 {
                     current = 0;
                     start += needle.Length;
@@ -105,7 +110,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             for (int i = 0; i < prefix.Length; ++i)
             {
                 current = Next(current, prefix[i]);
-                if (current == needle.Length)
+                if (current == End)
                 {
                     return true;
                 }

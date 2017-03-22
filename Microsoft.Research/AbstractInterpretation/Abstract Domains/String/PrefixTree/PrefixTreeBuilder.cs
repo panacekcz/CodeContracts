@@ -22,6 +22,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
+    /// <summary>
+    /// Provides helper methods for building prefix trees.
+    /// </summary>
     public class PrefixTreeBuilder
     {
         /// <summary>
@@ -58,12 +61,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
 
-        private static InnerNode PrependChar(char c, PrefixTreeNode tn)
-        {
-            InnerNode inn = new InnerNode(false);
-            inn.children[c] = tn;
-            return inn;
-        }
+
 
         /// <summary>
         /// Builds a prefix tree representing a single constant.
@@ -101,27 +99,73 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return tn;
         }
 
-        public static PrefixTreeNode PrependFromCharInterval(CharInterval interval, int repeat, PrefixTreeNode e)
+        /// <summary>
+        /// Prepends nodes with edges for all characters in the specified interval, to a existing tree.
+        /// </summary>
+        /// <param name="interval">The interval of characters.</param>
+        /// <param name="repeatCount">How many times a node should be prepended.</param>
+        /// <param name="next">The node following after all charactes.</param>
+        /// <returns>A tree which starts with <paramref name="repeatCount"/> nodes, which are not accepting and for each character in <paramref name="interval"/>, there
+        /// is an edge to the next node, ending with <paramref name="next"/>.</returns>
+        public static PrefixTreeNode PrependCharInterval(CharInterval interval, int repeatCount, PrefixTreeNode next)
         {
-            for (int i = 0; i < repeat; ++i)
+            for (int i = 0; i < repeatCount; ++i)
             {
-                e = CharIntervalNode(interval, e);
+                next = PrependCharInterval(interval, next, false);
             }
-            return e;
+            return next;
         }
-        public static PrefixTreeNode FromCharInterval(CharInterval interval, int repeat = 1)
+
+        /// <summary>
+        /// Creates a tree for a constant number of characters in the specified interval.
+        /// </summary>
+        /// <param name="interval">The interval of characters.</param>
+        /// <param name="repeat">How many times the characters should be repeated.</param>
+        /// <returns>A tree which starts with <paramref name="repeat"/> nodes, which are not accepting and for each character in <paramref name="interval"/>, there
+        /// is an edge to the next node, ending with an accepting node.</returns>
+        public static PrefixTreeNode FromCharInterval(CharInterval interval, int repeatCount = 1)
         {
-            return PrependFromCharInterval(interval, repeat, Empty());
+            return PrependCharInterval(interval, repeatCount, Empty());
         }
+
+        /// <summary>
+        /// Creates a prefix tree which represents a language of unlimited iteration of characters
+        /// from an interval.
+        /// </summary>
+        /// <param name="interval">The interval of allowed characters.</param>
+        /// <returns>A tree where the root is accepting and for each character in <paramref name="interval"/>, there is 
+        /// an edge to a repeat node.</returns>
         public static PrefixTreeNode CharIntervalTokens(CharInterval interval)
         {
-            return CharIntervalNode(interval, RepeatNode.Repeat);
+            return PrependCharInterval(interval, RepeatNode.Repeat, true);
+        }
+
+        /// <summary>
+        /// Prepends a node with edges for a specified character to a existing tree.
+        /// </summary>
+        /// <param name="c">The character.</param>
+        /// <param name="next">The node following after all charactes.</param>
+        /// <returns>A tree where the root is not accepting and for each character in <paramref name="intervals"/>, there
+        /// is an edge to <paramref name="next"/>.</returns>
+        public static InnerNode PrependChar(char c, PrefixTreeNode next)
+        {
+            InnerNode newNode = new InnerNode(false);
+            newNode.children[c] = next;
+            return newNode;
         }
 
 
-        public static InnerNode CharIntervalNode(CharInterval interval, PrefixTreeNode next)
+        /// <summary>
+        /// Prepends a node with edges for all characters in the specified interval, to a existing tree.
+        /// </summary>
+        /// <param name="interval">The interval of characters.</param>
+        /// <param name="next">The node following after all charactes.</param>
+        /// <param name="accepting">Whether the node should be accepting.</param>
+        /// <returns>A tree where the root accepting flag is <paramref name="accepting"/> and for each character in <paramref name="interval"/>, there
+        /// is an edge to <paramref name="next"/>.</returns>
+        public static InnerNode PrependCharInterval(CharInterval interval, PrefixTreeNode next, bool accepting)
         {
-            InnerNode node = new InnerNode(true);
+            InnerNode node = new InnerNode(accepting);
             for (int i = interval.LowerBound; i <= interval.UpperBound; ++i)
             {
                 node.children[(char)i] = next;
@@ -130,9 +174,16 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return node;
         }
 
-        public static InnerNode CharIntervalsNode(IEnumerable<CharInterval> intervals, PrefixTreeNode next)
+        /// <summary>
+        /// Prepends a node with edges for all characters in the specified intervals, to a existing tree.
+        /// </summary>
+        /// <param name="intervals">The intervals of characters.</param>
+        /// <param name="next">The node following after all charactes.</param>
+        /// <returns>A tree where the root is not accepting and for each character in <paramref name="intervals"/>, there
+        /// is an edge to <paramref name="next"/>.</returns>
+        public static InnerNode PrependCharIntervals(IEnumerable<CharInterval> intervals, PrefixTreeNode next)
         {
-            InnerNode node = new InnerNode(true);
+            InnerNode node = new InnerNode(false);
             foreach (var interval in intervals)
             {
                 for (int i = interval.LowerBound; i <= interval.UpperBound; ++i)

@@ -22,9 +22,23 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
+    /// <summary>
+    /// Represents a node of a prefix tree.
+    /// </summary>
     public abstract class PrefixTreeNode
     {
+        /// <summary>
+        /// Gets the corresponding inner node in a prefix tree.
+        /// </summary>
+        /// <param name="root">Root of the prefix tree.</param>
+        /// <returns>The inner node corresponding to this in a tree rooted in <paramref name="root"/>.</returns>
         public abstract InnerNode ToInner(InnerNode root);
+
+        public override string ToString()
+        {
+            ToStringVisitor visitor = new ToStringVisitor();
+            return visitor.ToString(this);
+        }
     }
     public class InnerNode : PrefixTreeNode
     {
@@ -50,13 +64,17 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
     }
     
+    /// <summary>
+    /// Represents a repeat node in a prefix tree. Reaching this node measn returning to the root
+    /// of the tree.
+    /// </summary>
     public class RepeatNode : PrefixTreeNode
     {
+        public static RepeatNode Repeat = new RepeatNode();
+
         private RepeatNode()
         {
         }
-
-        public static RepeatNode Repeat = new RepeatNode();
 
         public override InnerNode ToInner(InnerNode root)
         {

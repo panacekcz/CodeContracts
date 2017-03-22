@@ -6,15 +6,18 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
-    class CompareVisitor : PrefixTreeRelation
+    /// <summary>
+    /// Relation on prefix tree nodes, relating nodes that are less than equal.
+    /// </summary>
+    class LessThanEqualRelation : PrefixTreeRelation
     {
         public static bool CanBeLessEqual(InnerNode leftRoot, InnerNode rightRoot)
         {
-            CompareVisitor v = new CompareVisitor(leftRoot, rightRoot);
+            LessThanEqualRelation v = new LessThanEqualRelation(leftRoot, rightRoot);
             return v.Solve();
         }
 
-        public CompareVisitor(InnerNode leftRoot, InnerNode rightRoot) : base(leftRoot, rightRoot)
+        public LessThanEqualRelation(InnerNode leftRoot, InnerNode rightRoot) : base(leftRoot, rightRoot)
         {
         }
 
@@ -42,15 +45,18 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
     }
 
-    class StrictCompareVisitor : PrefixTreeRelation
+    /// <summary>
+    /// Relation on prefix tree nodes, relating nodes that are less than equal.
+    /// </summary>
+    class LessThanRelation : PrefixTreeRelation
     {
         public static bool CanBeLess(InnerNode leftRoot, InnerNode rightRoot)
         {
-            StrictCompareVisitor v = new StrictCompareVisitor(leftRoot, rightRoot);
+            LessThanRelation v = new LessThanRelation(leftRoot, rightRoot);
             return v.Solve();
         }
 
-        public StrictCompareVisitor(InnerNode leftRoot, InnerNode rightRoot) : base(leftRoot, rightRoot)
+        public LessThanRelation(InnerNode leftRoot, InnerNode rightRoot) : base(leftRoot, rightRoot)
         {
         }
 
@@ -78,17 +84,15 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
     }
 
-
-
-    class EqualityVisitor : PrefixTreeRelation
+    class EqualityRelation : PrefixTreeRelation
     {
         public static bool CanBeEqual(InnerNode leftRoot, InnerNode rightRoot)
         {
-            EqualityVisitor v = new EqualityVisitor(leftRoot, rightRoot);
+            EqualityRelation v = new EqualityRelation(leftRoot, rightRoot);
             return !v.Solve();
         }
 
-        public EqualityVisitor(InnerNode leftRoot, InnerNode rightRoot) : base(leftRoot, rightRoot)
+        public EqualityRelation(InnerNode leftRoot, InnerNode rightRoot) : base(leftRoot, rightRoot)
         {
         }
 

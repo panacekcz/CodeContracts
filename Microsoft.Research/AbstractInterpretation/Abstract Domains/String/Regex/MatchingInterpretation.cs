@@ -8,83 +8,121 @@ using Microsoft.Research.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings.Regex
 {
-    internal struct MatchingState<D>
+    /// <summary>
+    /// Abstract state for matching regex interpretations.
+    /// </summary>
+    /// <typeparam name="TState">Abstract state representing a language.</typeparam>
+    internal struct MatchingState<TState>
     {
-        private readonly D over, under;
+        private readonly TState over, under;
 
-        public D Over { get { return over; } }
-        public D Under { get { return under; } }
+        /// <summary>
+        /// Gets the over-approximating abstract state.
+        /// </summary>
+        public TState Over { get { return over; } }
+        /// <summary>
+        /// Gets the over-approximating abstract state.
+        /// </summary>
+        public TState Under { get { return under; } }
 
-        public MatchingState(D o, D u)
+        public MatchingState(TState over, TState under)
         {
-            over = o;
-            under = u;
+            this.over = over;
+            this.under = under;
+        }
+
+        public override string ToString()
+        {
+            return Under.ToString() + ";" + Over.ToString();
         }
     }
 
-    internal class MatchingInterpretation<D, SD> : IRegexInterpretation<MatchingState<D>>
+    /// <summary>
+    /// Interprets a regex in order to determine whether it can/must match a specified input.
+    /// </summary>
+    /// <typeparam name="TState">Type of the abstract state used during interpretation.</typeparam>
+    /// <typeparam name="TInput">Type of the abstract input.</typeparam>
+    internal class MatchingInterpretation<TState, TInput> : IRegexInterpretation<MatchingState<TState>>
     {
-        private readonly IMatchingOperationsForRegex<D, SD> operations;
-        private readonly SD input;
+        private readonly IMatchingOperationsForRegex<TState, TInput> operations;
+        private readonly TInput input;
 
-        public MatchingState<D> Bottom
-        {
-            get
-            {
-                D bot = operations.GetBottom(input);
-                return new MatchingState<D>(bot, bot);
-            }
-        }
-
-        public MatchingState<D> Top
-        {
-            get
-            {
-                D top = operations.GetTop(input);
-                return new MatchingState<D>(top, top);
-            }
-        }
-
-        public MatchingInterpretation(IMatchingOperationsForRegex<D, SD> operations, SD input)
+        /// <summary>
+        /// Creates an interpretation for a specified input.
+        /// </summary>
+        /// <param name="operations">Operations for updating the abstract state.</param>
+        /// <param name="input">The abstract input.</param>
+        public MatchingInterpretation(IMatchingOperationsForRegex<TState, TInput> operations, TInput input)
         {
             this.operations = operations;
             this.input = input;
         }
 
-        public MatchingState<D> AddChar(MatchingState<D> data, CharRanges must, CharRanges can)
+        #region IRegexInterpretation<MatchingState<TState>> implementation
+
+        public MatchingState<TState> Bottom
         {
-            return new MatchingState<D>(operations.MatchChar(input, data.Over, can, false), operations.MatchChar(input, data.Under, must, true));
+            get
+            {
+                TState bot = operations.GetBottom(input);
+                return new MatchingState<TState>(bot, bot);
+            }
         }
 
-        public MatchingState<D> AssumeEnd(MatchingState<D> data)
+        public MatchingState<TState> Top
         {
-            return new MatchingState<D>(operations.AssumeEnd(input, data.Over, false), operations.AssumeEnd(input, data.Under, true));
+            get
+            {
+                TState top = operations.GetTop(input);
+                return new MatchingState<TState>(top, top);
+            }
         }
 
-        public MatchingState<D> AssumeStart(MatchingState<D> data)
+        public MatchingState<TState> AddChar(MatchingState<TState> data, CharRanges must, CharRanges can)
         {
-            return new MatchingState<D>(operations.AssumeStart(input, data.Over, false), operations.AssumeStart(input, data.Under, true));
+            return new MatchingState<TState>(operations.MatchChar(input, data.Over, can, false), operations.MatchChar(input, data.Under, must, true));
         }
 
-        public MatchingState<D> Join(MatchingState<D> prev, MatchingState<D> next, bool widen)
+        public MatchingState<TState> AssumeEnd(MatchingState<TState> data)
         {
-            return new MatchingState<D>(operations.Join(input, prev.Over, next.Over, widen, false), operations.Join(input, prev.Under, next.Under, widen, true));
+            return new MatchingState<TState>(operations.AssumeEnd(input, data.Over, false), operations.AssumeEnd(input, data.Under, true));
         }
 
-        public MatchingState<D> Unknown(MatchingState<D> data)
+        public MatchingState<TState> AssumeStart(MatchingState<TState> data)
         {
-            return new MatchingState<D>(data.Over, operations.GetBottom(input));
+            return new MatchingState<TState>(operations.AssumeStart(input, data.Over, false), operations.AssumeStart(input, data.Under, true));
         }
 
-        public MatchingState<D> BeginLoop(MatchingState<D> prev, IndexInt min, IndexInt max)
+        public MatchingState<TState> Join(MatchingState<TState> prev, MatchingState<TState> next, bool widen)
         {
-            return new MatchingState<D>(operations.BeginLoop(input, prev.Over, false), operations.BeginLoop(input, prev.Under, true));
+            return new MatchingState<TState>(operations.Join(input, prev.Over, next.Over, widen, false), operations.Join(input, prev.Under, next.Under, widen, true));
         }
 
-        public MatchingState<D> EndLoop(MatchingState<D> prev, MatchingState<D> next, IndexInt min, IndexInt max)
+        public MatchingState<TState> Unknown(MatchingState<TState> data)
         {
-            return new MatchingState<D>(operations.EndLoop(input, prev.Over, next.Over, min, max, false), operations.EndLoop(input, prev.Under, next.Under, min, max, true));
+            return new MatchingState<TState>(data.Over, operations.GetBottom(input));
         }
+
+        public MatchingState<TState> BeginLoop(MatchingState<TState> prev, IndexInt min, IndexInt max)
+        {
+            return new MatchingState<TState>(operations.BeginLoop(input, prev.Over, false), operations.BeginLoop(input, prev.Under, true));
+        }
+
+        public MatchingState<TState> EndLoop(MatchingState<TState> prev, MatchingState<TState> next, IndexInt min, IndexInt max)
+        {
+            return new MatchingState<TState>(operations.EndLoop(input, prev.Over, next.Over, min, max, false), operations.EndLoop(input, prev.Under, next.Under, min, max, true));
+        }
+
+        public MatchingState<TState> BeginLookaround(MatchingState<TState> prev, bool behind)
+        {
+            throw new NotImplementedException();
+        }
+
+        public MatchingState<TState> EndLookaround(MatchingState<TState> prev, MatchingState<TState> next, bool behind)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
     }
 
     

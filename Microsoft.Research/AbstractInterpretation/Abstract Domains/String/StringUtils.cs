@@ -25,90 +25,90 @@ using System.Diagnostics;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-  internal static class StringUtils
-  {
-    /// <summary>
-    /// Computes the length of the longest common prefix of two strings.
-    /// </summary>
-    /// <param name="stringA">The first string.</param>
-    /// <param name="stringB">The second string.</param>
-    /// <returns>The length of the longest common prefix of <paramref name="stringA"/>
-    /// and <paramref name="stringB"/>.</returns>
-    public static int LongestCommonPrefixLength(string stringA, string stringB)
+    internal static class StringUtils
     {
-      System.Diagnostics.Contracts.Contract.Requires(stringA != null && stringB != null);
-
-      int i = 0;
-      while (i < stringA.Length && i < stringB.Length && stringA[i] == stringB[i])
-      {
-        ++i;
-      }
-      return i;
-    }
-
-    /// <summary>
-    /// Computes the longest common prefix of two strings.
-    /// </summary>
-    /// <param name="stringA">The first string.</param>
-    /// <param name="stringB">The second string.</param>
-    /// <returns>The longest common prefix of <paramref name="stringA"/>
-    /// and <paramref name="stringB"/>.</returns>
-    public static string LongestCommonPrefix(string stringA, string stringB)
-    {
-      System.Diagnostics.Contracts.Contract.Requires(stringA != null && stringB != null);
-
-      return stringA.Substring(0, LongestCommonPrefixLength(stringA, stringB));
-    }
-
-    public static int LongestCommonSuffixLength(string a, string b)
-    {
-      int al = a.Length;
-      int bl = b.Length;
-      int i = 0;
-      while (i < al && i < bl && a[al - 1 - i] == b[bl - 1 - i])
-      {
-        ++i;
-      }
-      return i;
-    }
-
-    public static string LongestCommonSuffix(string a, string b)
-    {
-      return a.Substring(a.Length - LongestCommonSuffixLength(a, b));
-    }
-
-    public static string LongestConstantPrefix(string a, char p)
-    {
-      int i = 0;
-      while (i < a.Length && a[i] == p)
-      {
-        ++i;
-      }
-      return a.Substring(0, i);
-    }
-
-    public static string LongestConstantSuffix(string a, char p)
-    {
-      int i = a.Length;
-      while (i > 0 && a[i - 1] == p)
-      {
-        --i;
-      }
-      return a.Substring(i);
-    }
-
-    public static bool CanBeEqualPrefix(string a, string b)
-    {
-      //alternative: return a.StartsWith(b, SC.Ordinal) || b.StartsWith(a, SC.Ordinal)
-      for (int i = 0; i < a.Length && i < b.Length; ++i)
-      {
-        if (a[i] != b[i])
+        /// <summary>
+        /// Computes the length of the longest common prefix of two strings.
+        /// </summary>
+        /// <param name="stringA">The first string.</param>
+        /// <param name="stringB">The second string.</param>
+        /// <returns>The length of the longest common prefix of <paramref name="stringA"/>
+        /// and <paramref name="stringB"/>.</returns>
+        public static int LongestCommonPrefixLength(string stringA, string stringB)
         {
-          return false;
-        }
-      }
-      return true;
-    }
+            System.Diagnostics.Contracts.Contract.Requires(stringA != null && stringB != null);
 
-  }
+            int i = 0;
+            while (i < stringA.Length && i < stringB.Length && stringA[i] == stringB[i])
+            {
+                ++i;
+            }
+            return i;
+        }
+
+        /// <summary>
+        /// Computes the longest common prefix of two strings.
+        /// </summary>
+        /// <param name="stringA">The first string.</param>
+        /// <param name="stringB">The second string.</param>
+        /// <returns>The longest common prefix of <paramref name="stringA"/>
+        /// and <paramref name="stringB"/>.</returns>
+        public static string LongestCommonPrefix(string stringA, string stringB)
+        {
+            System.Diagnostics.Contracts.Contract.Requires(stringA != null && stringB != null);
+
+            return stringA.Substring(0, LongestCommonPrefixLength(stringA, stringB));
+        }
+
+        public static int LongestCommonSuffixLength(string a, string b)
+        {
+            int al = a.Length;
+            int bl = b.Length;
+            int i = 0;
+            while (i < al && i < bl && a[al - 1 - i] == b[bl - 1 - i])
+            {
+                ++i;
+            }
+            return i;
+        }
+
+        public static string LongestCommonSuffix(string a, string b)
+        {
+            return a.Substring(a.Length - LongestCommonSuffixLength(a, b));
+        }
+
+        public static string LongestConstantPrefix(string a, char p)
+        {
+            int i = 0;
+            while (i < a.Length && a[i] == p)
+            {
+                ++i;
+            }
+            return a.Substring(0, i);
+        }
+
+        public static string LongestConstantSuffix(string a, char p)
+        {
+            int i = a.Length;
+            while (i > 0 && a[i - 1] == p)
+            {
+                --i;
+            }
+            return a.Substring(i);
+        }
+
+        public static bool CanBeEqualPrefix(string a, string b)
+        {
+            //alternative: return a.StartsWith(b, SC.Ordinal) || b.StartsWith(a, SC.Ordinal)
+            for (int i = 0; i < a.Length && i < b.Length; ++i)
+            {
+                if (a[i] != b[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+    }
 }

@@ -22,63 +22,97 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 {
+    /// <summary>
+    /// Base class for visitors that perform an action for ndoes of a prefix tree.
+    /// </summary>
+    /// <typeparam name="Result">Type of result value from processing a node.</typeparam>
     public abstract class PrefixTreeVisitor<Result>
     {
-        protected Result VisitNode(PrefixTreeNode tn)
+        /// <summary>
+        /// Calls <see cref="VisitInnerNode(InnerNode)"/> of <see cref="VisitRepeatNode(RepeatNode)"/>
+        /// according to the type of the node.
+        /// </summary>
+        /// <param name="node">The node to be processed.</param>
+        /// <returns>Result returned by the selected method.</returns>
+        protected Result VisitNode(PrefixTreeNode node)
         {
-            if (tn is InnerNode)
-                return VisitInnerNode((InnerNode)tn);
-            else if (tn is RepeatNode)
+            if (node is InnerNode)
             {
-                return VisitRepeatNode((RepeatNode)tn);
+                return VisitInnerNode((InnerNode)node);
+            }
+            else if (node is RepeatNode)
+            {
+                return VisitRepeatNode((RepeatNode)node);
             }
 
-            throw new NotImplementedException();
+            throw new InvalidOperationException("Invalid node type");
         }
-
-        protected abstract Result VisitInnerNode(InnerNode inn);
-        protected abstract Result VisitRepeatNode(RepeatNode inn);
+        /// <summary>
+        /// Processes an inner node of the tree.
+        /// </summary>
+        /// <param name="innerNode">The inner node.</param>
+        /// <returns>Result of the node processing.</returns>
+        protected abstract Result VisitInnerNode(InnerNode innerNode);
+        /// <summary>
+        /// Processes a repeat node of the tree.
+        /// </summary>
+        /// <param name="repeatNode">The repeat node.</param>
+        /// <returns>Result of the node processing.</returns>
+        protected abstract Result VisitRepeatNode(RepeatNode repeatNode);
     }
 
+    /// <summary>
+    /// Base class for visitors that perform an action for ndoes of a prefix tree, where the result
+    /// is stored an reused for all occurences of the same node within the tree.
+    /// </summary>
+    /// <typeparam name="Result">Type of result value from processing a node.</typeparam>
     public abstract class CachedPrefixTreeVisitor<Result> : PrefixTreeVisitor<Result>
     {
         private Dictionary<PrefixTreeNode, Result> cache = new Dictionary<PrefixTreeNode, Result>();
 
-        protected Result VisitNodeCached(PrefixTreeNode tn)
+        /// <summary>
+        /// Calls <see cref="VisitInnerNode(InnerNode)"/> of <see cref="VisitRepeatNode(RepeatNode)"/>
+        /// according to the type of the node. If the result for <paramref name="node"/> has already been
+        /// computed, returns that result.
+        /// </summary>
+        /// <param name="node">The node to be processed.</param>
+        /// <returns>Result returned by the selected method.</returns>
+        protected Result VisitNodeCached(PrefixTreeNode node)
         {
-            Result r;
-            if (!cache.TryGetValue(tn, out r))
+            Result result;
+            if (!cache.TryGetValue(node, out result))
             {
-                r = VisitNode(tn);
-                cache[tn] = r;
+                result = VisitNode(node);
+                cache[node] = result;
             }
 
-            return r;
+            return result;
         }
 
     }
 
-    internal class TrieShare
+    /// <summary>
+    /// Stores shared instances of nodes.
+    /// </summary>
+    internal class NodeSharing
     {
         private Dictionary<PrefixTreeNode, PrefixTreeNode> nodes = new Dictionary<PrefixTreeNode, PrefixTreeNode>(PrefixTreeNodeComparer.Comparer);
 
-        public PrefixTreeNode Share(PrefixTreeNode tn)
+        /// <summary>
+        /// Gets a shared instance for a node.
+        /// </summary>
+        /// <param name="node">The node to be shared.</param>
+        /// <returns>A shared instance equivalent to <paramref name="node"/></returns>
+        public PrefixTreeNode Share(PrefixTreeNode node)
         {
-            PrefixTreeNode tno;
-            if (nodes.TryGetValue(tn, out tno))
-                return nodes[tn];
-            else
+            PrefixTreeNode sharedNode;
+            if (!nodes.TryGetValue(node, out sharedNode))
             {
-                nodes[tn] = tn;
-                return tn;
+                nodes[node] = node;
+                sharedNode = node;
             }
+            return sharedNode;
         }
 
     }
-
-    
-
-
-    
-
 }
