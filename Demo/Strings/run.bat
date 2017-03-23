@@ -2,17 +2,10 @@
 
 if {%1} == {} (
 echo "Runs string analysis demos"
-echo "USAGE: run DOMAIN EXAMPLE [arrays] [libs]"
+echo "USAGE: run DOMAIN EXAMPLE [/arrays] [/libs]"
 ) else (
 
 setlocal EnableDelayedExpansion
-
-if "%3" == "arrays" (
-set arrays=-arrays -bounds -arithmetic
-)
-if "%4" == "libs" (
-set libs=-libpaths:..\..\Microsoft.Research\Contracts\bin\Debug\.NETFramework\v4.5
-)
 
 if not "%1" == "no" (
 set domain=-strings:domain=%1
@@ -28,6 +21,27 @@ set file="%2\bin\debug\%2.exe"
 set file="%2\bin\debug\%2.dll"
 )
 
-..\..\Microsoft.Research\Clousot\bin\debug\clousot.exe -show:validations !arrays! !libs! !domain! !file!
+:loop
+if not "%~3" == "" (
+
+if "%3" == "/arrays" (
+set arrays=-arrays -bounds -arithmetic
+) else if "%3" == "/libs" (
+set libs=-libpaths:..\..\Microsoft.Research\Contracts\bin\Debug\.NETFramework\v4.5
+) else if "%3" == "/trace" (
+set trace=-trace:dfa
+) else (
+echo "Unknown option %3"
+set err="yes"
+)
+shift /3
+goto :loop
+)
+
+if "%err%" == "" (
+..\..\Microsoft.Research\Clousot\bin\debug\clousot.exe -show:validations !arrays! !libs! !domain! !trace! !file!
+) else (
+echo ..\..\Microsoft.Research\Clousot\bin\debug\clousot.exe -show:validations !arrays! !libs! !domain! !trace! !file!
+)
 
 )
