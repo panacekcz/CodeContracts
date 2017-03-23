@@ -304,12 +304,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public bool CanBeEmpty(TokensNegativeRegexState prev)
         {
-            return false;
+            return !underapproximate;
         }
 
         public TokensNegativeRegexState Join(TokensNegativeRegexState left, TokensNegativeRegexState right, bool widen)
         {
-            //TODO: chech if all the cases work
+            //TODO: VD: chech if all the cases work
 
             // The tree does not contain any repeat nodes
 

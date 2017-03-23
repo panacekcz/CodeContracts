@@ -116,6 +116,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
     }
 
+    //TODO: VD: cleanup code!
     internal class MeetVisitor : PrefixTreeTransformer
     {
 

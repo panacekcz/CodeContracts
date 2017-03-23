@@ -214,7 +214,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return testVisitor.VisitFalse(guard, this);
         }
 
-        protected virtual StringAbstractDomain<Variable, Expression, StringAbstraction>/*!*/ Test(Variable assumedVariable, bool holds)
+        protected virtual StringAbstractDomain<Variable, Expression, StringAbstraction> Test(Variable assumedVariable, bool holds)
         {
 
             // We must create a copy of the domain because the test visitor assumes that (see Not-LogicalAnd)
