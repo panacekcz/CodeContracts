@@ -43,6 +43,7 @@
     <Compile Include="IntegersUnproven.cs" />
     <Compile Include="Proven.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SubstringIndexOf.cs" />
     <Compile Include="Unproven.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
