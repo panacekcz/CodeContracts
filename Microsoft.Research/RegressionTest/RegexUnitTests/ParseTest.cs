@@ -60,9 +60,79 @@ namespace RegexUnitTests
         public void ParseQuantifiers()
         {
             Test("a*");
+            Test("a+");
+            Test("a?");
+            Test("a{3}");
+            Test("a{2,}");
+            
+            Test("a{2,3}");
+
             Test("a*?");
-            Test("a{1,3}?");
+            Test("a+?");
+            Test("a??");
+            Test("a{3}?");
+            Test("a{2,}?");
+            Test("a{2,3}?");
         }
+
+        [TestMethod]
+        public void ParseFakeQuantifiers()
+        {
+            Test("{,3}?", "\\u007B\\u002C3\\u007D?");
+            Test("a{,3}", "a\\u007B\\u002C3\\u007D");
+            Test("a{,3}?", "a\\u007B\\u002C3\\u007D?");
+            Test("a*{,3}", "a*\\u007B\\u002C3\\u007D");
+            Test("a*{,3}?", "a*\\u007B\\u002C3\\u007D?");
+            Test("a{x", "a\\u007Bx");
+            Test("a{1x", "a\\u007B1x");
+            Test("a{2,x", "a\\u007B2\\u002Cx");
+            Test("a{2,3x", "a\\u007B2\\u002C3x");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ParseException))]
+        public void ParseNestedQuantifiersStarStar()
+        {
+            RegexParser.Parse("a**");
+        }
+        [TestMethod]
+        [ExpectedException(typeof(ParseException))]
+        public void ParseNestedQuantifiersStarPlus()
+        {
+            RegexParser.Parse("a*+");
+        }
+        [TestMethod]
+        [ExpectedException(typeof(ParseException))]
+        public void ParseNestedQuantifiersStarBrace()
+        {
+            RegexParser.Parse("a*{2,3}");
+        }
+        [TestMethod]
+        [ExpectedException(typeof(ParseException))]
+        public void ParseEmptyQuantifierStar()
+        {
+            RegexParser.Parse("*");
+        }
+        [TestMethod]
+        [ExpectedException(typeof(ParseException))]
+        public void ParseEmptyQuantifierPlus()
+        {
+            RegexParser.Parse("+");
+        }
+        [TestMethod]
+        [ExpectedException(typeof(ParseException))]
+        public void ParseEmptyQuantifierQuestion()
+        {
+            RegexParser.Parse("?");
+        }
+        [TestMethod]
+        [ExpectedException(typeof(ParseException))]
+        public void ParseEmptyQuantifierBrace()
+        {
+            RegexParser.Parse("{1}");
+        }
+
+
         [TestMethod]
         public void ParseAlternations()
         {

@@ -481,22 +481,43 @@ namespace Microsoft.Research.Regex
             return r;
         }
 
-        AST.Element ParseRepeats(AST.Element inner)
+        bool TryParseRepeats(AST.Element inner, out AST.Element outElement)
         {
+            int before = current;
             int min = ParseDecimal();
-            int max = -1;
+
+            if(current == before)
+            {
+                //If there is no digit, it is not a quantifier
+                outElement = new AST.Character('{');
+                return false;
+            }
+
             char c = Next();
+
+            // If the maximum is not specified at all, it is the same as minimum.
+            int max = min;
             if (c == ',')
             {
+                int beforeMax = current;
                 max = ParseDecimal();
+                if(current == beforeMax)
+                {
+                    // If the maximum is empty, it is unbounded
+                    max = AST.Loop.UNBOUNDED;
+                }
                 c = Next();
             }
             if (c != '}')
             {
-                throw new ParseException("Expected }");
+                //If there is an unexpected character, treat the brace as a character
+                current = before;
+                outElement = new AST.Character('{');
+                return false;
             }
 
-            return new AST.Loop(min, max, inner, false);
+            outElement = new AST.Loop(min, max, inner, false);
+            return true;
         }
 
         private AST.Element Parse(bool group)
@@ -540,8 +561,24 @@ namespace Microsoft.Research.Regex
                         builder.CatElement(new AST.Anchor(AST.AnchorKind.LineEnd));
                         break;
                     case '{':
-                        //TODO: VD: quantifiers cannot be nested
-                        builder.currentElement = ParseRepeats(builder.currentElement);
+                        AST.Element repeated;
+                        if (TryParseRepeats(builder.currentElement, out repeated))
+                        {
+                            if (builder.currentElement == null)
+                            {
+                                throw new ParseException("Empty quantifier");
+                            }
+                            if (builder.currentElement is AST.Loop)
+                            {
+                                throw new ParseException("Quantifiers cannot be nested");
+                            }
+                            builder.currentElement = repeated;
+                        }
+                        else
+                        {
+                            builder.CatElement(repeated);
+                        }
+
                         break;
                     case '.':
                         builder.CatElement(new AST.Wildcard());
