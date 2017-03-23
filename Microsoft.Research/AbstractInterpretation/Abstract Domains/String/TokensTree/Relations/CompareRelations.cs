@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
-    /// Relation on prefix tree nodes, relating nodes that are less than equal.
+    /// Relation on tokens tree nodes, relating nodes that are less than equal.
     /// </summary>
-    class LessThanEqualRelation : PrefixTreeRelation
+    class LessThanEqualRelation : TokensTreeRelation
     {
         public static bool CanBeLessEqual(InnerNode leftRoot, InnerNode rightRoot)
         {
@@ -46,9 +46,9 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     }
 
     /// <summary>
-    /// Relation on prefix tree nodes, relating nodes that are less than equal.
+    /// Relation on tokens tree nodes, relating nodes that are less than equal.
     /// </summary>
-    class LessThanRelation : PrefixTreeRelation
+    class LessThanRelation : TokensTreeRelation
     {
         public static bool CanBeLess(InnerNode leftRoot, InnerNode rightRoot)
         {
@@ -84,7 +84,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
     }
 
-    class EqualityRelation : PrefixTreeRelation
+    class EqualityRelation : TokensTreeRelation
     {
         public static bool CanBeEqual(InnerNode leftRoot, InnerNode rightRoot)
         {
@@ -110,7 +110,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             foreach (var child in left.children)
             {
-                PrefixTreeNode rightChild;
+                TokensTreeNode rightChild;
                 if (right.children.TryGetValue(child.Key, out rightChild))
                 {
                     Request(child.Value, rightChild);

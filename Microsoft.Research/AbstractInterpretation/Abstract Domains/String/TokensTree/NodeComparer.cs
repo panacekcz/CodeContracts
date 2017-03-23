@@ -4,19 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
     /// Deep comparison of prefix tree subtrees.
     /// </summary>
-    public class PrefixTreeNodeComparer : IEqualityComparer<PrefixTreeNode>
+    public class NodeComparer : IEqualityComparer<TokensTreeNode>
     {
-        public static readonly PrefixTreeNodeComparer Comparer = new PrefixTreeNodeComparer();
+        public static readonly NodeComparer Comparer = new NodeComparer();
 
-        private PrefixTreeNodeComparer() { }
+        private NodeComparer() { }
 
         #region IEqualityComparer<PrefixTreeNode> implementation
-        public bool Equals(PrefixTreeNode leftNode, PrefixTreeNode rightNode)
+        public bool Equals(TokensTreeNode leftNode, TokensTreeNode rightNode)
         {
             if (leftNode == rightNode)
                 return true;
@@ -31,7 +31,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             foreach (var leftChild in leftInner.children)
             {
-                PrefixTreeNode rightChild;
+                TokensTreeNode rightChild;
                 if (!rightInner.children.TryGetValue(leftChild.Key, out rightChild))
                     return false;
                 if (!Equals(leftChild.Value, rightChild))
@@ -41,7 +41,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return true;
         }
 
-        public int GetHashCode(PrefixTreeNode obj)
+        public int GetHashCode(TokensTreeNode obj)
         {
             if (obj is InnerNode)
             {

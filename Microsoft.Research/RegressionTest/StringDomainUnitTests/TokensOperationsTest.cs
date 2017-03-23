@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Research.AbstractDomains.Strings;
 using Microsoft.Research.CodeAnalysis;
-using Microsoft.Research.AbstractDomains.Strings.PrefixTree;
+using Microsoft.Research.AbstractDomains.Strings.TokensTree;
 
 namespace StringDomainUnitTests
 {
@@ -55,7 +55,7 @@ namespace StringDomainUnitTests
         /// <returns>The specified Tokens element.</returns>
         protected Tokens ParseTokens(string tokensAsString)
         {
-            PrefixTreeParser parser = new PrefixTreeParser();
+            TokensTreeParser parser = new TokensTreeParser();
             return parser.ParseTokens(tokensAsString);
         }
 

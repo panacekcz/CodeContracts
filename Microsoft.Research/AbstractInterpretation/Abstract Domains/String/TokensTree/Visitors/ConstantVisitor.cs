@@ -20,12 +20,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
     /// Tries to extract a constant string from a tree.
     /// </summary>
-    class ConstantVisitor : PrefixTreeVisitor<bool>
+    class ConstantVisitor : TokensTreeVisitor<bool>
     {
         private StringBuilder stringBuilder;
 
@@ -35,7 +35,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// </summary>
         /// <param name="root">Root of the prefix tree.</param>
         /// <returns>The constant or null.</returns>
-        public string GetConstant(PrefixTreeNode root)
+        public string GetConstant(TokensTreeNode root)
         {
             stringBuilder = new StringBuilder();
             if (VisitNode(root))

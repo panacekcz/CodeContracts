@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
     /// Visits a prefix tree from the root so that all
     /// predecessors are visited before a node is visited.
     /// </summary>
     /// <typeparam name="T">A value that will be associated with each node.</typeparam>
-    abstract class ForwardVisitor<T>
+    abstract class ForwardTokensTreeVisitor<T>
     {
         private readonly Dictionary<InnerNode, int> inputDegree = new Dictionary<InnerNode, int>();
         private readonly Dictionary<InnerNode, T> data = new Dictionary<InnerNode, T>();
@@ -88,7 +88,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// </summary>
         /// <param name="node">Node of the tree.</param>
         /// <param name="nextData">Value added to the node data.</param>
-        protected void Push(PrefixTreeNode node, T nextData)
+        protected void Push(TokensTreeNode node, T nextData)
         {
             // Repeat nodes not considered
             if (!(node is InnerNode))

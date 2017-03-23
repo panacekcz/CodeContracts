@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
     /// Base for forward visitors which compute an interval of indices for each node.
     /// </summary>
-    internal abstract class IntervalVisitor : ForwardVisitor<IndexInterval>
+    internal abstract class IntervalVisitor : ForwardTokensTreeVisitor<IndexInterval>
     {
         #region ForwardVisitor overrides
         protected override IndexInterval Default()
@@ -33,7 +33,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// <summary>
     /// Base for forward visitors which compute a congruence of indices for each node.
     /// </summary>
-    internal abstract class CongruenceVisitor : ForwardVisitor<Congruence>
+    internal abstract class CongruenceVisitor : ForwardTokensTreeVisitor<Congruence>
     {
         #region ForwardVisitor overrides
         protected override Congruence Default()
@@ -55,86 +55,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         #endregion
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    class MustContainVisitor : ForwardVisitor<IndexInt>
-    {
-        private readonly KMP constantKmp;
-        private readonly bool fixedEnd;
-        private bool fail;
-
-        public MustContainVisitor(string constant, bool fixedEnd)
-        {
-            this.constantKmp = new KMP(constant);
-            this.fixedEnd = fixedEnd;
-        }
-
-
-        protected override IndexInt Default()
-        {
-            return IndexInt.Negative;
-        }
-
-        protected override IndexInt Merge(IndexInt oldData, IndexInt newData)
-        {
-            return IndexUtils.JoinIndices(oldData, newData);
-        }
-
-        private bool IsAcceptingState(IndexInt index)
-        {
-            if (index.IsInfinite)
-                return false;
-            if (index.IsNegative)
-                return true;
-            return index == constantKmp.End;
-        }
-        private IndexInt Next(IndexInt state, char c)
-        {
-            if (state.IsInfinite || state.IsNegative)
-                return state;
-            else
-            {
-                int nextIndex = constantKmp.Next(state.AsInt, c);
-
-                if (!fixedEnd && nextIndex == constantKmp.End)
-                    return IndexInt.Negative;
-
-                return IndexInt.For(nextIndex);
-            }
-            
-        }
-
-        protected override void VisitInnerNode(InnerNode node)
-        {
-            if (fail)
-                return;
-
-            IndexInt index = Get(node);
-
-            if (node.Accepting && !IsAcceptingState(index))
-            {
-                fail = true;
-            }
-            else
-            {
-                foreach (var c in node.children)
-                {
-                    Push(c.Value, Next(index, c.Key));
-                }
-            }
-        }
-
-        public bool MustContain(InnerNode root)
-        {
-            fail = false;
-            Push(root, IndexInt.For(0));
-            this.Traverse(root);
-            return !fail;
-        }
-    }
-
-
+    
     /// <summary>
     /// Finds all states that can occur in an interval of indices.
     /// </summary>

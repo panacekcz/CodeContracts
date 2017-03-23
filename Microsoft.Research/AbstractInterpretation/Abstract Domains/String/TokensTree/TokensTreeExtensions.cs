@@ -21,116 +21,41 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Research.DataStructures;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
-    internal struct InnerNodePair
+    internal static class TokensTreeExtensions
     {
-        public readonly InnerNode left;
-        public readonly InnerNode right;
-
-        public InnerNodePair(InnerNode left, InnerNode right)
+        public static bool IsBounded(this InnerNode root)
         {
-            this.left = left;
-            this.right = right;
+            IsBoundedVisitor isBoundedVisitor = new IsBoundedVisitor();
+            return isBoundedVisitor.IsBounded(root);
+        }
+        public static bool IsBottom(this InnerNode root)
+        {
+            return !root.Accepting && root.children.Count == 0;
+        }
+        public static bool IsEmpty(this InnerNode node)
+        {
+            return node.Accepting && node.children.Count == 0;
         }
     }
 
-    public abstract class PrefixTreeRelation
-    {
-        internal readonly HashSet<InnerNodePair> knownPairs = new HashSet<InnerNodePair>();
-        private readonly WorkList<InnerNodePair> pendingPairs = new WorkList<InnerNodePair>();
-        protected readonly InnerNode leftRoot, rightRoot;
-
-        public PrefixTreeRelation(InnerNode leftRoot, InnerNode rightRoot)
-        {
-            this.leftRoot = leftRoot;
-            this.rightRoot = rightRoot;
-        }
-
-        public abstract void Init();
-        public abstract bool Next(InnerNode left, InnerNode right);
-
-        public void Request(PrefixTreeNode left, PrefixTreeNode right)
-        {
-            InnerNode innerLeft = (left is RepeatNode) ? leftRoot : (InnerNode)left;
-            InnerNode innerRight = (right is RepeatNode) ? rightRoot : (InnerNode)right;
-            InnerNodePair innerPair = new InnerNodePair(innerLeft, innerRight);
-
-            if (knownPairs.Add(innerPair))
-            {
-                pendingPairs.Add(innerPair);
-            }
-        }
-
-        public bool Solve()
-        {
-            Init();
-
-            while (!pendingPairs.IsEmpty)
-            {
-                var pair = pendingPairs.Pull();
-                if (!Next(pair.left, pair.right))
-                    return false;
-                
-            }
-
-            return true;
-        }
-    }
-
-    public class PrefixTreePreorder : PrefixTreeRelation
-    {
-        public PrefixTreePreorder(InnerNode leftRoot, InnerNode rightRoot):
-            base(leftRoot, rightRoot)
-        { }
-        public static bool LessEqual(InnerNode le, InnerNode ge)
-        {
-            if (le == ge)
-                return true;
-
-            PrefixTreePreorder preorder = new PrefixTreePreorder(le, ge);
-            return preorder.Solve();
-
-        }
-        public override void Init()
-        {
-            Request(leftRoot, rightRoot);
-        }
-        public override bool Next(InnerNode left, InnerNode right)
-        {
-
-            if (left.Accepting && !right.Accepting)
-                return false;
-
-            foreach (var child in left.children)
-            {
-                PrefixTreeNode rightChild;
-                if (!right.children.TryGetValue(child.Key, out rightChild))
-                    return false;
-
-                Request(child.Value, rightChild);
-            }
-
-            return true;
-
-        }
-    }
 
     //TODO: VD: cleanup code!
-    internal class MeetVisitor : PrefixTreeTransformer
+    internal class MeetVisitor : TokensTreeTransformer
     {
 
         HashSet<InnerNode> acc;
         Dictionary<InnerNode, HashSet<char>> used;
 
-        public MeetVisitor(PrefixTreeMerger merger, HashSet<InnerNode> acc,
+        public MeetVisitor(TokensTreeMerger merger, HashSet<InnerNode> acc,
         Dictionary<InnerNode, HashSet<char>> used) : base(merger)
         {
             this.acc = acc;
             this.used = used;
         }
 
-        private bool IsBottom(PrefixTreeNode tn)
+        private bool IsBottom(TokensTreeNode tn)
         {
             if(tn is InnerNode)
             {
@@ -143,7 +68,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             }
         }
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
+        protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
         {
             InnerNode newNode = new InnerNode(innerNode.Accepting && acc.Contains(innerNode));
            
@@ -152,7 +77,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
                 if (used[innerNode].Contains(kv.Key))
                 {
 
-                    PrefixTreeNode tn = VisitNodeCached(kv.Value);
+                    TokensTreeNode tn = VisitNodeCached(kv.Value);
                     if(!IsBottom(tn))
                     newNode.children[kv.Key] = tn;
                 }
@@ -168,7 +93,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
     }
 
-    internal class PrefixTreeMeet : PrefixTreeRelation
+    internal class PrefixTreeMeet : TokensTreeRelation
     {
         public PrefixTreeMeet(InnerNode leftRoot, InnerNode rightRoot) :
             base(leftRoot, rightRoot)
@@ -184,7 +109,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             PrefixTreeMeet preorder = new PrefixTreeMeet(le, ge);
             preorder.Solve();
-            PrefixTreeMerger ptm = new PrefixTreeMerger();
+            TokensTreeMerger ptm = new TokensTreeMerger();
             MeetVisitor mv = new MeetVisitor(ptm, preorder.acc, preorder.used);
             mv.Mee(le);
             return ptm.Build();
@@ -209,7 +134,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             foreach (var child in left.children)
             {
-                PrefixTreeNode rightChild;
+                TokensTreeNode rightChild;
                 if (right.children.TryGetValue(child.Key, out rightChild))
                 {
                     used[left].Add(child.Key);
@@ -223,24 +148,4 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
     }
 
-    class PrefixTreeBounded : CachedPrefixTreeVisitor<bool>
-    {
-        public bool IsBounded(PrefixTreeNode node)
-        {
-            return VisitNode(node);
-        }
-        protected override bool VisitInnerNode(InnerNode inn)
-        {
-            foreach(var k in inn.children)
-            {
-                if (!VisitNode(k.Value))
-                    return false;
-            }
-            return true;
-        }
-        protected override bool VisitRepeatNode(RepeatNode inn)
-        {
-            return false;
-        }
-    }
 }

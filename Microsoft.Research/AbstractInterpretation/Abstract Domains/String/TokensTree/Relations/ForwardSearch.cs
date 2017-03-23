@@ -5,21 +5,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
 
 
-    class PrefixTreeBackwardSearch : PrefixTreeForwardSearch
+    class BidirectionalSearch : ForwardSearch
     {
         private Dictionary<InnerNodePair, List<InnerNodePair>> predecesors = new Dictionary<InnerNodePair, List<InnerNodePair>>();
         private HashSet<InnerNodePair> knownBackwardPairs = new HashSet<InnerNodePair>();
         private readonly WorkList<InnerNodePair> pendingBackwardPairs = new WorkList<InnerNodePair>();
 
-        public PrefixTreeBackwardSearch(InnerNode leftRoot, InnerNode rightRoot, bool allStarts) : base(leftRoot, rightRoot, allStarts)
+        public BidirectionalSearch(InnerNode leftRoot, InnerNode rightRoot, bool allStarts) : base(leftRoot, rightRoot, allStarts)
         {
         }
 
-        private void AddPredecesor(InnerNode left, InnerNode right, PrefixTreeNode leftChild, PrefixTreeNode rightChild)
+        private void AddPredecesor(InnerNode left, InnerNode right, TokensTreeNode leftChild, TokensTreeNode rightChild)
         {
             InnerNodePair fr = new InnerNodePair(left, right);
             InnerNodePair ch = new InnerNodePair(leftChild.ToInner(leftRoot), rightChild.ToInner(rightRoot));
@@ -39,7 +39,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         {
             foreach (var child in left.children)
             {
-                PrefixTreeNode rightChild;
+                TokensTreeNode rightChild;
                 if (right.children.TryGetValue(child.Key, out rightChild))
                 {
                     AddPredecesor(left, right, child.Value, rightChild);
@@ -121,7 +121,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// the complexity is quadratic if the size of alphabet is constant.
     /// That is, for each pair, we do constant amount of work.
     /// </remarks>
-    class PrefixTreeForwardSearch : PrefixTreeRelation
+    class ForwardSearch : TokensTreeRelation
     {
         private readonly bool allStarts;
 
@@ -131,7 +131,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// <param name="leftRoot">Root of the left tree.</param>
         /// <param name="rightRoot">Root of the right tree.</param>
         /// <param name="allStarts">Whether the occurence can start at any node.</param>
-        public PrefixTreeForwardSearch(InnerNode leftRoot, InnerNode rightRoot, bool allStarts) : base(leftRoot, rightRoot)
+        public ForwardSearch(InnerNode leftRoot, InnerNode rightRoot, bool allStarts) : base(leftRoot, rightRoot)
         {
             this.allStarts = allStarts;
         }
@@ -180,7 +180,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         {
             foreach (var child in left.children)
             {
-                PrefixTreeNode rightChild;
+                TokensTreeNode rightChild;
                 if (right.children.TryGetValue(child.Key, out rightChild))
                 {
                     Request(child.Value, rightChild);

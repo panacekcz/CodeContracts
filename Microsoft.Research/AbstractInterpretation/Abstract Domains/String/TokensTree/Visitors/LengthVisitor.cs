@@ -21,10 +21,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
 
-    internal class LengthCongruenceVisitor : CachedPrefixTreeVisitor<CongruencePair>
+    internal class LengthCongruenceVisitor : CachedTokensTreeVisitor<CongruencePair>
     {
         public int GetRepeatCommonDivisor(InnerNode tree)
         {
@@ -61,7 +61,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// <summary>
     /// Computes possible lengths of strings represented by a token tree.
     /// </summary>
-    internal class LengthIntervalVisitor : CachedPrefixTreeVisitor<IndexInterval>
+    internal class LengthIntervalVisitor : CachedTokensTreeVisitor<IndexInterval>
     {
         /// <summary>
         /// Gets the interval of lengths of string represented by a token tree.

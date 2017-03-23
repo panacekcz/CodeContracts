@@ -4,48 +4,48 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
-    public abstract class PrefixTreeTransformer : CachedPrefixTreeVisitor<PrefixTreeNode>
+    public abstract class TokensTreeTransformer : CachedTokensTreeVisitor<TokensTreeNode>
     {
         private readonly NodeSharing sharing = new NodeSharing();
-        private readonly PrefixTreeMerger merger;
+        private readonly TokensTreeMerger merger;
 
-        public PrefixTreeTransformer(PrefixTreeMerger merger)
+        public TokensTreeTransformer(TokensTreeMerger merger)
         {
             this.merger = merger;
         }
 
-        protected PrefixTreeNode Share(PrefixTreeNode tn)
+        protected TokensTreeNode Share(TokensTreeNode tn)
         {
             return sharing.Share(tn);
         }
-        protected PrefixTreeNode Cutoff(PrefixTreeNode tn)
+        protected TokensTreeNode Cutoff(TokensTreeNode tn)
         {
             return merger.Cutoff(tn);
         }
-        protected PrefixTreeNode Merge(PrefixTreeNode left, PrefixTreeNode right)
+        protected TokensTreeNode Merge(TokensTreeNode left, TokensTreeNode right)
         {
             return merger.Merge(left, right);
         }
 
-        protected InnerNode TransformTree(PrefixTreeNode root)
+        protected InnerNode TransformTree(TokensTreeNode root)
         {
             root = VisitNodeCached(root);
-            return (root is RepeatNode) ? PrefixTreeBuilder.Empty() : (InnerNode)root;
+            return (root is RepeatNode) ? TokensTreeBuilder.Empty() : (InnerNode)root;
         }
 
-        protected void Transform(PrefixTreeNode root)
+        protected void Transform(TokensTreeNode root)
         {
             merger.Cutoff(TransformTree(root));
         }
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
+        protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
         {
             InnerNode newNode = null;
             foreach (var kv in innerNode.children)
             {
-                PrefixTreeNode tn = VisitNodeCached(kv.Value);
+                TokensTreeNode tn = VisitNodeCached(kv.Value);
                 if (tn != kv.Value) // Reference comparison
                 {
                     if (newNode == null)
@@ -58,7 +58,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             return Share(newNode ?? innerNode);
         }
-        protected override PrefixTreeNode VisitRepeatNode(RepeatNode repeatNode)
+        protected override TokensTreeNode VisitRepeatNode(RepeatNode repeatNode)
         {
             return repeatNode;
         }

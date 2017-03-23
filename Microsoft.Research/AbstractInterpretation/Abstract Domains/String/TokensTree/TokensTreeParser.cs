@@ -4,51 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
-    /// Generates a string representation of a prefix tree.
+    /// Parses string representations of tokens trees.
     /// </summary>
-    /// <remarks>
-    /// Repeat node is *, inner node is {cX...}. (if the nodes is not accepting) or {cX...}! if accepting.
-    /// For str it is {s{t{r{}!}.}.}.
-    /// </remarks>
-    internal class ToStringVisitor : PrefixTreeVisitor<string>
-    {
-        public string ToString(PrefixTreeNode node)
-        {
-            return VisitNode(node);
-        }
-
-        protected override string VisitInnerNode(InnerNode inn)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append('{');
-
-            foreach (var child in inn.children.OrderBy(child => child.Key))
-            {
-                sb.Append(child.Key);
-                sb.Append(VisitNode(child.Value));
-            }
-           
-            sb.Append('}');
-            sb.Append(inn.Accepting ? '!' : '.');
-
-            return sb.ToString();
-        }
-
-        protected override string VisitRepeatNode(RepeatNode inn)
-        {
-            return "*";
-        }
-
-    }
-
-    /// <summary>
-    /// Parses string representations of prefix trees.
-    /// </summary>
-    public class PrefixTreeParser
+    public class TokensTreeParser
     {
         private enum State
         {
@@ -64,7 +25,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return new Tokens((InnerNode)Parse(s));
         }
 
-        public PrefixTreeNode Parse(string s)
+        public TokensTreeNode Parse(string s)
         {
             this.state = State.OUTSIDE;
 
@@ -108,7 +69,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
                 else
                     throw new FormatException();
             }
-            else if(state == State.INSIDE)
+            else if (state == State.INSIDE)
             {
                 if (c == '}')
                 {
@@ -119,7 +80,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
                     current = c;
                     state = State.OUTSIDE;
                 }
-                
+
             }
             else
             {
@@ -134,7 +95,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
                     throw new FormatException();
                 state = State.INSIDE;
             }
-            
+
         }
 
 

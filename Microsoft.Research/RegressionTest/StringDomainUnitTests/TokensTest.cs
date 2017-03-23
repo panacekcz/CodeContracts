@@ -23,7 +23,6 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Research.AbstractDomains.Strings;
 using Microsoft.Research.CodeAnalysis;
-using Microsoft.Research.AbstractDomains.Strings.PrefixTree;
 
 namespace StringDomainUnitTests
 {

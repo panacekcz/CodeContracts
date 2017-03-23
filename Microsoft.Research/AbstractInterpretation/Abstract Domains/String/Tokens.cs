@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Research.AbstractDomains.Strings.PrefixTree;
+using Microsoft.Research.AbstractDomains.Strings.TokensTree;
 using Microsoft.Research.Regex;
 using Microsoft.Research.Regex.AST;
 using Microsoft.Research.CodeAnalysis;
@@ -43,7 +43,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new Tokens(PrefixTreeBuilder.Unknown());
+                return new Tokens(TokensTreeBuilder.Unknown());
             }
         }
 
@@ -51,7 +51,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new Tokens(PrefixTreeBuilder.Unreached());
+                return new Tokens(TokensTreeBuilder.Unreached());
             }
         }
 
@@ -66,7 +66,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 for (int c = char.MinValue; c <= char.MaxValue; ++c)
                 {
-                    PrefixTreeNode next;
+                    TokensTreeNode next;
                     if (!root.children.TryGetValue((char)c, out next))
                     {
                         return false;
@@ -109,7 +109,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             InnerNode current = root;
             foreach (char c in s)
             {
-                PrefixTreeNode next;
+                TokensTreeNode next;
                 if (!current.children.TryGetValue(c, out next))
                 {
                     return false;
@@ -130,7 +130,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 get
                 {
-                    return new Tokens(PrefixTreeBuilder.Unknown());
+                    return new Tokens(TokensTreeBuilder.Unknown());
                 }
             }
 
@@ -139,25 +139,25 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 if (index.UpperBound == 0)
                     return node;
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
                 After(node, index, merger);
 
                 return merger.Build();
             }
-            private void After(InnerNode node, IndexInterval index, PrefixTreeMerger merger)
+            private void After(InnerNode node, IndexInterval index, TokensTreeMerger merger)
             { 
                 LengthCongruenceVisitor lcv = new LengthCongruenceVisitor();
                 int c = lcv.GetRepeatCommonDivisor(node);
-                PrefixTreeBounded liv = new PrefixTreeBounded();
-                bool bnd = liv.IsBounded(node);
+                
+                bool isBounded = node.IsBounded();
 
-                IntervalMarkVisitor imv = new IntervalMarkVisitor(index, bnd);
+                IntervalMarkVisitor imv = new IntervalMarkVisitor(index, isBounded);
                 imv.Collect(node, c);
 
                 SliceAfterVisitor sliceAfterTransformer = new SliceAfterVisitor(merger, imv.Nodes);
-                sliceAfterTransformer.Split(node, bnd);
+                sliceAfterTransformer.Split(node, isBounded);
                 if (index.UpperBound.IsInfinite)
-                    merger.Cutoff(PrefixTreeBuilder.Empty());
+                    merger.Cutoff(TokensTreeBuilder.Empty());
             }
 
             private InnerNode Before(InnerNode node, IndexInterval index)
@@ -165,20 +165,20 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 if (index.LowerBound.IsInfinite)
                     return node;
 
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
                 Before(node, index, merger);
                 return merger.Build();
             }
 
-            private void Before(InnerNode node, IndexInterval index, PrefixTreeMerger merger)
+            private void Before(InnerNode node, IndexInterval index, TokensTreeMerger merger)
             {
                 LengthCongruenceVisitor lcv = new LengthCongruenceVisitor();
                 int c = lcv.GetRepeatCommonDivisor(node);
-                PrefixTreeBounded liv = new PrefixTreeBounded();
-                bool bnd = liv.IsBounded(node);
+                
+                bool isBounded = node.IsBounded();
 
 
-                IntervalMarkVisitor imv = new IntervalMarkVisitor(index, bnd);
+                IntervalMarkVisitor imv = new IntervalMarkVisitor(index, isBounded);
                 imv.Collect(node, c);
 
                 SliceBeforeVisitor sliceBeforeVisitor = new SliceBeforeVisitor(merger, imv.Nodes, imv, index.UpperBound);
@@ -205,7 +205,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     return new Tokens(before);
                 }
                 else {
-                    PrefixTreeMerger merger = new PrefixTreeMerger();
+                    TokensTreeMerger merger = new TokensTreeMerger();
                     new RepeatVisitor(merger).Repeat(before);
                     merger.Cutoff(after);
                     return new Tokens(merger.Build());
@@ -219,10 +219,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 Tokens leftAbstraction = left.ToAbstract(this);
                 Tokens rightAbstraction = right.ToAbstract(this);
 
-                PrefixTreeBounded boundedVisitor = new PrefixTreeBounded();
+                IsBoundedVisitor boundedVisitor = new IsBoundedVisitor();
                 bool bounded = boundedVisitor.IsBounded(leftAbstraction.root) && boundedVisitor.IsBounded(rightAbstraction.root);
 
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
 
                 if (!bounded)
                 {
@@ -241,15 +241,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return new Tokens(merger.Build());
             }
 
-            private void SplitAtIndex(InnerNode root, IndexInterval interval, PrefixTreeMerger merger)
+            private void SplitAtIndex(InnerNode root, IndexInterval interval, TokensTreeMerger merger)
             {
                 LengthCongruenceVisitor lcv = new LengthCongruenceVisitor();
                 int repeatDivisor = lcv.GetRepeatCommonDivisor(root);
-                PrefixTreeBounded liv = new PrefixTreeBounded();
-                bool bnd = liv.IsBounded(root);
+                
+                bool isBounded = root.IsBounded();
 
 
-                IntervalMarkVisitor imv = new IntervalMarkVisitor(interval, bnd);
+                IntervalMarkVisitor imv = new IntervalMarkVisitor(interval, isBounded);
                 imv.Collect(root, repeatDivisor);
 
                 SplitVisitor msv = new SplitVisitor(merger, imv.Nodes);
@@ -266,7 +266,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }*/
 
                 //Split at the index, merge with the inserted part
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
 
                 SplitAtIndex(selfRoot, index, merger);
                 RepeatVisitor rv = new RepeatVisitor(merger);
@@ -277,7 +277,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public Tokens Replace(Tokens self, CharInterval from, CharInterval to)
             {
-                var merger = new PrefixTreeMerger();
+                var merger = new TokensTreeMerger();
                 new ReplaceCharVisitor(merger, from, to).ReplaceChar(self.root);
                 return new Tokens(merger.Build());
             }
@@ -288,7 +288,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 Tokens fromAbstract = from.ToAbstract(this);
                 Tokens toAbstract = to.ToAbstract(this);
 
-                PrefixTreeBackwardSearch ptbs = new PrefixTreeBackwardSearch(selfAbstract.root, fromAbstract.root, true);
+                BidirectionalSearch ptbs = new BidirectionalSearch(selfAbstract.root, fromAbstract.root, true);
                 ptbs.Solve();
                 ptbs.BackwardStage(true);
                 var endPoints = ptbs.GetStartsAndEnds();
@@ -296,7 +296,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     return selfAbstract;
 
                 // Split everywhere from can occur (both start and end) merge with to
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
                 SplitVisitor splitter = new SplitVisitor(merger, endPoints);
                 splitter.Split(selfAbstract.root);
                 RepeatVisitor rv = new RepeatVisitor(merger);
@@ -317,7 +317,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 // add repeating node, or add constant string of fill chars at accepting nodes
 
                 InnerNode root = self.root;
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
                 LengthIntervalVisitor liv = new LengthIntervalVisitor();
                 IndexInterval oldLength = liv.GetLengthInterval(root);
 
@@ -332,7 +332,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     else if (oldLength.IsFiniteConstant && length.IsFiniteConstant)
                     {
                         // We know exactly how many characters to add
-                        InnerNode padding = (InnerNode)PrefixTreeBuilder.FromCharInterval(fill, length.LowerBound.AsInt - oldLength.UpperBound.AsInt);
+                        InnerNode padding = (InnerNode)TokensTreeBuilder.FromCharInterval(fill, length.LowerBound.AsInt - oldLength.UpperBound.AsInt);
                         ConcatVisitor cv = new ConcatVisitor(merger, padding);
 
                         cv.ConcatTo(self.root);
@@ -341,7 +341,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     {
                         RepeatVisitor rv = new RepeatVisitor(merger);
                         rv.Repeat(self.root);
-                        PrefixTreeNode padding = PrefixTreeBuilder.CharIntervalTokens(fill);
+                        TokensTreeNode padding = TokensTreeBuilder.CharIntervalTokens(fill);
                         merger.Cutoff(padding);
                     }
 
@@ -364,9 +364,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                     mayPadMore = length.UpperBound.IsInfinite || length.UpperBound.AsInt > oldLength.LowerBound.AsInt + mustPad;
 
-                    merger.Cutoff(PrefixTreeBuilder.PrependCharInterval(fill, mustPad, root));
+                    merger.Cutoff(TokensTreeBuilder.PrependCharInterval(fill, mustPad, root));
                     if (mayPadMore)
-                        merger.Cutoff(PrefixTreeBuilder.CharIntervalTokens(fill));
+                        merger.Cutoff(TokensTreeBuilder.CharIntervalTokens(fill));
 
                 }
                 return new Tokens(merger.Build());
@@ -375,7 +375,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             private Tokens AnyTrim(WithConstants<Tokens> self, WithConstants<Tokens> trimmed)
             {
                 Tokens selfAbstraction = self.ToAbstract(this), trimmedAbstraction = trimmed.ToAbstract(this);
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
 
                 NodeCollectVisitor ncv = new NodeCollectVisitor();
                 ncv.Collect(selfAbstraction.root);
@@ -403,13 +403,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 LengthCongruenceVisitor lcv = new LengthCongruenceVisitor();
                 int repeatDivisor = lcv.GetRepeatCommonDivisor(root);
-                PrefixTreeBounded liv = new PrefixTreeBounded();
-                bool bnd = liv.IsBounded(root);
+                
+                bool isBounded = root.IsBounded();
 
 
-                IntervalMarkVisitor imv = new IntervalMarkVisitor(index, bnd);
+                IntervalMarkVisitor imv = new IntervalMarkVisitor(index, isBounded);
                 imv.Collect(root, repeatDivisor);
-                IntervalMarkVisitor imve = new IntervalMarkVisitor(end, bnd);
+                IntervalMarkVisitor imve = new IntervalMarkVisitor(end, isBounded);
                 imve.Collect(root, repeatDivisor);
 
                 if (imv.Nodes.Count == 1)
@@ -421,11 +421,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 union.UnionWith(imve.Nodes);
 
                 //Split at the index, merge with the inserted part
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
 
                 SplitVisitor msv = new SplitVisitor(merger, union);
                 msv.Split(self.root);
-                merger.Cutoff(PrefixTreeBuilder.CharIntervalTokens(value));
+                merger.Cutoff(TokensTreeBuilder.CharIntervalTokens(value));
 
                 return new Tokens(merger.Build());
             }
@@ -437,7 +437,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 if (canBeEmpty && canBeNonEmpty && selfVariable != null)
                 {
-                    return StringAbstractionPredicate.ForTrue(selfVariable, new Tokens(PrefixTreeBuilder.Empty()));
+                    return StringAbstractionPredicate.ForTrue(selfVariable, new Tokens(TokensTreeBuilder.Empty()));
                 }
 
                 return new FlatPredicate(canBeEmpty, canBeNonEmpty);
@@ -449,7 +449,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 // Seems there is no possibility to return predicate here
                 Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
 
-                PrefixTreeForwardSearch forwardSearch = new PrefixTreeForwardSearch(selfAbstraction.root, otherAbstraction.root, true);
+                ForwardSearch forwardSearch = new ForwardSearch(selfAbstraction.root, otherAbstraction.root, true);
                 forwardSearch.Solve();
                 if (forwardSearch.FoundAnyEnd())
                 {
@@ -497,7 +497,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                     foreach (char c in prefix)
                     {
-                        PrefixTreeNode ptn;
+                        TokensTreeNode ptn;
                         if (!node.children.TryGetValue(c, out ptn))
                         {
                             return FlatPredicate.False;
@@ -514,7 +514,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     //cubic occurence finder that will aling nodes by pairs from the start
                     // used also for replace, meet, endswith, indexOf
 
-                    PrefixTreeForwardSearch ptfm = new PrefixTreeForwardSearch(selfAbstraction.root, otherAbstraction.root, false);
+                    ForwardSearch ptfm = new ForwardSearch(selfAbstraction.root, otherAbstraction.root, false);
                     ptfm.Solve();
                     if (ptfm.FoundAnyEnd())
                         return FlatPredicate.Top;
@@ -533,7 +533,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
 
-                PrefixTreeForwardSearch ptfm = new PrefixTreeForwardSearch(selfAbstraction.root, otherAbstraction.root, true);
+                ForwardSearch ptfm = new ForwardSearch(selfAbstraction.root, otherAbstraction.root, true);
                 ptfm.Solve();
                 if (ptfm.FoundAlignedEnd())
                 {
@@ -616,15 +616,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 Tokens selfAbstraction = self.ToAbstract(this);
                 Tokens needleAbstraction = needle.ToAbstract(this);
                 //TODO: VD:  use offset and count to limit the beginnings/ends
-                PrefixTreeBackwardSearch ptbs = new PrefixTreeBackwardSearch(selfAbstraction.root, needleAbstraction.root, true);
+                BidirectionalSearch ptbs = new BidirectionalSearch(selfAbstraction.root, needleAbstraction.root, true);
                 ptbs.Solve();
                 ptbs.BackwardStage(true);
 
                 IndexOfVisitor iof = new IndexOfVisitor(ptbs.GetStarts());
 
                 IndexInterval ii = iof.Interval;
-                PrefixTreeBounded boundedVisitor = new PrefixTreeBounded();
-                if (boundedVisitor.IsBounded(selfAbstraction.root))
+                
+                if (selfAbstraction.root.IsBounded())
                 {
                     return ii;
                 }
@@ -643,8 +643,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 InnerNode root = self.root;
                 CharInterval result = CharInterval.Unreached;
 
-                PrefixTreeBounded ptb = new PrefixTreeBounded();
-                bool bounded = ptb.IsBounded(root);
+                bool bounded = root.IsBounded();
                 LengthCongruenceVisitor lcv = new LengthCongruenceVisitor();
                 int repeatDivisor = lcv.GetRepeatCommonDivisor(root);
 
@@ -685,24 +684,24 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public Tokens Constant(string constant)
             {
-                return new Tokens(PrefixTreeBuilder.FromString(constant));
+                return new Tokens(TokensTreeBuilder.FromString(constant));
             }
         }
 
         public bool Equals(Tokens other)
         {
-            return PrefixTreeNodeComparer.Comparer.Equals(root, other.root);
+            return NodeComparer.Comparer.Equals(root, other.root);
         }
  
 
         public bool LessThanEqual(Tokens other)
         {
-            return PrefixTreePreorder.LessEqual(root, other.root);
+            return PreorderRelation.LessEqual(root, other.root);
         }
 
         public Tokens Join(Tokens other)
         {
-            PrefixTreeMerger merger = new PrefixTreeMerger();
+            TokensTreeMerger merger = new TokensTreeMerger();
             merger.Cutoff(root);
             merger.Cutoff(other.root);
 
@@ -716,7 +715,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public Tokens Constant(string cst)
         {
-            return new Tokens(PrefixTreeBuilder.FromString(cst));
+            return new Tokens(TokensTreeBuilder.FromString(cst));
         }
 
         public bool LessEqual(IAbstractDomain a)
@@ -767,7 +766,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
         public override int GetHashCode()
         {
-            return PrefixTreeNodeComparer.Comparer.GetHashCode(root);
+            return NodeComparer.Comparer.GetHashCode(root);
         }
         #endregion
     }

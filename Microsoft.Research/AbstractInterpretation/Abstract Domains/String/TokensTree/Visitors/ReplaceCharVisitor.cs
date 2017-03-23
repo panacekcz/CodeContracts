@@ -20,7 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
 
     struct InnerNodeBuilder
@@ -34,7 +34,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             this.oldNode = oldNode;
         }
 
-        public void SetChild(char c, PrefixTreeNode next)
+        public void SetChild(char c, TokensTreeNode next)
         {
 
 
@@ -50,7 +50,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
     }
 
-    class ReplaceCharVisitor : PrefixTreeTransformer
+    class ReplaceCharVisitor : TokensTreeTransformer
     {
         //Replace char from an interval with another char from another interval
         //For each node, we look at edges that can be replaced, and construct a merged node of the childer.
@@ -62,7 +62,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
         private CharInterval from, to;
 
-        public ReplaceCharVisitor(PrefixTreeMerger merger, CharInterval from, CharInterval to)
+        public ReplaceCharVisitor(TokensTreeMerger merger, CharInterval from, CharInterval to)
             : base(merger)
         {
             this.from = from;
@@ -75,22 +75,22 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
 
-        protected override PrefixTreeNode VisitRepeatNode(RepeatNode repeatNode)
+        protected override TokensTreeNode VisitRepeatNode(RepeatNode repeatNode)
         {
             return repeatNode;
 
         }
-        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
+        protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
         {
               
             InnerNode newInnerNode = null;
-            PrefixTreeNode next = PrefixTreeBuilder.Unreached(); //could be optinized
+            TokensTreeNode next = TokensTreeBuilder.Unreached(); //could be optinized
 
             bool canReplace = false;
             
             foreach(var child in innerNode.children)
             {
-                PrefixTreeNode newChild = VisitNodeCached(child.Value);
+                TokensTreeNode newChild = VisitNodeCached(child.Value);
 
                 if (newChild != child.Value)
                 {

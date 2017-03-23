@@ -20,12 +20,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
-    /// Provides helper methods for building prefix trees.
+    /// Provides helper methods for building tokens trees.
     /// </summary>
-    public class PrefixTreeBuilder
+    public class TokensTreeBuilder
     {
         /// <summary>
         /// Builds a prefix tree representing the empty string.
@@ -37,7 +37,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
         /// <summary>
-        /// Builds a prefix tree representing all strings.
+        /// Builds a tokens tree representing all strings.
         /// </summary>
         /// <returns>Root node of the tree.</returns>
         public static InnerNode Unknown()
@@ -81,15 +81,15 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
         /// <summary>
-        /// Builds a prefix tree representing strings which are repetitions of a single token.
+        /// Builds a tokens tree representing strings which are repetitions of a single token.
         /// </summary>
         /// <param name="token">The repeated token.</param>
         /// <returns>Root node of the tree</returns>
-        public static PrefixTreeNode FromToken(string token)
+        public static TokensTreeNode FromToken(string token)
         {
             if (token == "")
                 return Empty();
-            PrefixTreeNode tn = RepeatNode.Repeat;
+            TokensTreeNode tn = RepeatNode.Repeat;
 
             for (int i = token.Length - 1; i >= 0; --i)
             {
@@ -107,7 +107,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// <param name="next">The node following after all charactes.</param>
         /// <returns>A tree which starts with <paramref name="repeatCount"/> nodes, which are not accepting and for each character in <paramref name="interval"/>, there
         /// is an edge to the next node, ending with <paramref name="next"/>.</returns>
-        public static PrefixTreeNode PrependCharInterval(CharInterval interval, int repeatCount, PrefixTreeNode next)
+        public static TokensTreeNode PrependCharInterval(CharInterval interval, int repeatCount, TokensTreeNode next)
         {
             for (int i = 0; i < repeatCount; ++i)
             {
@@ -123,19 +123,19 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// <param name="repeat">How many times the characters should be repeated.</param>
         /// <returns>A tree which starts with <paramref name="repeat"/> nodes, which are not accepting and for each character in <paramref name="interval"/>, there
         /// is an edge to the next node, ending with an accepting node.</returns>
-        public static PrefixTreeNode FromCharInterval(CharInterval interval, int repeatCount = 1)
+        public static TokensTreeNode FromCharInterval(CharInterval interval, int repeatCount = 1)
         {
             return PrependCharInterval(interval, repeatCount, Empty());
         }
 
         /// <summary>
-        /// Creates a prefix tree which represents a language of unlimited iteration of characters
+        /// Creates a tokens tree which represents a language of unlimited iteration of characters
         /// from an interval.
         /// </summary>
         /// <param name="interval">The interval of allowed characters.</param>
         /// <returns>A tree where the root is accepting and for each character in <paramref name="interval"/>, there is 
         /// an edge to a repeat node.</returns>
-        public static PrefixTreeNode CharIntervalTokens(CharInterval interval)
+        public static TokensTreeNode CharIntervalTokens(CharInterval interval)
         {
             return PrependCharInterval(interval, RepeatNode.Repeat, true);
         }
@@ -147,7 +147,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// <param name="next">The node following after all charactes.</param>
         /// <returns>A tree where the root is not accepting and for each character in <paramref name="intervals"/>, there
         /// is an edge to <paramref name="next"/>.</returns>
-        public static InnerNode PrependChar(char c, PrefixTreeNode next)
+        public static InnerNode PrependChar(char c, TokensTreeNode next)
         {
             InnerNode newNode = new InnerNode(false);
             newNode.children[c] = next;
@@ -163,7 +163,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// <param name="accepting">Whether the node should be accepting.</param>
         /// <returns>A tree where the root accepting flag is <paramref name="accepting"/> and for each character in <paramref name="interval"/>, there
         /// is an edge to <paramref name="next"/>.</returns>
-        public static InnerNode PrependCharInterval(CharInterval interval, PrefixTreeNode next, bool accepting)
+        public static InnerNode PrependCharInterval(CharInterval interval, TokensTreeNode next, bool accepting)
         {
             InnerNode node = new InnerNode(accepting);
             for (int i = interval.LowerBound; i <= interval.UpperBound; ++i)
@@ -181,7 +181,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// <param name="next">The node following after all charactes.</param>
         /// <returns>A tree where the root is not accepting and for each character in <paramref name="intervals"/>, there
         /// is an edge to <paramref name="next"/>.</returns>
-        public static InnerNode PrependCharIntervals(IEnumerable<CharInterval> intervals, PrefixTreeNode next)
+        public static InnerNode PrependCharIntervals(IEnumerable<CharInterval> intervals, TokensTreeNode next)
         {
             InnerNode node = new InnerNode(false);
             foreach (var interval in intervals)

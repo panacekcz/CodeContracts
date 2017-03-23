@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
-    internal class SplitVisitor : PrefixTreeTransformer
+    internal class SplitVisitor : TokensTreeTransformer
     {
         private readonly HashSet<InnerNode> splitStates;
 
-        public SplitVisitor(PrefixTreeMerger merger, HashSet<InnerNode> splitStates) : base(merger) {
+        public SplitVisitor(TokensTreeMerger merger, HashSet<InnerNode> splitStates) : base(merger) {
             this.splitStates = splitStates;
         }
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
+        protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
         {
             InnerNode newInnerNode = (InnerNode)base.VisitInnerNode(innerNode);
 
@@ -34,21 +34,21 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     }
 
 
-    internal class SliceBeforeVisitor : PrefixTreeTransformer
+    internal class SliceBeforeVisitor : TokensTreeTransformer
     {
         
         private readonly HashSet<InnerNode> mayEnd;
         IntervalMarkVisitor imv;
         IndexInt upper;
 
-        public SliceBeforeVisitor(PrefixTreeMerger merger, HashSet<InnerNode> mayEnd, IntervalMarkVisitor imv, IndexInt upper) : base(merger)
+        public SliceBeforeVisitor(TokensTreeMerger merger, HashSet<InnerNode> mayEnd, IntervalMarkVisitor imv, IndexInt upper) : base(merger)
         {
             this.mayEnd = mayEnd;
             this.imv = imv;
             this.upper = upper;
         }
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
+        protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
         {
             if (imv.GetIndexInterval(innerNode).LowerBound >= upper)
             {
@@ -82,15 +82,15 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// <summary>
     /// 
     /// </summary>
-    internal class SliceAfterVisitor : PrefixTreeTransformer
+    internal class SliceAfterVisitor : TokensTreeTransformer
     {
         private readonly HashSet<InnerNode> splitStates;
 
-        public SliceAfterVisitor(PrefixTreeMerger merger, HashSet<InnerNode> splitStates) : base(merger) {
+        public SliceAfterVisitor(TokensTreeMerger merger, HashSet<InnerNode> splitStates) : base(merger) {
             this.splitStates = splitStates;
         }
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
+        protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
         {
             InnerNode newInnerNode = (InnerNode)base.VisitInnerNode(innerNode);
 

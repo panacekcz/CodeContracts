@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
 
     /// <summary>
@@ -18,7 +18,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// for other characters, add repeat nodes.
     ///</remarks>
 
-    class ComplementVisitor : CachedPrefixTreeVisitor<InnerNode>
+    class ComplementVisitor : CachedTokensTreeVisitor<InnerNode>
     {
         private readonly InnerNode root;
 

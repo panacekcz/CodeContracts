@@ -20,56 +20,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
-
-    internal class RepeatVisitor : PrefixTreeTransformer
-    {
-        private InnerNode root;
-
-        public RepeatVisitor(PrefixTreeMerger merger)
-            : base(merger)
-        {
-        }
-
-        public void Repeat(InnerNode root)
-        {
-            this.root = root;
-            Transform(root);
-        }
-
-
-        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
-        {
-            InnerNode newNode = (InnerNode)base.VisitInnerNode(innerNode);
-
-            if (innerNode.Accepting)
-            {
-                InnerNode notAccepting = new InnerNode(newNode);
-                notAccepting.accepting = false;
-                if (innerNode == root)
-                {
-                    return notAccepting;
-                }
-                else
-                {
-                    return Cutoff(notAccepting);
-                }
-            }
-            else
-                return newNode;
-        }
-        protected override PrefixTreeNode VisitRepeatNode(RepeatNode repeatNode)
-        {
-            return repeatNode;
-        }
-    }
-
-    class ConcatVisitor : PrefixTreeTransformer
+    internal class ConcatVisitor : TokensTreeTransformer
     {
         private InnerNode append;
         private bool addedAsRoot = false;
-        public ConcatVisitor(PrefixTreeMerger merger, InnerNode append) :
+        public ConcatVisitor(TokensTreeMerger merger, InnerNode append) :
             base(merger)
         {
             this.append = append;
@@ -81,10 +38,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             Transform(left);
         }
 
-        protected override PrefixTreeNode VisitInnerNode(InnerNode innerNode)
+        protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
         {
             // Concat to children first
-            PrefixTreeNode newInn = base.VisitInnerNode(innerNode);
+            TokensTreeNode newInn = base.VisitInnerNode(innerNode);
 
             if (innerNode.Accepting)
             {
@@ -98,7 +55,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
                 return newInn;
         }
 
-        protected override PrefixTreeNode VisitRepeatNode(RepeatNode inn)
+        protected override TokensTreeNode VisitRepeatNode(RepeatNode inn)
         {
             throw new InvalidOperationException();
 

@@ -4,16 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
     /// Merges multiple trees into one by cutting off some branches.
     /// </summary>
-    public class PrefixTreeMerger
+    public class TokensTreeMerger
     {
         private readonly List<InnerNode> rootsToMerge = new List<InnerNode>();
 
-        public RepeatNode Cutoff(PrefixTreeNode tn)
+        public RepeatNode Cutoff(TokensTreeNode tn)
         {
             if (tn is RepeatNode)
                 return (RepeatNode)tn;
@@ -29,7 +29,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
             foreach (var kv in oldNode.children)
             {
-                PrefixTreeNode otherChild;
+                TokensTreeNode otherChild;
                 if (newNode.children.TryGetValue(kv.Key, out otherChild))
                     merged.children.Add(kv.Key, Merge(kv.Value, otherChild));
                 else
@@ -47,7 +47,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return merged;
         }
 
-        internal virtual PrefixTreeNode Merge(PrefixTreeNode oldNode, PrefixTreeNode newNode)
+        internal virtual TokensTreeNode Merge(TokensTreeNode oldNode, TokensTreeNode newNode)
         {
             // Tree merging
             // - if any of the nodes is repeating, cut the other off
@@ -98,10 +98,14 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
 
     }
 
-    internal class UnderapproximatingMerger : PrefixTreeMerger
+    /// <summary>
+    /// A variant of merger, which does not allow the result to represent more strings than
+    /// union of the input languages. Branches extending over repeat nodes are ignored.
+    /// </summary>
+    internal class UnderapproximatingMerger : TokensTreeMerger
     {
 
-        internal override PrefixTreeNode Merge(PrefixTreeNode oldNode, PrefixTreeNode newNode)
+        internal override TokensTreeNode Merge(TokensTreeNode oldNode, TokensTreeNode newNode)
         {
             // If any of the nodes is repeating, ignore the other one
             if (oldNode is RepeatNode)
@@ -124,7 +128,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// A variant of merger, which does not allow adding new branches to the tree,
     /// instead it cuts them off to the root.
     /// </summary>
-    internal class WideningMerger : PrefixTreeMerger
+    internal class WideningMerger : TokensTreeMerger
     {
         
         public InnerNode Widening(InnerNode oldRoot, InnerNode newRoot)
@@ -136,7 +140,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         }
 
 
-        internal override PrefixTreeNode Merge(PrefixTreeNode oldNode, PrefixTreeNode newNode)
+        internal override TokensTreeNode Merge(TokensTreeNode oldNode, TokensTreeNode newNode)
         {
             // Tree merging
             // - if any of the nodes is repeating, cut the other off
@@ -163,7 +167,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             }
         }
 
-        internal PrefixTreeNode WideningMergeInnerNodes(InnerNode oldNode, InnerNode newNode)
+        internal TokensTreeNode WideningMergeInnerNodes(InnerNode oldNode, InnerNode newNode)
         {
             //The widening is achieved by cutting nodes, where newNode adds something new.
 
@@ -186,7 +190,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             InnerNode merged = new InnerNode(oldNode.Accepting);
             foreach (var kv in oldNode.children)
             {
-                PrefixTreeNode otherChild;
+                TokensTreeNode otherChild;
                 if (newNode.children.TryGetValue(kv.Key, out otherChild))
                     merged.children.Add(kv.Key, Merge(kv.Value, otherChild));
                 else

@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
     /// Collects all nodes in a prefix tree into a set.
     /// </summary>
-    class NodeCollectVisitor : PrefixTreeVisitor<Void>
+    class NodeCollectVisitor : TokensTreeVisitor<Void>
     {
         private HashSet<InnerNode> nodes = new HashSet<InnerNode>();
 
@@ -18,7 +18,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// Add all nodes in tree rooted by <paramref name="node"/> to <see cref="Nodes"/>.
         /// </summary>
         /// <param name="node">Root of the tree to add.</param>
-        public void Collect(PrefixTreeNode node)
+        public void Collect(TokensTreeNode node)
         {
             VisitNode(node);
         }

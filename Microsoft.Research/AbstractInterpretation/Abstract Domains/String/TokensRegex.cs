@@ -14,7 +14,7 @@
 
 // Created by Vlastimil Dort (2016)
 
-using Microsoft.Research.AbstractDomains.Strings.PrefixTree;
+using Microsoft.Research.AbstractDomains.Strings.TokensTree;
 using Microsoft.Research.AbstractDomains.Strings.Regex;
 using Microsoft.Research.CodeAnalysis;
 using Microsoft.Research.Regex;
@@ -64,22 +64,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public TokensRegexOperations(bool underapproximate)
         {
             this.underapproximate = underapproximate;
-            emptyNode = PrefixTreeBuilder.Empty();
-            topNode = PrefixTreeBuilder.Unknown();
+            emptyNode = TokensTreeBuilder.Empty();
+            topNode = TokensTreeBuilder.Unknown();
         }
 
-        private bool IsEmpty(InnerNode node)
-        {
-            return node.Accepting && node.children.Count == 0;
-        }
 
         public InnerNode GetResult(TokensRegexState state)
         {
             // Makes a single result from the two parts
             // If one of the parts is empty, return the other one
-            if (IsEmpty(state.prefix))
+            if (state.prefix.IsEmpty())
                 return state.result;
-            else if (IsEmpty(state.result))
+            else if (state.result.IsEmpty())
                 return state.prefix;
             else if (underapproximate)
             {
@@ -90,12 +86,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 else if (state.result.Accepting)
                     return state.prefix;
                 else
-                    return PrefixTreeBuilder.Unreached();
+                    return TokensTreeBuilder.Unreached();
             }
             else
             {
                 // Otherwise, repeat the first part and join with the other one
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
                 RepeatVisitor rv = new RepeatVisitor(merger);
                 rv.Repeat(state.prefix);
                 merger.Cutoff(state.result);
@@ -131,13 +127,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
             else
             {
                 // Repeat the loop and append the suffix
-                PrefixTreeMerger merger = new PrefixTreeMerger();
+                TokensTreeMerger merger = new TokensTreeMerger();
                 var rv = new RepeatVisitor(merger);
 
                 rv.Repeat(last.prefix);
                 rv.Repeat(last.result);
 
-                if (IsEmpty(prev.result))
+                if (prev.result.IsEmpty())
                 {
                     merger.Cutoff(prev.prefix);
                 }
@@ -157,7 +153,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             if (!closed && !underapproximate)
                 return Top;
 
-            return new TokensRegexState(PrefixTreeBuilder.PrependCharIntervals(ranges.ToIntervals(), prev.prefix), prev.result);
+            return new TokensRegexState(TokensTreeBuilder.PrependCharIntervals(ranges.ToIntervals(), prev.prefix), prev.result);
         }
 
         public bool CanBeEmpty(TokensRegexState state)
@@ -184,7 +180,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new TokensRegexState(PrefixTreeBuilder.Unreached(), PrefixTreeBuilder.Unreached());
+                return new TokensRegexState(TokensTreeBuilder.Unreached(), TokensTreeBuilder.Unreached());
             }
         }
 
@@ -203,16 +199,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
             else
             {
                 // Avoid merging empty parts with non-empty parts
-                if (IsEmpty(prev.prefix) && IsEmpty(next.result))
+                if (prev.prefix.IsEmpty() && next.result.IsEmpty())
                     next = new TokensRegexState(emptyNode, GetResult(next));
-                else if (IsEmpty(next.prefix) && IsEmpty(prev.result))
+                else if (next.prefix.IsEmpty() && prev.result.IsEmpty())
                     prev = new TokensRegexState(emptyNode, GetResult(prev));
 
-                PrefixTreeMerger mergerPrefix = new PrefixTreeMerger();
+                TokensTreeMerger mergerPrefix = new TokensTreeMerger();
                 mergerPrefix.Cutoff(prev.prefix);
                 mergerPrefix.Cutoff(next.prefix);
 
-                PrefixTreeMerger mergerResult = new PrefixTreeMerger();
+                TokensTreeMerger mergerResult = new TokensTreeMerger();
                 mergerResult.Cutoff(prev.result);
                 mergerResult.Cutoff(next.result);
 
@@ -253,7 +249,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public InnerNode GetResult(TokensNegativeRegexState state)
         {
             if (!state.isOpenStart || !state.isOpenEnd)
-                return underapproximate ? PrefixTreeBuilder.Unknown() : PrefixTreeBuilder.Unreached();
+                return underapproximate ? TokensTreeBuilder.Unknown() : TokensTreeBuilder.Unreached();
             else
             {
                 return ComplementVisitor.Complement(state.root);
@@ -264,7 +260,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new TokensNegativeRegexState(PrefixTreeBuilder.Unreached(), true, true);
+                return new TokensNegativeRegexState(TokensTreeBuilder.Unreached(), true, true);
             }
         }
 
@@ -272,7 +268,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new TokensNegativeRegexState(PrefixTreeBuilder.Empty(), false, false);
+                return new TokensNegativeRegexState(TokensTreeBuilder.Empty(), false, false);
             }
         }
 
@@ -288,17 +284,17 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new TokensNegativeRegexState(PrefixTreeBuilder.Empty(), true, true);
+                return new TokensNegativeRegexState(TokensTreeBuilder.Empty(), true, true);
             }
         }
 
         public TokensNegativeRegexState AddChar(TokensNegativeRegexState prev, CharRanges ranges, bool closed)
         {
-            if (!prev.root.Accepting && prev.root.children.Count == 0)
+            if (prev.root.IsBottom())
                 return prev;
 
             return new TokensNegativeRegexState(
-                PrefixTreeBuilder.PrependCharIntervals(ranges.ToIntervals(), prev.root), prev.isOpenStart, !closed
+                TokensTreeBuilder.PrependCharIntervals(ranges.ToIntervals(), prev.root), prev.isOpenStart, !closed
                 );
         }
 
@@ -313,7 +309,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             // The tree does not contain any repeat nodes
 
-            PrefixTreeMerger merger = new PrefixTreeMerger();
+            TokensTreeMerger merger = new TokensTreeMerger();
             merger.Cutoff(left.root);
             merger.Cutoff(right.root);
 

@@ -20,12 +20,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
     /// Represents a node of a prefix tree.
     /// </summary>
-    public abstract class PrefixTreeNode
+    public abstract class TokensTreeNode
     {
         /// <summary>
         /// Gets the corresponding inner node in a prefix tree.
@@ -40,9 +40,9 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
             return visitor.ToString(this);
         }
     }
-    public class InnerNode : PrefixTreeNode
+    public class InnerNode : TokensTreeNode
     {
-        internal Dictionary<char, PrefixTreeNode> children;
+        internal Dictionary<char, TokensTreeNode> children;
         internal bool accepting;
 
         public bool Accepting { get { return accepting; } }
@@ -50,12 +50,12 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         public InnerNode(bool accepting)
         {
             this.accepting = accepting;
-            children = new Dictionary<char, PrefixTreeNode>();
+            children = new Dictionary<char, TokensTreeNode>();
         }
         public InnerNode(InnerNode inn)
         {
             this.accepting = inn.Accepting;
-            children = new Dictionary<char, PrefixTreeNode>(inn.children);
+            children = new Dictionary<char, TokensTreeNode>(inn.children);
         }
 
         public override InnerNode ToInner(InnerNode root)
@@ -68,7 +68,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// Represents a repeat node in a prefix tree. Reaching this node measn returning to the root
     /// of the tree.
     /// </summary>
-    public class RepeatNode : PrefixTreeNode
+    public class RepeatNode : TokensTreeNode
     {
         public static RepeatNode Repeat = new RepeatNode();
 

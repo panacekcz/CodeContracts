@@ -20,13 +20,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
+namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
     /// Base class for visitors that perform an action for ndoes of a prefix tree.
     /// </summary>
     /// <typeparam name="Result">Type of result value from processing a node.</typeparam>
-    public abstract class PrefixTreeVisitor<Result>
+    public abstract class TokensTreeVisitor<Result>
     {
         /// <summary>
         /// Calls <see cref="VisitInnerNode(InnerNode)"/> of <see cref="VisitRepeatNode(RepeatNode)"/>
@@ -34,7 +34,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// </summary>
         /// <param name="node">The node to be processed.</param>
         /// <returns>Result returned by the selected method.</returns>
-        protected Result VisitNode(PrefixTreeNode node)
+        protected Result VisitNode(TokensTreeNode node)
         {
             if (node is InnerNode)
             {
@@ -66,9 +66,9 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// is stored an reused for all occurences of the same node within the tree.
     /// </summary>
     /// <typeparam name="Result">Type of result value from processing a node.</typeparam>
-    public abstract class CachedPrefixTreeVisitor<Result> : PrefixTreeVisitor<Result>
+    public abstract class CachedTokensTreeVisitor<Result> : TokensTreeVisitor<Result>
     {
-        private Dictionary<PrefixTreeNode, Result> cache = new Dictionary<PrefixTreeNode, Result>();
+        private Dictionary<TokensTreeNode, Result> cache = new Dictionary<TokensTreeNode, Result>();
 
         /// <summary>
         /// Calls <see cref="VisitInnerNode(InnerNode)"/> of <see cref="VisitRepeatNode(RepeatNode)"/>
@@ -77,7 +77,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
         /// </summary>
         /// <param name="node">The node to be processed.</param>
         /// <returns>Result returned by the selected method.</returns>
-        protected Result VisitNodeCached(PrefixTreeNode node)
+        protected Result VisitNodeCached(TokensTreeNode node)
         {
             Result result;
             if (!cache.TryGetValue(node, out result))
@@ -96,16 +96,16 @@ namespace Microsoft.Research.AbstractDomains.Strings.PrefixTree
     /// </summary>
     internal class NodeSharing
     {
-        private Dictionary<PrefixTreeNode, PrefixTreeNode> nodes = new Dictionary<PrefixTreeNode, PrefixTreeNode>(PrefixTreeNodeComparer.Comparer);
+        private Dictionary<TokensTreeNode, TokensTreeNode> nodes = new Dictionary<TokensTreeNode, TokensTreeNode>(NodeComparer.Comparer);
 
         /// <summary>
         /// Gets a shared instance for a node.
         /// </summary>
         /// <param name="node">The node to be shared.</param>
         /// <returns>A shared instance equivalent to <paramref name="node"/></returns>
-        public PrefixTreeNode Share(PrefixTreeNode node)
+        public TokensTreeNode Share(TokensTreeNode node)
         {
-            PrefixTreeNode sharedNode;
+            TokensTreeNode sharedNode;
             if (!nodes.TryGetValue(node, out sharedNode))
             {
                 nodes[node] = node;
