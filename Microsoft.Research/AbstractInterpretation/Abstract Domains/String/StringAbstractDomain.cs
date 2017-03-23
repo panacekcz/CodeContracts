@@ -245,10 +245,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     // Could be also done as Meet on FlatPredicate
                 }
                 //else remains
+
+
+                mutable.predicates[assumedVariable] = (IStringPredicate)predicate.Meet(new FlatPredicate(holds));
+            }
+            else
+            {
+                //Change the known information
+                mutable.predicates[assumedVariable] = new FlatPredicate(holds);
             }
 
-            //Change the known information
-            mutable.predicates[assumedVariable] = new FlatPredicate(holds);
 
             return mutable;
         }

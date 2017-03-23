@@ -31,7 +31,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
           where Variable : class, IEquatable<Variable>
           where Abstraction : IStringAbstraction<Abstraction>
         {
-            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, trueAbstraction.Top);
+            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, trueAbstraction.Top, new FlatPredicate(!trueAbstraction.IsBottom, true));
         }
 
         public static StringAbstractionPredicate<Abstraction, Variable>
@@ -39,7 +39,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
           where Variable : class, IEquatable<Variable>
           where Abstraction : IStringAbstraction<Abstraction>
         {
-            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction);
+            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, new FlatPredicate(!trueAbstraction.IsBottom, !falseAbstraction.IsBottom));
         }
     }
 
@@ -49,8 +49,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
     {
         private readonly Abstraction trueAbstraction, falseAbstraction;
         private readonly Variable variable;
+        private readonly FlatPredicate knownValue;
 
-        internal StringAbstractionPredicate(Variable variable, Abstraction trueAbstraction, Abstraction falseAbstraction)
+        internal StringAbstractionPredicate(Variable variable, Abstraction trueAbstraction, Abstraction falseAbstraction, FlatPredicate knownValue)
         {
             System.Diagnostics.Contracts.Contract.Requires(variable != null);
             System.Diagnostics.Contracts.Contract.Requires(trueAbstraction != null);
@@ -59,6 +60,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             this.variable = variable;
             this.trueAbstraction = trueAbstraction;
             this.falseAbstraction = falseAbstraction;
+            this.knownValue = knownValue;
         }
 
         public Abstraction AbstractionIf(bool holds)
@@ -68,7 +70,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public bool ContainsValue(bool value)
         {
-            return true; //overapproximation
+            return knownValue.ContainsValue(value); //overapproximation
         }
         public Variable DependentVariable
         {
@@ -80,12 +82,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public bool IsBottom
         {
-            get { return false; }//overapproximation
+            get { return knownValue.IsBottom; }//overapproximation
         }
 
         public bool IsTop
         {
-            get { return trueAbstraction.IsTop && falseAbstraction.IsTop; }
+            get { return trueAbstraction.IsTop && falseAbstraction.IsTop && knownValue.IsTop; }
         }
 
         public bool LessEqual(IAbstractDomain a)
@@ -119,16 +121,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             if (a is FlatPredicate)
             {
-                return a.Join(this);
+                // Ignoring the string abstraction
+                return knownValue.Join(a);
             }
             else if (a is StringAbstractionPredicate<Abstraction, Variable>)
             {
                 var ap = (StringAbstractionPredicate<Abstraction, Variable>)a;
                 if (!ap.variable.Equals(this.variable))
                 {
-                    return FlatPredicate.Top;
+                    // Ignoring the string abstraction
+                    return knownValue.Join(ap.knownValue);
                 }
-                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction.Join(ap.trueAbstraction), falseAbstraction.Join(ap.falseAbstraction));
+                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction.Join(ap.trueAbstraction), falseAbstraction.Join(ap.falseAbstraction), (FlatPredicate)knownValue.Join(ap.knownValue));
             }
             else
             {
@@ -140,20 +144,20 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             if (a is FlatPredicate)
             {
-                return a.Meet(this);
+                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, (FlatPredicate)knownValue.Meet(a));
             }
             else if (a is StringAbstractionPredicate<Abstraction, Variable>)
             {
                 var ap = (StringAbstractionPredicate<Abstraction, Variable>)a;
                 if (!ap.variable.Equals(this.variable))
                 {
-                    return FlatPredicate.Top;
+                    return this;
                 }
-                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction.Meet(ap.trueAbstraction), falseAbstraction.Meet(ap.falseAbstraction));
+                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction.Meet(ap.trueAbstraction), falseAbstraction.Meet(ap.falseAbstraction), (FlatPredicate)knownValue.Meet(ap.knownValue));
             }
             else
             {
-                return FlatPredicate.Top;
+                return this;
             }
         }
 
@@ -161,7 +165,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             if (prev is FlatPredicate)
             {
-                return prev.Join(this);
+                return knownValue.Join(prev);
             }
             else if (prev is StringAbstractionPredicate<Abstraction, Variable>)
             {
@@ -173,7 +177,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 Abstraction trueWide = (Abstraction)trueAbstraction.Widening(ap.trueAbstraction);
                 Abstraction falseWide = (Abstraction)falseAbstraction.Widening(ap.falseAbstraction);
 
-                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueWide, falseWide);
+                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueWide, falseWide, (FlatPredicate)knownValue.Join(ap.knownValue));
             }
             else
             {
@@ -188,7 +192,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public object Clone()
         {
-            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction);
+            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, knownValue);
         }
 
         public override string ToString()
@@ -201,7 +205,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             FList<Variable1> list;
             if (sourcesToTargets.TryGetValue((Variable1)(object)variable, out list) && !list.IsEmpty())
             {
-                return new StringAbstractionPredicate<Abstraction, Variable>((Variable)(object)list.Head, trueAbstraction, falseAbstraction);
+                return new StringAbstractionPredicate<Abstraction, Variable>((Variable)(object)list.Head, trueAbstraction, falseAbstraction, knownValue);
             }
             else
             {
@@ -211,7 +215,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public CodeAnalysis.ProofOutcome ProofOutcome
         {
-            get { return CodeAnalysis.ProofOutcome.Top; }//Overapproximation
+            get { return knownValue.ProofOutcome; }//Overapproximation
         }
     }
 }
