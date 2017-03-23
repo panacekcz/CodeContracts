@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
-    /// Base class for visitors that perform an action for ndoes of a prefix tree.
+    /// Base class for visitors that perform an action for ndoes of a tokens tree.
     /// </summary>
     /// <typeparam name="Result">Type of result value from processing a node.</typeparam>
     public abstract class TokensTreeVisitor<Result>

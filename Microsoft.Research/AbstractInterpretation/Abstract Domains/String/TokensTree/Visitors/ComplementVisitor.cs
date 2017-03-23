@@ -33,6 +33,8 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             this.root = root;
         }
 
+
+        #region TokensTreeVisitor<InnerNode> implementation
         protected override InnerNode VisitInnerNode(InnerNode innerNode)
         {
             InnerNode complementNode = new InnerNode(innerNode == root);
@@ -60,5 +62,6 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             // No repeat nodes are allowed
             throw new InvalidOperationException();
         }
+        #endregion
     }
 }

@@ -23,14 +23,14 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
-    /// Represents a node of a prefix tree.
+    /// Represents a node of a tokens tree.
     /// </summary>
     public abstract class TokensTreeNode
     {
         /// <summary>
-        /// Gets the corresponding inner node in a prefix tree.
+        /// Gets the corresponding inner node in a tokens tree.
         /// </summary>
-        /// <param name="root">Root of the prefix tree.</param>
+        /// <param name="root">Root of the tokens tree.</param>
         /// <returns>The inner node corresponding to this in a tree rooted in <paramref name="root"/>.</returns>
         public abstract InnerNode ToInner(InnerNode root);
 
@@ -40,6 +40,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             return visitor.ToString(this);
         }
     }
+
+    /// <summary>
+    /// Represents a non-repeat node of a tokens tree. The node can be accepting and have children labeled by characters.
+    /// </summary>
     public class InnerNode : TokensTreeNode
     {
         internal Dictionary<char, TokensTreeNode> children;
@@ -63,9 +67,9 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             return this;
         }
     }
-    
+
     /// <summary>
-    /// Represents a repeat node in a prefix tree. Reaching this node measn returning to the root
+    /// Represents a repeat node in a tokens tree. Reaching this node means returning to the root
     /// of the tree.
     /// </summary>
     public class RepeatNode : TokensTreeNode

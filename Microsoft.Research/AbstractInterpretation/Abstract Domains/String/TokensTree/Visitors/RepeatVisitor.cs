@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
+    /// <summary>
+    /// Changes accepting nodes to repeat nodes in a tokens tree.
+    /// </summary>
     internal class RepeatVisitor : TokensTreeTransformer
     {
         private InnerNode root;
@@ -15,13 +18,17 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
         {
         }
 
+        /// <summary>
+        /// Repeats the specified tree.
+        /// </summary>
+        /// <param name="root">Root node of the tree.</param>
         public void Repeat(InnerNode root)
         {
             this.root = root;
             Transform(root);
         }
 
-
+        #region TokensTreeVisitor<InnerNode> overrides
         protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
         {
             InnerNode newNode = (InnerNode)base.VisitInnerNode(innerNode);
@@ -46,6 +53,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
         {
             return repeatNode;
         }
+        #endregion
     }
 } 
     

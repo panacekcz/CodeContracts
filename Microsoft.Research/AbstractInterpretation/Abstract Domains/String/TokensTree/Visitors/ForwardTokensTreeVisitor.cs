@@ -10,11 +10,11 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
     /// Visits a prefix tree from the root so that all
     /// predecessors are visited before a node is visited.
     /// </summary>
-    /// <typeparam name="T">A value that will be associated with each node.</typeparam>
-    abstract class ForwardTokensTreeVisitor<T>
+    /// <typeparam name="TData">A value that will be associated with each node.</typeparam>
+    abstract class ForwardTokensTreeVisitor<TData>
     {
         private readonly Dictionary<InnerNode, int> inputDegree = new Dictionary<InnerNode, int>();
-        private readonly Dictionary<InnerNode, T> data = new Dictionary<InnerNode, T>();
+        private readonly Dictionary<InnerNode, TData> data = new Dictionary<InnerNode, TData>();
         private readonly List<InnerNode> ready = new List<InnerNode>();
 
         private void ComputeInputDegrees(InnerNode node)
@@ -63,21 +63,21 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
         /// <param name="oldData">Old data associated with a node.</param>
         /// <param name="newData">New data added to the value.</param>
         /// <returns>The result of combining <paramref name="oldData"/> with <paramref name="newData"/>.</returns>
-        protected abstract T Merge(T oldData, T newData);
+        protected abstract TData Merge(TData oldData, TData newData);
         /// <summary>
         /// Gets the default value for nodes not accessed.
         /// </summary>
         /// <returns>A result value for not accessed nodes.</returns>
-        protected abstract T Default();
+        protected abstract TData Default();
 
         /// <summary>
         /// Gets the value associated with a node.
         /// </summary>
         /// <param name="node">A node of the tree.</param>
         /// <returns>The value associated with <paramref name="node"/>.</returns>
-        protected T Get(InnerNode node)
+        protected TData Get(InnerNode node)
         {
-            T value;
+            TData value;
             if (!data.TryGetValue(node, out value))
                 value = Default();
             return value;
@@ -88,7 +88,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
         /// </summary>
         /// <param name="node">Node of the tree.</param>
         /// <param name="nextData">Value added to the node data.</param>
-        protected void Push(TokensTreeNode node, T nextData)
+        protected void Push(TokensTreeNode node, TData nextData)
         {
             // Repeat nodes not considered
             if (!(node is InnerNode))
@@ -96,7 +96,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 
             InnerNode innerNode = (InnerNode)node;
 
-            T oldData;
+            TData oldData;
             if(data.TryGetValue(innerNode, out oldData))
             {
                 data[innerNode] = Merge(oldData, nextData);

@@ -11,6 +11,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
     /// </summary>
     internal class IsBoundedVisitor : CachedTokensTreeVisitor<bool>
     {
+        /// <summary>
+        /// Determines whether a tokens tree is bounded (contains no repeat nodes).
+        /// </summary>
+        /// <param name="node">Root node of the tree.</param>
         public bool IsBounded(TokensTreeNode node)
         {
             return VisitNode(node);

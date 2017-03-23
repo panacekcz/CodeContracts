@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
+    /// <summary>
+    /// Base class for visitors that take a tokens tree and transforms it into another tokens tree.
+    /// </summary>
     public abstract class TokensTreeTransformer : CachedTokensTreeVisitor<TokensTreeNode>
     {
         private readonly NodeSharing sharing = new NodeSharing();

@@ -22,44 +22,18 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
-
-    struct InnerNodeBuilder
-    {
-        private InnerNode newNode;
-        private InnerNode oldNode;
-
-        public InnerNodeBuilder(InnerNode oldNode)
-        {
-            this.newNode = null;
-            this.oldNode = oldNode;
-        }
-
-        public void SetChild(char c, TokensTreeNode next)
-        {
-
-
-            if(newNode == null)
-            {
-                newNode = new InnerNode(oldNode);
-            }
-        }
-
-        public InnerNode Build()
-        {
-            return newNode ?? oldNode;
-        }
-    }
-
+    /// <summary>
+    /// Replaces char from an interval with another char from another interval.
+    /// </summary>
+    /// <remarks>
+    /// For each node, looks at edges that can be replaced, and constructs a merged node of the children.
+    /// Also merges in the children of nodes that can be the replacement character, so that 
+    /// it does not construct too many merged nodes.
+    /// If the replaced char is known, removes the edge.
+    /// For each replacement edge, if it was there before or not, adds the merged ndoe.
+    /// </remarks>
     class ReplaceCharVisitor : TokensTreeTransformer
     {
-        //Replace char from an interval with another char from another interval
-        //For each node, we look at edges that can be replaced, and construct a merged node of the childer.
-        //We also merge in the children of nodes that can be the replacement character, so that 
-        //we do not construct too many merged nodes.
-        //If the replaced char is known, we remove the edge.
-        //For each replacement edge, if it was there before or not, we add the merged ndoe.
-
-
         private CharInterval from, to;
 
         public ReplaceCharVisitor(TokensTreeMerger merger, CharInterval from, CharInterval to)
@@ -69,12 +43,16 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             this.to = to;
         }
 
+        /// <summary>
+        /// Replaces the characters in a specified tree.
+        /// </summary>
+        /// <param name="root">Root node of the tree.</param>
         public void ReplaceChar(InnerNode root)
         {
             Transform(root);
         }
 
-
+        #region TokensTreeVisitor<InnerNode> overrides
         protected override TokensTreeNode VisitRepeatNode(RepeatNode repeatNode)
         {
             return repeatNode;
@@ -128,6 +106,6 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             return newInnerNode ?? innerNode;
 
         }
+        #endregion
     }
-
 }

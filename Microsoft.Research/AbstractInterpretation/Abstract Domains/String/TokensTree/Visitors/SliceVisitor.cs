@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
+    /// <summary>
+    /// Splits a tokens tree at specified nodes.
+    /// </summary>
     internal class SplitVisitor : TokensTreeTransformer
     {
         private readonly HashSet<InnerNode> splitStates;
@@ -33,7 +36,9 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
         }
     }
 
-
+    /// <summary>
+    /// Gets a slice of a tokens tree before specified nodes.
+    /// </summary>
     internal class SliceBeforeVisitor : TokensTreeTransformer
     {
         
@@ -77,10 +82,8 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
         }
     }
 
-
-
     /// <summary>
-    /// 
+    /// Gets a slice of a tokens tree after specified nodes.
     /// </summary>
     internal class SliceAfterVisitor : TokensTreeTransformer
     {

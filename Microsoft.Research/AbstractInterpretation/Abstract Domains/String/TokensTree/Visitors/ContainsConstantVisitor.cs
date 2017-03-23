@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
     /// <summary>
-    /// 
+    /// Determines whether the strings represented by a tokens tree must contain
+    /// a specified constant.
     /// </summary>
     class MustContainVisitor : ForwardTokensTreeVisitor<IndexInt>
     {
@@ -21,16 +22,6 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             this.fixedEnd = fixedEnd;
         }
 
-
-        protected override IndexInt Default()
-        {
-            return IndexInt.Negative;
-        }
-
-        protected override IndexInt Merge(IndexInt oldData, IndexInt newData)
-        {
-            return IndexUtils.JoinIndices(oldData, newData);
-        }
 
         private bool IsAcceptingState(IndexInt index)
         {
@@ -56,6 +47,18 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 
         }
 
+        #region ForwardTokensTreeVisitor<IndexInt> overrides
+        protected override IndexInt Default()
+        {
+            return IndexInt.Negative;
+        }
+
+        protected override IndexInt Merge(IndexInt oldData, IndexInt newData)
+        {
+            return IndexUtils.JoinIndices(oldData, newData);
+        }
+
+
         protected override void VisitInnerNode(InnerNode node)
         {
             if (fail)
@@ -75,6 +78,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
                 }
             }
         }
+        #endregion
 
         public bool MustContain(InnerNode root)
         {

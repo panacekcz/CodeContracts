@@ -23,9 +23,16 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
-
+    /// <summary>
+    /// Computes congruence of possible lengths of strings represented by a token tree.
+    /// </summary>
     internal class LengthCongruenceVisitor : CachedTokensTreeVisitor<CongruencePair>
     {
+        /// <summary>
+        /// Get common divisor of lengths of the repeated part.
+        /// </summary>
+        /// <param name="tree">Root of the tokens tree.</param>
+        /// <returns>Common divisor of lengths from <paramref name="tree"/> to all repeat nodes.</returns>
         public int GetRepeatCommonDivisor(InnerNode tree)
         {
             CongruencePair cp = VisitNodeCached(tree);
@@ -33,12 +40,19 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
                 return 0;
             return cp.Repeat.CommonDivisor;
         }
+        /// <summary>
+        /// Get common divisor of lengths of the strings.
+        /// </summary>
+        /// <param name="tree">Root of the tokens tree.</param>
+        /// <returns>Common divisor of lengths of strings represented by <paramref name="tree"/>.</returns>
         public int GetLengthCommonDivisor(InnerNode tree)
         {
             CongruencePair cp = VisitNodeCached(tree);
             Congruence total = cp.Total;
             return total.CommonDivisor;
         }
+
+        #region TokensTreeVisitor<CongruencePair>
         protected override CongruencePair VisitInnerNode(InnerNode innerNode)
         {
             CongruencePair cp = new CongruencePair(Congruence.Unreached, innerNode.Accepting ? Congruence.For(0) : Congruence.Unreached);
@@ -55,11 +69,12 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
         {
             return new CongruencePair(Congruence.For(0), Congruence.Unreached);
         }
+        #endregion
     }
 
 
     /// <summary>
-    /// Computes possible lengths of strings represented by a token tree.
+    /// Computes interval of possible lengths of strings represented by a token tree.
     /// </summary>
     internal class LengthIntervalVisitor : CachedTokensTreeVisitor<IndexInterval>
     {
@@ -73,6 +88,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             return VisitNodeCached(tree);
         }
 
+        #region TokensTreeVisitor<IndexInterval>
         protected override IndexInterval VisitInnerNode(InnerNode innerNode)
         {
             IndexInterval interval = innerNode.Accepting ? IndexInterval.For(0) : IndexInterval.Unreached;
@@ -94,6 +110,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             // accepting inner nodes.
             return IndexInterval.Infinity;
         }
+        #endregion
     }
 
 }

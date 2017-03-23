@@ -44,7 +44,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
                 return null;
         }
 
-        #region PrefixTreeVisitor<bool> overrides
+        #region TokensTreeVisitor<bool> overrides
         protected override bool VisitRepeatNode(RepeatNode repeatNode)
         {
             return false;
