@@ -135,7 +135,7 @@ namespace Microsoft.Research.CodeAnalysis
           AnalysisDependencies[typeof(RuntimeTypesPlugIn)] = new System.Type[] { };
           AnalysisDependencies[typeof(ArrayExpressionRefinementPlugIn)] = new System.Type[] { };
           AnalysisDependencies[typeof(ArrayPurityAnalysisPlugIn)] = new System.Type[] { };
-          AnalysisDependencies[typeof(StringWrapperPlugIn)] = new System.Type[] { };//TODO: VD: is this now OK?
+          AnalysisDependencies[typeof(StringWrapperPlugIn)] = new System.Type[] { };
           AnalysisDependencies[typeof(ExistentialAnalysisPlugIn)] = new System.Type[] { typeof(ArrayPurityAnalysisPlugIn) };
           AnalysisDependencies[typeof(ArrayElementsCheckedAnalysisPlugin)] = new System.Type[] { typeof(ArrayPurityAnalysisPlugIn), typeof(ArrayExpressionRefinementPlugIn) };
         }
