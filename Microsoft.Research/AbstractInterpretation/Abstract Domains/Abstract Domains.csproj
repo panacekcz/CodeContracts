@@ -283,6 +283,7 @@
     <Compile Include="String\OrderPredicate.cs" />
     <Compile Include="String\PrefixInterval.cs" />
     <Compile Include="String\TokensTree\Relations\ForwardSearch.cs" />
+    <Compile Include="String\TokensTree\Relations\Meet.cs" />
     <Compile Include="String\TokensTree\Relations\TokensTreeRelation.cs" />
     <Compile Include="String\TokensTree\Relations\PreorderRelation.cs" />
     <Compile Include="String\TokensTree\TokensTreeParser.cs" />

@@ -710,7 +710,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public Tokens Meet(Tokens other)
         {
-            return new Tokens(PrefixTreeMeet.Meet(root, other.root));
+            return new Tokens(MeetRelation.Meet(root, other.root));
         }
 
         public Tokens Constant(string cst)

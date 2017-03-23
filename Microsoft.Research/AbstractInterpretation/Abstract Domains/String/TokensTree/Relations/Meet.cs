@@ -6,79 +6,29 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
-
-    //TODO: VD: cleanup code!
-    internal class MeetVisitor : TokensTreeTransformer
+    /// <summary>
+    /// Relates nodes of two trees to meet two trees.
+    /// </summary>
+    internal class MeetRelation : TokensTreeRelation
     {
-
-        HashSet<InnerNode> acc;
-        Dictionary<InnerNode, HashSet<char>> used;
-
-        public MeetVisitor(TokensTreeMerger merger, HashSet<InnerNode> acc,
-        Dictionary<InnerNode, HashSet<char>> used) : base(merger)
-        {
-            this.acc = acc;
-            this.used = used;
-        }
-
-        private bool IsBottom(TokensTreeNode tn)
-        {
-            if (tn is InnerNode)
-            {
-                InnerNode inn = (InnerNode)tn;
-                return !inn.accepting && inn.children.Count == 0;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
-        {
-            InnerNode newNode = new InnerNode(innerNode.Accepting && acc.Contains(innerNode));
-
-            foreach (var kv in innerNode.children)
-            {
-                if (used[innerNode].Contains(kv.Key))
-                {
-
-                    TokensTreeNode tn = VisitNodeCached(kv.Value);
-                    if (!IsBottom(tn))
-                        newNode.children[kv.Key] = tn;
-                }
-
-            }
-
-            return Share(newNode);
-        }
-
-        public void Mee(InnerNode root)
-        {
-            Transform(root);
-        }
-    }
-
-    internal class PrefixTreeMeet : TokensTreeRelation
-    {
-        public PrefixTreeMeet(InnerNode leftRoot, InnerNode rightRoot) :
+        public MeetRelation(InnerNode leftRoot, InnerNode rightRoot) :
             base(leftRoot, rightRoot)
         { }
 
-        HashSet<InnerNode> acc = new HashSet<InnerNode>();
-        Dictionary<InnerNode, HashSet<char>> used = new Dictionary<InnerNode, HashSet<char>>();
+        HashSet<InnerNode> alignedAcceptingNodes = new HashSet<InnerNode>();
+        Dictionary<InnerNode, HashSet<char>> usedEdges = new Dictionary<InnerNode, HashSet<char>>();
 
-        public static InnerNode Meet(InnerNode le, InnerNode ge)
+        public static InnerNode Meet(InnerNode self, InnerNode other)
         {
-            if (le == ge)
-                return le;
+            if (self == other)
+                return self;
 
-            PrefixTreeMeet preorder = new PrefixTreeMeet(le, ge);
-            preorder.Solve();
-            TokensTreeMerger ptm = new TokensTreeMerger();
-            MeetVisitor mv = new MeetVisitor(ptm, preorder.acc, preorder.used);
-            mv.Mee(le);
-            return ptm.Build();
+            MeetRelation meetRelation = new MeetRelation(self, other);
+            meetRelation.Solve();
+            TokensTreeMerger merger = new TokensTreeMerger();
+            MeetPruneVisitor pruneVisitor = new MeetPruneVisitor(merger, meetRelation);
+            pruneVisitor.Prune(self);
+            return merger.Build();
 
         }
         public override void Init()
@@ -90,12 +40,12 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 
             if (right.Accepting)
             {
-                acc.Add(left);
+                alignedAcceptingNodes.Add(left);
             }
 
-            if (!used.ContainsKey(left))
+            if (!usedEdges.ContainsKey(left))
             {
-                used[left] = new HashSet<char>();
+                usedEdges[left] = new HashSet<char>();
             }
 
             foreach (var child in left.children)
@@ -103,7 +53,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
                 TokensTreeNode rightChild;
                 if (right.children.TryGetValue(child.Key, out rightChild))
                 {
-                    used[left].Add(child.Key);
+                    usedEdges[left].Add(child.Key);
 
                     Request(child.Value, rightChild);
                 }
@@ -112,5 +62,59 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             return true;
 
         }
+
+        /// <summary>
+        /// Prunes the tree according to a meet relation.
+        /// </summary>
+        internal class MeetPruneVisitor : TokensTreeTransformer
+        {
+            private MeetRelation meetRelation;
+
+            public MeetPruneVisitor(
+                TokensTreeMerger merger,
+                MeetRelation meetRelation
+                ) : base(merger)
+            {
+                this.meetRelation = meetRelation;
+            }
+
+            private bool IsBottom(TokensTreeNode tn)
+            {
+                if (tn is InnerNode)
+                {
+                    InnerNode inn = (InnerNode)tn;
+                    return !inn.accepting && inn.children.Count == 0;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            protected override TokensTreeNode VisitInnerNode(InnerNode innerNode)
+            {
+                InnerNode newNode = new InnerNode(innerNode.Accepting && meetRelation.alignedAcceptingNodes.Contains(innerNode));
+
+                foreach (var kv in innerNode.children)
+                {
+                    if (meetRelation.usedEdges[innerNode].Contains(kv.Key))
+                    {
+
+                        TokensTreeNode tn = VisitNodeCached(kv.Value);
+                        if (!IsBottom(tn))
+                            newNode.children[kv.Key] = tn;
+                    }
+
+                }
+
+                return Share(newNode);
+            }
+
+            public void Prune(InnerNode root)
+            {
+                Transform(root);
+            }
+        }
+
     }
 }
