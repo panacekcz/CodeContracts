@@ -32,6 +32,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// </summary>
     internal static class IndexUtils
     {
+        /// <summary>
+        /// Joins two indices, where Negative is treated as bottom, Infinite as top.
+        /// </summary>
         public static IndexInt JoinIndices(IndexInt a, IndexInt b)
         {
             if (a.IsNegative || b.IsInfinite)
@@ -44,6 +47,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
             else
                 return IndexInt.Infinity;
         }
+        /// <summary>
+        /// Meets two indices, where Negative is treated as bottom, Infinite as top.
+        /// </summary>
         public static IndexInt MeetIndices(IndexInt a, IndexInt b)
         {
             if (a.IsNegative || b.IsInfinite)

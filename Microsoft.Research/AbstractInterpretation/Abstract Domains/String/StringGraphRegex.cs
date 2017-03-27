@@ -29,9 +29,9 @@ using Microsoft.Research.AbstractDomains.Strings.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
-
-    using SGGeneratingState = Node;
-
+    /// <summary>
+    /// Provides regex-related functionality to <see cref="StringGraph"/>.
+    /// </summary>
     public class StringGraphRegex
     {
         private StringGraph element;
@@ -41,16 +41,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             this.element = element;
         }
 
-        /*private struct SGGeneratingState
-        {
-            public Node sgNode;
-            public SGGeneratingState(Node nd)
-            {
-                sgNode = nd;
-            }
-        }*/
-
-        private class StringGraphGeneratingOperations : IGeneratingOperationsForRegex<SGGeneratingState>
+        private class StringGraphGeneratingOperations : IGeneratingOperationsForRegex<Node>
         {
             private bool underapproximate;
 
@@ -79,7 +70,23 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
 
-            public SGGeneratingState Join(SGGeneratingState prev, SGGeneratingState next, bool widen)
+            private void AddNodeToConcatChildren(List<Node> concatChildren, Node node)
+            {
+                if (node is ConcatNode)
+                    concatChildren.AddRange(((ConcatNode)node).children);
+                else
+                    concatChildren.Add(node);
+            }
+
+            private void AddNodeToOrChildren(List<Node> orChildren, Node node)
+            {
+                if (node is OrNode)
+                    orChildren.AddRange(((OrNode)node).children);
+                else
+                    orChildren.Add(node);
+            }
+
+            public Node Join(Node prev, Node next, bool widen)
             {
                 // The join does not by itself introduce approximation
                 if (prev is BottomNode)
@@ -87,60 +94,43 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 if (next is BottomNode)
                     return prev;
 
-                List<Node> nxDif = new List<SGGeneratingState>(), prDif = new List<SGGeneratingState>();
-                if (prev is ConcatNode)
-                    prDif.AddRange(((ConcatNode)prev).children);
-                else
-                    prDif.Add(prev);
+                List<Node> nextParts = new List<Node>(), prevParts = new List<Node>();
+                AddNodeToConcatChildren(prevParts, prev);
+                AddNodeToConcatChildren(nextParts, next);
 
-                if (next is ConcatNode)
-                    nxDif.AddRange(((ConcatNode)next).children);
-                else
-                    nxDif.Add(next);
+                int commonPartCount = 0;
+                while (commonPartCount < nextParts.Count && commonPartCount < prevParts.Count && nextParts[commonPartCount] == prevParts[commonPartCount])
+                    ++commonPartCount;
 
-                int common = 0;
-                while (common < nxDif.Count && common < prDif.Count && nxDif[common] == prDif[common])
-                    ++common;
-
-                ConcatNode cn = new ConcatNode();
-
-                cn.children.AddRange(nxDif.Take(common));
-
-                ConcatNode c1 = new ConcatNode();
-                c1.children.AddRange(prDif.Skip(common));
-                ConcatNode c2 = new ConcatNode();
-                c2.children.AddRange(nxDif.Skip(common));
+                ConcatNode topConcat = new ConcatNode(nextParts.Take(commonPartCount));
+                ConcatNode prevConcat = new ConcatNode(prevParts.Skip(commonPartCount));
+                ConcatNode nextConcat = new ConcatNode(nextParts.Skip(commonPartCount));
 
                 OrNode orNode = new OrNode();
-                Node n1 =  c1.Compact();
-                if (n1 is OrNode)
-                    orNode.children.AddRange(((OrNode)n1).children);
-                else orNode.children.Add(n1);
-                Node n2 = c2.Compact();
-                if (n2 is OrNode)
-                    orNode.children.AddRange(((OrNode)n2).children);
-                else orNode.children.Add(n2);
-                cn.children.Add(orNode);
 
-                return cn.Compact();
+                Node prevPartsNode = prevConcat.Compact();
+                AddNodeToOrChildren(orNode.children, prevPartsNode);
+                Node nextPartsNode = nextConcat.Compact();
+                AddNodeToOrChildren(orNode.children, nextPartsNode);
+
+                topConcat.children.Add(orNode);
+
+                return topConcat.Compact();
             }
 
-            public SGGeneratingState AddChar(SGGeneratingState prev, CharRanges ranges, bool closed)
+            public Node AddChar(Node prev, CharRanges ranges, bool closed)
             {
                 var charIntervals = ranges.ToIntervals();
                 Node closedNode = NodeBuilder.CreateNodeForIntervals(charIntervals);
 
                 ConcatNode concatNode = new ConcatNode();
-                if (prev is ConcatNode)
-                    concatNode.children.AddRange(((ConcatNode)prev).children);
-                else
-                    concatNode.children.Add(prev);
+                AddNodeToConcatChildren(concatNode.children, prev);
                 concatNode.children.Add(closedNode);
 
                 return Wrap(concatNode.Compact(), closed);
             }
 
-            public SGGeneratingState Loop(SGGeneratingState prev, SGGeneratingState loop, SGGeneratingState last, IndexInt min, IndexInt max)
+            public Node Loop(Node prev, Node loop, Node last, IndexInt min, IndexInt max)
             {
                 if (max == 1)
                 {
@@ -184,6 +174,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public bool CanBeEmpty(Node node)
             {
+                //TODO: VD: underap?
                 LengthVisitor lengths = new LengthVisitor();
                 lengths.ComputeLengthsFor(node);
                 IndexInterval length = lengths.GetLengthFor(node);
@@ -217,11 +208,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public StringGraph StringGraphForRegex(Element regex)
         {
             StringGraphGeneratingOperations operations = new StringGraphGeneratingOperations(false);
-            GeneratingInterpretation<SGGeneratingState> interpretation = new GeneratingInterpretation<SGGeneratingState>(operations);
-            ForwardRegexInterpreter<GeneratingState<SGGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<SGGeneratingState>>(interpretation);
-
+            GeneratingInterpretation<Node> interpretation = new GeneratingInterpretation<Node>(operations);
+            ForwardRegexInterpreter<GeneratingState<Node>> interpreter = new ForwardRegexInterpreter<GeneratingState<Node>>(interpretation);
 
             Node node = interpreter.Interpret(regex).Open;
+
             CompactVisitor compacter = new CompactVisitor();
             return new StringGraph(compacter.Compact(node));
         }
@@ -237,13 +228,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
             StringGraph canMatchGraph = element.Meet(overapproximation);
 
             StringGraphGeneratingOperations operations = new StringGraphGeneratingOperations(true);
-            GeneratingInterpretation<SGGeneratingState> interpretation = new GeneratingInterpretation<SGGeneratingState>(operations);
-            ForwardRegexInterpreter<GeneratingState<SGGeneratingState>> interpreter = new ForwardRegexInterpreter<GeneratingState<SGGeneratingState>>(interpretation);
+            GeneratingInterpretation<Node> interpretation = new GeneratingInterpretation<Node>(operations);
+            ForwardRegexInterpreter<GeneratingState<Node>> interpreter = new ForwardRegexInterpreter<GeneratingState<Node>>(interpretation);
 
-            var r = interpreter.Interpret(regex);
+            var result = interpreter.Interpret(regex);
 
-
-            StringGraph underapproximation = new StringGraph(r.Open);
+            StringGraph underapproximation = new StringGraph(result.Open);
 
             bool mustMatch = element.LessThanEqual(underapproximation);
 
