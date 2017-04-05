@@ -26,12 +26,131 @@ using Microsoft.Research.DataStructures;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
+    public abstract class PredicateBase : IStringPredicate
+    {
+        protected readonly bool canBeTrue, canBeFalse;
+
+        protected PredicateBase(bool canBeTrue, bool canBeFalse)
+        {
+            this.canBeTrue = canBeTrue;
+            this.canBeFalse = canBeFalse;
+        }
+
+        public virtual bool IsBottom
+        {
+            get { return !canBeTrue && !canBeFalse; }
+        }
+
+        public virtual bool IsTop
+        {
+            get { return canBeTrue && canBeFalse; }
+        }
+
+
+        IAbstractDomain IAbstractDomain.Bottom
+        {
+            get { return FlatPredicate.Bottom; }
+        }
+
+        IAbstractDomain IAbstractDomain.Top
+        {
+            get { return FlatPredicate.Top; }
+        }
+
+        /// <summary>
+        /// Converts the predicate to <see cref="ProofOutcome"/> enumeration.
+        /// </summary>
+        public ProofOutcome ProofOutcome
+        {
+            get
+            {
+                return ProofOutcomeUtils.Build(canBeTrue, canBeFalse);
+            }
+        }
+
+        public T To<T>(IFactory<T> factory)
+        {
+            if (IsBottom)
+            {
+                return factory.IdentityForOr;
+            }
+            else
+            {
+                return factory.IdentityForAnd;
+            }
+        }
+
+        public virtual bool ContainsValue(bool value)
+        {
+            return value ? canBeTrue : canBeFalse;
+        }
+
+
+        public virtual IStringPredicate AssignInParallel<Variable>(Dictionary<Variable, FList<Variable>> sourcesToTargets)
+        {
+            return this;
+        }
+
+        public virtual IAbstractDomain Join(IAbstractDomain a)
+        {
+            // Join the two predicates as flat predicates (possible overapproximation).
+            // Subclasses may give more precise results
+            PredicateBase c = a as PredicateBase;
+            if (c != null)
+            {
+                return new FlatPredicate(canBeTrue | c.canBeTrue, canBeFalse | c.canBeFalse);
+            }
+            else
+            {
+                if (IsBottom)
+                {
+                    return a;
+                }
+                else if (a.IsBottom)
+                {
+                    return this;
+                }
+                else
+                {
+                    return FlatPredicate.Top;//Overapproximate
+                }
+            }
+        }
+
+        public virtual IAbstractDomain Widening(IAbstractDomain prev)
+        {
+            // Join guarantees termination
+            return Join(prev);
+        }
+
+        public virtual bool LessEqual(IAbstractDomain a)
+        {
+            FlatPredicate c = a as FlatPredicate;
+            if (c != null)
+            {
+                return (!canBeTrue | c.canBeTrue) & (!canBeFalse | c.canBeFalse);
+            }
+            else
+            {
+                return !canBeTrue && !canBeFalse;
+            }                
+        }
+
+
+        public abstract IAbstractDomain Meet(IAbstractDomain a);
+        public abstract object Clone();
+    }
+
+
     /// <summary>
     /// Represents top, bottom, or a constant predicate.
     /// </summary>
-    public class FlatPredicate : IStringPredicate
+    public class FlatPredicate : PredicateBase
     {
-        private readonly bool canBeTrue, canBeFalse;
+        private static readonly FlatPredicate bottom = new FlatPredicate(false, false);
+        private static readonly FlatPredicate top = new FlatPredicate();
+        private static readonly FlatPredicate @true = new FlatPredicate(true);
+        private static readonly FlatPredicate @false = new FlatPredicate(false);
 
         /// <summary>
         /// Gets the bottom (unreached) value.
@@ -40,7 +159,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new FlatPredicate(false, false);
+                return Bottom;
             }
         }
         /// <summary>
@@ -50,7 +169,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new FlatPredicate();
+                return top;
             }
         }
 
@@ -61,7 +180,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new FlatPredicate(true);
+                return @true;
             }
         }
         /// <summary>
@@ -71,7 +190,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             get
             {
-                return new FlatPredicate(false);
+                return @false;
             }
         }
         /// <summary>
@@ -92,15 +211,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="canBeTrue">Whether the predicate can be true.</param>
         /// <param name="canBeFalse">Whether the predicate can be false.</param>
         public FlatPredicate(bool canBeTrue, bool canBeFalse)
+            : base(canBeTrue, canBeFalse)
         {
-            this.canBeTrue = canBeTrue;
-            this.canBeFalse = canBeFalse;
+            
         }
         /// <summary>
         /// Creates a top predicate.
         /// </summary>
         public FlatPredicate()
-          : this(true, true)
+          : base(true, true)
         {
         }
 
@@ -109,117 +228,39 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="boolConstant">The constant boolean value.</param>
         public FlatPredicate(bool boolConstant)
-          : this(boolConstant, !boolConstant)
+          : base(boolConstant, !boolConstant)
         {
 
         }
 
-
-        public bool IsBottom
-        {
-            get { return !canBeTrue && !canBeFalse; }
-        }
-
-        public bool IsTop
-        {
-            get { return canBeTrue && canBeFalse; }
-        }
-
-
-        IAbstractDomain IAbstractDomain.Bottom
-        {
-            get { return new FlatPredicate(false, false); }
-        }
-
-        IAbstractDomain IAbstractDomain.Top
-        {
-            get { return new FlatPredicate(); }
-        }
-
-        public bool LessEqual(IAbstractDomain a)
-        {
-            FlatPredicate c = a as FlatPredicate;
-            if (c != null)
-            {
-                return (!canBeTrue | c.canBeTrue) & (!canBeFalse | c.canBeFalse);
-            }
-            else throw new NotImplementedException();
-        }
-
-        public IAbstractDomain Join(IAbstractDomain a)
-        {
-            FlatPredicate c = a as FlatPredicate;
-            if (c != null)
-            {
-                return new FlatPredicate(canBeTrue | c.canBeTrue, canBeFalse | c.canBeFalse);
-            }
-            else
-            {
-                if (IsBottom)
-                {
-                    return a;
-                }
-                else if (a.IsBottom)
-                {
-                    return this;
-                }
-                else
-                {
-                    return Top;//Overapproximate
-                }
-            }
-        }
-
-        public IAbstractDomain Meet(IAbstractDomain a)
+        public override IAbstractDomain Meet(IAbstractDomain a)
         {
             FlatPredicate c = a as FlatPredicate;
             if (c != null)
             {
                 return new FlatPredicate(canBeTrue & c.canBeTrue, canBeFalse & c.canBeFalse);
             }
-            else
+            else if (IsBottom)
             {
-                if (IsBottom || a.IsBottom)
-                {
-                    return Bottom;
-                }
-                else if (IsTop)
-                {
-                    return a;
-                }
-                else
-                {
-                    return this;//Overapproximate (but only between bottom and const)
-                }
+                return this;
             }
-        }
-
-        public IAbstractDomain Widening(IAbstractDomain prev)
-        {
-            return Join(prev);
-        }
-
-        public T To<T>(IFactory<T> factory)
-        {
-            if (IsBottom)
+            else if (IsTop)
             {
-                return factory.IdentityForOr;
+                return a;
             }
             else
             {
-                return factory.IdentityForAnd;
+                // The subclasses may provide more precise definition
+                return a.Meet(this);
             }
         }
 
-        public object Clone()
+        public override object Clone()
         {
             return new FlatPredicate(canBeTrue, canBeFalse);
         }
 
-        public bool ContainsValue(bool value)
-        {
-            return value ? canBeTrue : canBeFalse;
-        }
+
         public override string ToString()
         {
             if (canBeTrue)
@@ -251,20 +292,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return other.canBeFalse == canBeFalse && other.canBeTrue == canBeTrue;
         }
 
-        public IStringPredicate AssignInParallel<Variable>(Dictionary<Variable, FList<Variable>> sourcesToTargets)
-        {
-            return this;
-        }
-
-        /// <summary>
-        /// Converts the predicate to <see cref="ProofOutcome"/> enumeration.
-        /// </summary>
-        public ProofOutcome ProofOutcome
-        {
-            get
-            {
-                return ProofOutcomeUtils.Build(canBeTrue, canBeFalse);
-            }
-        }
+       
     }
 }

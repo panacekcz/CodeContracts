@@ -31,7 +31,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
           where Variable : class, IEquatable<Variable>
           where Abstraction : IStringAbstraction<Abstraction>
         {
-            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, trueAbstraction.Top, new FlatPredicate(!trueAbstraction.IsBottom, true));
+            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, trueAbstraction.Top, !trueAbstraction.IsBottom, true);
         }
 
         public static StringAbstractionPredicate<Abstraction, Variable>
@@ -39,19 +39,19 @@ namespace Microsoft.Research.AbstractDomains.Strings
           where Variable : class, IEquatable<Variable>
           where Abstraction : IStringAbstraction<Abstraction>
         {
-            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, new FlatPredicate(!trueAbstraction.IsBottom, !falseAbstraction.IsBottom));
+            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, !trueAbstraction.IsBottom, !falseAbstraction.IsBottom);
         }
     }
 
-    class StringAbstractionPredicate<Abstraction, Variable> : IStringPredicate
+    class StringAbstractionPredicate<Abstraction, Variable> : PredicateBase
       where Variable : class, IEquatable<Variable>
       where Abstraction : IStringAbstraction<Abstraction>
     {
         private readonly Abstraction trueAbstraction, falseAbstraction;
         private readonly Variable variable;
-        private readonly FlatPredicate knownValue;
 
-        internal StringAbstractionPredicate(Variable variable, Abstraction trueAbstraction, Abstraction falseAbstraction, FlatPredicate knownValue)
+        internal StringAbstractionPredicate(Variable variable, Abstraction trueAbstraction, Abstraction falseAbstraction, bool canBeTrue, bool canBeFalse)
+            : base(canBeTrue, canBeFalse)
         {
             System.Diagnostics.Contracts.Contract.Requires(variable != null);
             System.Diagnostics.Contracts.Contract.Requires(trueAbstraction != null);
@@ -60,7 +60,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             this.variable = variable;
             this.trueAbstraction = trueAbstraction;
             this.falseAbstraction = falseAbstraction;
-            this.knownValue = knownValue;
         }
 
         public Abstraction AbstractionIf(bool holds)
@@ -68,10 +67,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return holds ? trueAbstraction : falseAbstraction;
         }
 
-        public bool ContainsValue(bool value)
-        {
-            return knownValue.ContainsValue(value); //overapproximation
-        }
         public Variable DependentVariable
         {
             get
@@ -80,17 +75,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public bool IsBottom
+
+        public override bool IsTop
         {
-            get { return knownValue.IsBottom; }//overapproximation
+            get { return base.IsTop && trueAbstraction.IsTop && falseAbstraction.IsTop; }
         }
 
-        public bool IsTop
-        {
-            get { return trueAbstraction.IsTop && falseAbstraction.IsTop && knownValue.IsTop; }
-        }
-
-        public bool LessEqual(IAbstractDomain a)
+        public override bool LessEqual(IAbstractDomain a)
         {
             if (a.IsTop)
             {
@@ -101,98 +92,87 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 var other = (StringAbstractionPredicate<Abstraction, Variable>)a;
                 return other.variable.Equals(variable) && trueAbstraction.LessThanEqual(other.trueAbstraction) && falseAbstraction.LessThanEqual(other.falseAbstraction);
             }
-            else
+            else 
             {
-                return false;
+                return base.LessEqual(a);
             }
         }
 
-        public IAbstractDomain Bottom
-        {
-            get { return new FlatPredicate(false, false); }
-        }
+ 
 
-        public IAbstractDomain Top
+        public override IAbstractDomain Join(IAbstractDomain a)
         {
-            get { return new FlatPredicate(); }
-        }
-
-        public IAbstractDomain Join(IAbstractDomain a)
-        {
-            if (a is FlatPredicate)
-            {
-                // Ignoring the string abstraction
-                return knownValue.Join(a);
-            }
-            else if (a is StringAbstractionPredicate<Abstraction, Variable>)
+            if (a is StringAbstractionPredicate<Abstraction, Variable>)
             {
                 var ap = (StringAbstractionPredicate<Abstraction, Variable>)a;
-                if (!ap.variable.Equals(this.variable))
+                if (ap.variable.Equals(this.variable))
                 {
-                    // Ignoring the string abstraction
-                    return knownValue.Join(ap.knownValue);
+                    return new StringAbstractionPredicate<Abstraction, Variable>(
+                        variable,
+                        trueAbstraction.Join(ap.trueAbstraction),
+                        falseAbstraction.Join(ap.falseAbstraction),
+                        canBeTrue || ap.canBeTrue,
+                        canBeFalse || ap.canBeFalse
+                        );
                 }
-                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction.Join(ap.trueAbstraction), falseAbstraction.Join(ap.falseAbstraction), (FlatPredicate)knownValue.Join(ap.knownValue));
             }
-            else
-            {
-                return FlatPredicate.Top;
-            }
+      
+            // Ignoring the string abstraction
+            return base.Join(a);
         }
 
-        public IAbstractDomain Meet(IAbstractDomain a)
+        public override IAbstractDomain Meet(IAbstractDomain a)
         {
-            if (a is FlatPredicate)
-            {
-                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, (FlatPredicate)knownValue.Meet(a));
-            }
-            else if (a is StringAbstractionPredicate<Abstraction, Variable>)
+            if (a is StringAbstractionPredicate<Abstraction, Variable>)
             {
                 var ap = (StringAbstractionPredicate<Abstraction, Variable>)a;
-                if (!ap.variable.Equals(this.variable))
+                if (ap.variable.Equals(this.variable))
                 {
-                    return this;
+                    return new StringAbstractionPredicate<Abstraction, Variable>(
+                        variable,
+                        trueAbstraction.Meet(ap.trueAbstraction), 
+                        falseAbstraction.Meet(ap.falseAbstraction),
+                        canBeTrue & ap.canBeTrue,
+                        canBeFalse & ap.canBeFalse
+                        );
                 }
-                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction.Meet(ap.trueAbstraction), falseAbstraction.Meet(ap.falseAbstraction), (FlatPredicate)knownValue.Meet(ap.knownValue));
+
             }
-            else
+
+            if (a is IStringPredicate)
             {
-                return this;
+                bool aCanBeFalse = ((IStringPredicate)a).ContainsValue(false);
+                bool aCanBeTrue = ((IStringPredicate)a).ContainsValue(true);
+
+                if (!aCanBeFalse || !aCanBeTrue)
+                {
+                    return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, canBeTrue & aCanBeTrue, canBeFalse & aCanBeFalse);
+                }
             }
+           
+            return this;
         }
 
-        public IAbstractDomain Widening(IAbstractDomain prev)
+        public override IAbstractDomain Widening(IAbstractDomain prev)
         {
-            if (prev is FlatPredicate)
-            {
-                return knownValue.Join(prev);
-            }
-            else if (prev is StringAbstractionPredicate<Abstraction, Variable>)
+            if (prev is StringAbstractionPredicate<Abstraction, Variable>)
             {
                 var ap = (StringAbstractionPredicate<Abstraction, Variable>)prev;
-                if (!ap.variable.Equals(this.variable))
+                if (ap.variable.Equals(this.variable))
                 {
-                    return FlatPredicate.Top;
+                    Abstraction trueWide = (Abstraction)trueAbstraction.Widening(ap.trueAbstraction);
+                    Abstraction falseWide = (Abstraction)falseAbstraction.Widening(ap.falseAbstraction);
+
+                    return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueWide, falseWide, canBeTrue || ap.canBeTrue, canBeFalse || ap.canBeFalse);
                 }
-                Abstraction trueWide = (Abstraction)trueAbstraction.Widening(ap.trueAbstraction);
-                Abstraction falseWide = (Abstraction)falseAbstraction.Widening(ap.falseAbstraction);
+            }
 
-                return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueWide, falseWide, (FlatPredicate)knownValue.Join(ap.knownValue));
-            }
-            else
-            {
-                return FlatPredicate.Top;
-            }
+            return base.Widening(prev);
         }
 
-        public T To<T>(IFactory<T> factory)
+        public override object Clone()
         {
-            return factory.Constant(true);
-        }
-
-        public object Clone()
-        {
-            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, knownValue);
+            return new StringAbstractionPredicate<Abstraction, Variable>(variable, trueAbstraction, falseAbstraction, canBeTrue, canBeFalse);
         }
 
         public override string ToString()
@@ -200,12 +180,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return variable.ToString() + "=" + trueAbstraction.ToString() + "/" + falseAbstraction.ToString();
         }
 
-        public IStringPredicate AssignInParallel<Variable1>(Dictionary<Variable1, FList<Variable1>> sourcesToTargets)
+        public override IStringPredicate AssignInParallel<Variable1>(Dictionary<Variable1, FList<Variable1>> sourcesToTargets)
         {
             FList<Variable1> list;
             if (sourcesToTargets.TryGetValue((Variable1)(object)variable, out list) && !list.IsEmpty())
             {
-                return new StringAbstractionPredicate<Abstraction, Variable>((Variable)(object)list.Head, trueAbstraction, falseAbstraction, knownValue);
+                return new StringAbstractionPredicate<Abstraction, Variable>((Variable)(object)list.Head, trueAbstraction, falseAbstraction, canBeTrue, canBeFalse);
             }
             else
             {
@@ -213,9 +193,5 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public CodeAnalysis.ProofOutcome ProofOutcome
-        {
-            get { return knownValue.ProofOutcome; }//Overapproximation
-        }
     }
 }

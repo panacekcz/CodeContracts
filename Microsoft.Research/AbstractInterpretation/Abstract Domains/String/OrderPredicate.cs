@@ -39,7 +39,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public static OrderPredicate<Variable> For<Variable>(Variable leqVar, Variable geqVar)
           where Variable : IEquatable<Variable>
         {
-            return new OrderPredicate<Variable>(leqVar, new SetOfConstraints<Variable>(geqVar));
+            return new OrderPredicate<Variable>(leqVar, new SetOfConstraints<Variable>(geqVar), true, true);
         }
     }
 
@@ -47,24 +47,17 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// Represents a predicate which is satisfied if one variable is less than or equal to other variables.
     /// </summary>
     /// <typeparam name="Variable"></typeparam>
-    public class OrderPredicate<Variable> : IStringPredicate
+    public class OrderPredicate<Variable> : PredicateBase
       where Variable : IEquatable<Variable>
     {
         private readonly Variable stringVariable;
         private readonly SetOfConstraints<Variable> geqVariables;
 
-        internal OrderPredicate(Variable stringVariable, SetOfConstraints<Variable> geqVariables)
+        internal OrderPredicate(Variable stringVariable, SetOfConstraints<Variable> geqVariables, bool canBeTrue, bool canBeFalse)
+            : base(canBeTrue, canBeFalse)
         {
             this.stringVariable = stringVariable;
             this.geqVariables = geqVariables;
-        }
-
-        public IAbstractDomain Bottom
-        {
-            get
-            {
-                return FlatPredicate.Bottom;
-            }
         }
 
         /// <summary>
@@ -92,65 +85,47 @@ namespace Microsoft.Research.AbstractDomains.Strings
             get { return geqVariables; }
         }
 
-        public bool IsBottom
+        public override bool IsBottom
         {
             get
             {
-                return geqVariables.IsBottom;
+                return base.IsBottom || geqVariables.IsBottom;
             }
         }
 
-        public bool IsTop
+        public override bool IsTop
         {
             get
             {
-                return geqVariables.IsTop;
+                return base.IsTop && geqVariables.IsTop;
             }
         }
 
-        public ProofOutcome ProofOutcome
+
+        public override object Clone()
         {
-            get
-            {
-                return ProofOutcome.Top;
-            }
+            return new OrderPredicate<Variable>(stringVariable, geqVariables, canBeTrue, canBeFalse);
         }
 
-        public IAbstractDomain Top
-        {
-            get
-            {
-                return FlatPredicate.Top;
-            }
-        }
 
-        public object Clone()
-        {
-            return new OrderPredicate<Variable>(stringVariable, geqVariables);
-        }
-
-        public bool ContainsValue(bool value)
-        {
-            return true;
-        }
-
-        public IAbstractDomain Join(IAbstractDomain a)
+        public override IAbstractDomain Join(IAbstractDomain a)
         {
             if (a is OrderPredicate<Variable>)
             {
                 var other = (OrderPredicate<Variable>)a;
-                if (!stringVariable.Equals(other.stringVariable))
-                    return Top;
-
-                return new OrderPredicate<Variable>(stringVariable, geqVariables.Join(other.geqVariables));
+                if (stringVariable.Equals(other.stringVariable)) { 
+                    return new OrderPredicate<Variable>(
+                        stringVariable,
+                        geqVariables.Join(other.geqVariables),
+                        canBeTrue || other.canBeTrue,
+                        canBeFalse || other.canBeFalse
+                        );
+                }
             }
-            else
-            {
-                return Top;
-            }
+            return base.Join(a);
         }
 
-        public bool LessEqual(IAbstractDomain a)
+        public override bool LessEqual(IAbstractDomain a)
         {
             if (a.IsTop)
             {
@@ -163,45 +138,46 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             else
             {
-                return false;
+                return base.LessEqual(a);
             }
         }
 
-        public IAbstractDomain Meet(IAbstractDomain a)
+        public override IAbstractDomain Meet(IAbstractDomain a)
         {
             if (a is OrderPredicate<Variable>)
             {
                 var other = (OrderPredicate<Variable>)a;
-                if (!stringVariable.Equals(other.stringVariable))
-                    return Top;
-
-                return new OrderPredicate<Variable>(stringVariable, geqVariables.Meet(other.geqVariables));
+                if (stringVariable.Equals(other.stringVariable))
+                {
+                    return new OrderPredicate<Variable>(stringVariable, geqVariables.Meet(other.geqVariables), canBeTrue & other.canBeTrue, canBeFalse & other.canBeFalse);
+                }
             }
-            else
+
+            if (a is IStringPredicate)
             {
-                return Top;
+                bool aCanBeFalse = ((IStringPredicate)a).ContainsValue(false);
+                bool aCanBeTrue = ((IStringPredicate)a).ContainsValue(true);
+
+                if (!aCanBeFalse || !aCanBeTrue)
+                {
+                    return new OrderPredicate<Variable>(stringVariable, geqVariables, canBeTrue & aCanBeTrue, canBeFalse & aCanBeFalse);
+                }
             }
+
+            return this;
         }
 
-        public T To<T>(IFactory<T> factory)
-        {
-            return factory.Constant(true);
-        }
-
-        public IAbstractDomain Widening(IAbstractDomain prev)
+        public override IAbstractDomain Widening(IAbstractDomain prev)
         {
             if (prev is OrderPredicate<Variable>)
             {
                 var other = (OrderPredicate<Variable>)prev;
-                if (!stringVariable.Equals(other.stringVariable))
-                    return Top;
-
-                return new OrderPredicate<Variable>(stringVariable, geqVariables.Widening(other.geqVariables));
+                if (stringVariable.Equals(other.stringVariable))
+                {
+                    return new OrderPredicate<Variable>(stringVariable, geqVariables.Widening(other.geqVariables), canBeTrue || other.canBeTrue, canBeFalse || other.canBeFalse);
+                }
             }
-            else
-            {
-                return Top;
-            }
+            return base.Widening(prev);
         }
 
         public override string ToString()
@@ -209,7 +185,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return stringVariable.ToString() + "<=" + geqVariables.ToString();
         }
 
-        public IStringPredicate AssignInParallel<Variable1>(Dictionary<Variable1, FList<Variable1>> sourcesToTargets)
+        public override IStringPredicate AssignInParallel<Variable1>(Dictionary<Variable1, FList<Variable1>> sourcesToTargets)
         {
             FList<Variable1> list;
             if (sourcesToTargets.TryGetValue((Variable1)(object)stringVariable, out list) && !list.IsEmpty())
@@ -225,7 +201,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     }
                 }
 
-                return new OrderPredicate<Variable>((Variable)(object)list.Head, new SetOfConstraints<Variable>(newVars, false));
+                return new OrderPredicate<Variable>((Variable)(object)list.Head, new SetOfConstraints<Variable>(newVars, false), canBeTrue, canBeFalse);
             }
             else
             {
