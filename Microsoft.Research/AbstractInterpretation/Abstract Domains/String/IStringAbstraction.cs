@@ -101,7 +101,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <typeparam name="Variable">Type of variables used in the predicate.</typeparam>
         /// <param name="sourcesToTargets">Renaming of variables.</param>
         /// <returns>A predicate equivalent to this with variables renamed by <paramref name="sourcesToTargets"/>.</returns>
-        IStringPredicate AssignInParallel<Variable>(Dictionary<Variable, FList<Variable>> sourcesToTargets);
+        IStringPredicate AssignInParallel<Variable>(Dictionary<Variable, FList<Variable>> sourcesToTargets)
+            where Variable : class, IEquatable<Variable>;
         /// <summary>
         /// Checks whether the predicate may evaluate to the specified boolean value.
         /// </summary>
@@ -112,6 +113,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// Converts the predicate to a ProofOutcome variable using overapproximation.
         /// </summary>
         ProofOutcome ProofOutcome { get; }
+
+        bool RefersToVariable<Variable>(Variable variable);
+
+        IStringPredicate RenameVariable<Variable>(Variable oldName, Variable newName)
+            where Variable : class, IEquatable<Variable>;
     }
 
     /// <summary>
@@ -301,7 +307,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <typeparam name="Variable">The type of variables used in predicates.</typeparam>
     public interface IStringIntervalOperations<StringAbstraction, Variable> : IStringOperations<StringAbstraction, Variable>
     where StringAbstraction : IStringInterval<StringAbstraction>
-    where Variable : IEquatable<Variable>
+    where Variable : class, IEquatable<Variable>
     {
         /// <summary>
         /// Evaluates the <see cref="String.StartsWith"/> or <see cref="String.EndsWith"/> method, with an argument of <see cref="StringComparison.Ordinal"/>, in abstract.

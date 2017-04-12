@@ -37,7 +37,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="geqVar">The variable that should be greater than or equal to leqVar.</param>
         /// <returns></returns>
         public static OrderPredicate<Variable> For<Variable>(Variable leqVar, Variable geqVar)
-          where Variable : IEquatable<Variable>
+          where Variable : class, IEquatable<Variable>
         {
             return new OrderPredicate<Variable>(leqVar, new SetOfConstraints<Variable>(geqVar), true, true);
         }
@@ -48,7 +48,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// </summary>
     /// <typeparam name="Variable"></typeparam>
     public class OrderPredicate<Variable> : PredicateBase
-      where Variable : IEquatable<Variable>
+      where Variable : class, IEquatable<Variable>
     {
         private readonly Variable stringVariable;
         private readonly SetOfConstraints<Variable> geqVariables;
@@ -65,9 +65,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// </summary>
         /// <param name="v">The variable of interest.</param>
         /// <returns>True, if v is one of the varaibles in the predicate.</returns>
-        public bool RefersToVariable(Variable v)
+        public override bool RefersToVariable<ArgVariable>(ArgVariable v)
         {
-            return stringVariable.Equals(v) || geqVariables.Values.Any(l => l.Equals(v));
+            if (v is Variable)
+            {
+                Variable vv = v as Variable;
+                return stringVariable.Equals(v) || geqVariables.Values.Any(l => l.Equals(v));
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -190,22 +196,49 @@ namespace Microsoft.Research.AbstractDomains.Strings
             FList<Variable1> list;
             if (sourcesToTargets.TryGetValue((Variable1)(object)stringVariable, out list) && !list.IsEmpty())
             {
-                Set<Variable> newVars = new Set<Variable>();
+                Set<Variable1> newVars = new Set<Variable1>();
 
                 foreach (Variable v in geqVariables.Values)
                 {
                     FList<Variable1> vlist;
                     if (sourcesToTargets.TryGetValue((Variable1)(object)v, out vlist))
                     {
-                        newVars.AddRange(vlist.GetEnumerable().Select(ov => (Variable)(object)ov));
+                        newVars.AddRange(vlist.GetEnumerable());
                     }
                 }
 
-                return new OrderPredicate<Variable>((Variable)(object)list.Head, new SetOfConstraints<Variable>(newVars, false), canBeTrue, canBeFalse);
+                return new OrderPredicate<Variable1>(list.Head, new SetOfConstraints<Variable1>(newVars, false), canBeTrue, canBeFalse);
             }
             else
             {
                 return FlatPredicate.Top;
+            }
+        }
+
+        public override IStringPredicate RenameVariable<Variable1>(Variable1 oldName, Variable1 newName)
+        {
+            bool changed = false;
+
+            Variable newStringVariable = stringVariable;
+
+            if(stringVariable.Equals(oldName as Variable))
+            {
+                newStringVariable = newName as Variable;
+                changed = true;
+            }
+            SetOfConstraints<Variable> newGeqVariables = geqVariables;
+            if(geqVariables.Contains(oldName as Variable))
+            {
+                newGeqVariables = newGeqVariables.Add(newName as Variable);
+            }
+
+            if (changed)
+            {
+                return new OrderPredicate<Variable>(newStringVariable, newGeqVariables, canBeTrue, canBeFalse);
+            }
+            else
+            {
+                return this;
             }
         }
     }

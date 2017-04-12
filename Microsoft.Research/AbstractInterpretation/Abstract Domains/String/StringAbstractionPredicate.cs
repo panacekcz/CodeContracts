@@ -185,13 +185,39 @@ namespace Microsoft.Research.AbstractDomains.Strings
             FList<Variable1> list;
             if (sourcesToTargets.TryGetValue((Variable1)(object)variable, out list) && !list.IsEmpty())
             {
-                return new StringAbstractionPredicate<Abstraction, Variable>((Variable)(object)list.Head, trueAbstraction, falseAbstraction, canBeTrue, canBeFalse);
+                return new StringAbstractionPredicate<Abstraction, Variable1>(list.Head, trueAbstraction, falseAbstraction, canBeTrue, canBeFalse);
             }
             else
             {
                 return FlatPredicate.Top;
             }
         }
+
+        public override IStringPredicate RenameVariable<ArgVariable>(ArgVariable oldName, ArgVariable newName)
+        {
+            if(variable.Equals(oldName as Variable))
+            {
+                return new StringAbstractionPredicate<Abstraction, ArgVariable>(newName, trueAbstraction, falseAbstraction, canBeTrue, canBeFalse);
+            }
+            else
+            {
+                return this;
+            }
+        }
+
+        public override bool RefersToVariable<ArgVariable>(ArgVariable variable)
+        {
+            if (variable is Variable)
+            {
+                var cmpVariable = variable as Variable;
+
+                if (variable.Equals(cmpVariable))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }   
 
     }
 }

@@ -117,14 +117,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public override void Empty(Expression targetExp)
         {
-            Variable targetVariable = decoder.UnderlyingVariable(targetExp);
             StringAbstraction targetAbstraction = operations.Constant("");
-            strings[targetVariable] = targetAbstraction;
+            AssignTargetStringAbstraction(targetExp, targetAbstraction);
         }
 
         public override void Copy(Expression targetExp, Expression sourceExp)
         {
-            base.Copy(targetExp, sourceExp);
 
             Variable targetVariable = decoder.UnderlyingVariable(targetExp);
             Variable sourceVariable = decoder.UnderlyingVariable(sourceExp);
@@ -134,6 +132,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 TestTrueLessEqualThan(targetVariable, sourceVariable);
                 TestTrueLessEqualThan(sourceVariable, targetVariable);
             }
+            base.Copy(targetExp, sourceExp);
         }
 
         public override void Concat(Expression targetExp, Expression leftExp, Expression rightExp)
@@ -145,7 +144,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             // Interval concatenation
             StringAbstraction targetAbstraction = operations.Concat(leftAbstraction, rightAbstraction);
-            strings[targetVariable] = targetAbstraction;
+
+            AssignTargetStringAbstraction(targetVariable, targetAbstraction);
 
             // Get predicates about variables
             foreach (var order in IntervalOperations.ConcatOrder(targetVariable, leftVariable, rightVariable))
@@ -165,13 +165,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 IndexInterval indexInterval = EvalIndexArgumentInterval(indexExp, numericalDomain);
                 IndexInterval lengthInterval = EvalLengthArgumentInterval(lengthExp, numericalDomain);
+
                 
+
                 // Get predicates about variables
                 foreach (var order in IntervalOperations.SubstringRemoveOrder(targetVariable, sourceVariable, indexInterval, lengthInterval, remove))
                 {
                     TestTruePredicate(order);
                 }
-
             }
         }
 
@@ -243,52 +244,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
 
         #endregion
-
-        public override void Unknown(Expression targetExp)
-        {
-            Variable targetVariable = decoder.UnderlyingVariable(targetExp);
-
-            strings.RemoveElement(targetVariable);
-            upperBounds.RemoveElement(targetVariable);
-        }
-
-        public override void Mutate(Expression mutatedExp)
-        {
-            Variable mutatedVariable = decoder.UnderlyingVariable(mutatedExp);
-
-            if (mutatedVariable != null)
-            {
-
-                // Find predicates that involve the variable
-                List<Variable> removedPredicates = new List<Variable>();
-                foreach (var element in predicates.Elements)
-                {
-                    if (element.Value is StringAbstractionPredicate<StringAbstraction, Variable>)
-                    {
-                        var predicate = element.Value as StringAbstractionPredicate<StringAbstraction, Variable>;
-                        if (predicate.DependentVariable.Equals(mutatedVariable))
-                        {
-                            removedPredicates.Add(element.Key);
-                        }
-                    }
-                    else if (element.Value is OrderPredicate<Variable>)
-                    {
-                        var predicate = element.Value as OrderPredicate<Variable>;
-                        if (predicate.RefersToVariable(mutatedVariable))
-                        {
-                            removedPredicates.Add(element.Key);
-                        }
-                    }
-                }
-                // Forget about those predicates
-                foreach (var removedPredicate in removedPredicates)
-                {
-                    predicates.RemoveElement(removedPredicate);
-                }
-            }
-        }
-
-
 
         public override string ToString()
         {
@@ -514,24 +469,38 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public override void ProjectVariable(Variable var)
-        {
-            RemoveVariable(var);
-        }
 
         public override void RemoveVariable(Variable var)
         {
-            strings.RemoveElement(var);
-            upperBounds.RemoveElement(var);
-            predicates.RemoveElement(var);
+            base.RemoveVariable(var);
+            RemoveFromBounds(var);
         }
 
-        public override void RenameVariable(Variable OldName, Variable NewName)
+        protected override void DoVariableRenaming(Variable oldName, Variable newName)
         {
-            strings[NewName] = strings[OldName];
-            upperBounds[NewName] = upperBounds[OldName];
-            predicates[NewName] = predicates[OldName];
-            RemoveVariable(OldName);
+            // rename in strings and predicates
+            base.DoVariableRenaming(oldName, newName);
+
+            // rename in bounds
+            foreach (var key in upperBounds.Keys.ToArray()) // Keys stored in array because the collection is modified
+            {
+                Variable newKey;
+
+                if (key.Equals(oldName)) {
+                    newKey = newName;
+                }
+                else
+                {
+                    newKey = key;
+                }
+
+                SetOfConstraints<Variable> newValue = upperBounds[key];
+
+                if (newValue.Contains(oldName))
+                    newValue = newValue.Add(newName);
+
+                upperBounds[newKey] = newValue;
+            }
         }
 
         private void TestTruePredicate(OrderPredicate<Variable> orderPredicate)
@@ -943,6 +912,43 @@ namespace Microsoft.Research.AbstractDomains.Strings
         #endregion
 
         #region Assign
+
+        private void RemoveFromBounds(Variable var)
+        {
+            var toUpdate = new Dictionary<Variable, SetOfConstraints<Variable>>(upperBounds.Count);
+
+            var forVar = new Set<Variable>();
+
+            SetOfConstraints<Variable> value;
+            if (upperBounds.TryGetValue(var, out value) && value.IsNormal())
+            {
+                forVar = new Set<Variable>(value.Values);
+            }
+
+            foreach (var x_Pair in upperBounds.Elements)
+            {
+                var constraints = x_Pair.Value;
+
+                if (!constraints.IsNormal() || !constraints.Contains(var))
+                {
+                    continue;
+                }
+
+                var newConstraints = new Set<Variable>(constraints.Values);
+                newConstraints.AddRange(forVar);
+                newConstraints.Remove(var);
+
+                toUpdate[x_Pair.Key] = new SetOfConstraints<Variable>(newConstraints);
+            }
+
+            foreach (var x_pair in toUpdate)
+            {
+                upperBounds[x_pair.Key] = x_pair.Value;
+            }
+
+            upperBounds.RemoveElement(var);
+        }
+
         private void UnassignPredicate(Expression target)
         {
             predicates.RemoveElement(decoder.UnderlyingVariable(target));

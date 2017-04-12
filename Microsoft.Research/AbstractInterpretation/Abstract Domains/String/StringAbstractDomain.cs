@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Research.AbstractDomains.Expressions;
 using System.Diagnostics;
@@ -176,14 +177,34 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public virtual void RemoveVariable(Variable var)
         {
             this.strings.RemoveElement(var);
-            this.predicates.RemoveElement(var);
+            RemoveFromPredicates(var);
         }
 
-        public virtual void RenameVariable(Variable OldName, Variable NewName)
+        public void RenameVariable(Variable oldName, Variable newName)
         {
-            this.strings[NewName] = this.strings[OldName];
-            this.predicates[NewName] = this.predicates[OldName];
-            this.RemoveVariable(OldName);
+            // Rename oldName to newName
+            DoVariableRenaming(oldName, newName);
+           
+            // Remove oldName from the domain
+            RemoveVariable(oldName);
+        }
+
+        protected virtual void DoVariableRenaming(Variable oldName, Variable newName)
+        {
+            // Rename in string abstractions
+            this.strings[newName] = this.strings[oldName];
+
+            // Rename in predicates
+            foreach (var key in predicates.Keys.ToArray()) { // Keys stored in array because the collection is modified
+                if (key.Equals(oldName))
+                {
+                    this.predicates[newName] = this.predicates[oldName].RenameVariable(oldName, newName);
+                }
+                else
+                {
+                    this.predicates[key] = this.predicates[key].RenameVariable(oldName, newName);
+                }
+            }
         }
 
         #endregion
@@ -357,14 +378,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             Debug.Assert(targetExp != null);
 
-            AssignLeftTarget(targetExp, operations.Constant(""));
+            AssignTargetStringAbstraction(targetExp, operations.Constant(""));
         }
 
         public virtual void Copy(Expression targetExp, Expression valueExp)
         {
             Debug.Assert(targetExp != null && valueExp != null);
 
-            AssignLeftTarget(targetExp, EvalStringAbstraction(valueExp));
+            AssignTargetStringAbstraction(targetExp, EvalStringAbstraction(valueExp));
         }
         #endregion
 
@@ -402,7 +423,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 targetAbstraction = operations.Concat(leftAbstraction, rightAbstraction);
             }
 
-            AssignLeftTarget(targetExp, targetAbstraction);
+            AssignTargetStringAbstraction(targetExp, targetAbstraction);
         }
 
         /// <inheritdoc/>
@@ -435,7 +456,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     }
                 }
             }
-            AssignLeftTarget(targetExp, currentAbstraction.ToAbstract(operations));
+            AssignTargetStringAbstraction(targetExp, currentAbstraction.ToAbstract(operations));
         }
         #endregion
         /// <inheritdoc/>
@@ -470,7 +491,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 targetAbstraction = operations.Insert(valueAbstraction, indexAbstraction, partAbstraction);
             }
 
-            AssignLeftTarget(targetExp, targetAbstraction);
+            AssignTargetStringAbstraction(targetExp, targetAbstraction);
         }
 
         #region Replace operations
@@ -499,7 +520,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 targetAbstraction = operations.Replace(valueAbstraction.ToAbstract(operations), fromInterval, toInterval);
             }
 
-            AssignLeftTarget(targetExp, targetAbstraction);
+            AssignTargetStringAbstraction(targetExp, targetAbstraction);
         }
         /// <inheritdoc/>
         public virtual void ReplaceString(Expression targetExp, Expression valueExp, Expression fromExp, Expression toExp)
@@ -521,7 +542,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 targetAbstraction = operations.Replace(valueAbstraction, fromAbstraction, toAbstraction);
             }
 
-            AssignLeftTarget(targetExp, targetAbstraction);
+            AssignTargetStringAbstraction(targetExp, targetAbstraction);
         }
         #endregion
         #region Substring operations
@@ -564,7 +585,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 targetAbstraction = operations.Substring(valueAbstraction.ToAbstract(operations), indexAbstraction, lengthAbstraction);
             }
-            AssignLeftTarget(targetExp, targetAbstraction);
+            AssignTargetStringAbstraction(targetExp, targetAbstraction);
         }
 
         #endregion
@@ -608,7 +629,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 targetAbstraction = operations.PadLeftRight(valueAbstraction.ToAbstract(operations), lengthAbstraction, fillInterval, right);
             }
 
-            AssignLeftTarget(targetExp, targetAbstraction);
+            AssignTargetStringAbstraction(targetExp, targetAbstraction);
         }
         #endregion
 
@@ -651,7 +672,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
                 
             }
-            AssignLeftTarget(targetExp, targetAbstraction);
+            AssignTargetStringAbstraction(targetExp, targetAbstraction);
         }
         /// <inheritdoc/>
         public virtual void Trim(Expression targetExp, Expression valueExp, Expression trimExp)
@@ -687,7 +708,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 targetPredicate = operations.IsEmpty(valueAbstraction.ToAbstract(operations), valueVar);
             }
 
-            AssignRightTarget(targetExp, targetPredicate);
+            AssignTargetPredicate(targetExp, targetPredicate);
         }
 
         #region Containment operations
@@ -715,7 +736,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 targetPredicate = operations.Contains(valueAbstraction, valueVar, partAbstraction, partVar);
             }
 
-            AssignRightTarget(targetExp, targetPredicate);
+            AssignTargetPredicate(targetExp, targetPredicate);
         }
         /// <inheritdoc/>
         public virtual void StartsEndsWith(Expression targetExp, Expression valueExp, Expression partExp, Expression comparisonExp, bool ends)
@@ -753,11 +774,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     targetPredicate = operations.StartsEndsWithOrdinal(valueAbstraction, valueVar, partAbstraction, partVar, ends);
                 }
 
-                AssignRightTarget(targetExp, targetPredicate);
+                AssignTargetPredicate(targetExp, targetPredicate);
             }
             else
             {
-                UnassignRightTarget(targetExp);
+                UnassignTargetPredicate(targetExp);
             }
         }
         #endregion
@@ -829,7 +850,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 targetAbstraction = (IStringPredicate)targetAbstraction.Join(compared);
             }
 
-            AssignRightTarget(targetExp, targetAbstraction);
+            AssignTargetPredicate(targetExp, targetAbstraction);
         }
         /// <inheritdoc/>
         public virtual void CompareOrdinal(Expression targetExp, Expression leftExp, Expression rightExp,
@@ -901,7 +922,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 numericalDomain.AssumeInDisInterval(targetVar, targetLength.ToDisInterval());
             }
         }
-        #region Index operaitons
+        #region Index operations
         public virtual void IndexOfChar(Expression indexExp, Expression thisExp, Expression needleExp, Expression offsetExp, Expression countExp, bool last, INumericalAbstractDomain<Variable, Expression> numericalDomain)
         {
             CharInterval needleInterval = EvalCharInterval(needleExp, numericalDomain);
@@ -988,6 +1009,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 numericalDomain.AssumeInDisInterval(targetVariable, targetInterval.ToDisInterval());
             }
         }
+
         #endregion
 
         /// <inheritdoc/>
@@ -1019,18 +1041,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     }
                 }
 
-                AssignRightTarget(targetExp, targetPredicate);
+                AssignTargetPredicate(targetExp, targetPredicate);
             }
             else
             {
-                UnassignRightTarget(targetExp);
+                UnassignTargetPredicate(targetExp);
             }
         }
 
         public virtual void Unknown(Expression unknownExp)
         {
             // Forget about this variable
-            UnassignLeftTarget(unknownExp);
+            UnassignTargetStringAbstraction(unknownExp);
         }
 
         public virtual void Mutate(Expression mutatedExp)
@@ -1039,43 +1061,54 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             if (mutatedVariable != null)
             {
-
-                // Find predicates that involve the variable
-                List<Variable> removedPredicates = new List<Variable>();
-                foreach (var element in this.predicates.Elements)
-                {
-                    if (element.Value is StringAbstractionPredicate<StringAbstraction, Variable>)
-                    {
-                        var predicate = element.Value as StringAbstractionPredicate<StringAbstraction, Variable>;
-                        if (predicate.DependentVariable.Equals(mutatedVariable))
-                        {
-                            removedPredicates.Add(element.Key);
-                        }
-                    }
-                }
-                // Forget about those predicates
-                foreach (var removedPredicate in removedPredicates)
-                {
-                    this.predicates.RemoveElement(removedPredicate);
-                }
+                RemoveVariable(mutatedVariable);
             }
         }
         #endregion
 
-        #region Assign to variables
-        private void UnassignLeftTarget(Expression target)
+
+        private void RemoveFromPredicates(Variable removedVariable)
         {
-            this.strings.RemoveElement(this.decoder.UnderlyingVariable(target));
+            this.predicates.RemoveElement(removedVariable);
+
+            // Find predicates that involve the variable
+            List<Variable> removedPredicates = new List<Variable>();
+            foreach (var element in this.predicates.Elements)
+            {
+                if (element.Value.RefersToVariable(removedVariable))
+                {
+                    removedPredicates.Add(element.Key);
+                }
+            }
+            // Forget about those predicates
+            foreach (var removedPredicate in removedPredicates)
+            {
+                this.predicates.RemoveElement(removedPredicate);
+            }
         }
-        private void AssignLeftTarget(Expression target, StringAbstraction targetAbstraction)
+
+        #region Assign properties to expressions and variables
+        protected virtual void UnassignTargetStringAbstraction(Variable targetVariable)
         {
-            this.strings[this.decoder.UnderlyingVariable(target)] = targetAbstraction;
+            this.strings.RemoveElement(targetVariable);
         }
-        private void UnassignRightTarget(Expression target)
+        protected void UnassignTargetStringAbstraction(Expression target)
+        {
+            UnassignTargetStringAbstraction(this.decoder.UnderlyingVariable(target));
+        }
+        protected virtual void AssignTargetStringAbstraction(Variable targetVariable, StringAbstraction targetAbstraction)
+        {
+            this.strings[targetVariable] = targetAbstraction;
+        }
+        protected void AssignTargetStringAbstraction(Expression target, StringAbstraction targetAbstraction)
+        {
+            AssignTargetStringAbstraction(this.decoder.UnderlyingVariable(target), targetAbstraction);
+        }
+        private void UnassignTargetPredicate(Expression target)
         {
             this.predicates.RemoveElement(this.decoder.UnderlyingVariable(target));
         }
-        private void AssignRightTarget(Expression target, IStringPredicate targetPredicate)
+        private void AssignTargetPredicate(Expression target, IStringPredicate targetPredicate)
         {
             Debug.Assert(targetPredicate != null);
             this.predicates[this.decoder.UnderlyingVariable(target)] = targetPredicate;

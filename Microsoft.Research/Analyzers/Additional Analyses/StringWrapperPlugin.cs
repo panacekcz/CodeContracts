@@ -53,6 +53,7 @@ namespace Microsoft.Research.CodeAnalysis
 
         public GenericPlugInAnalysisForComposedAnalysis Create<AState>(IAbstractAnalysis<Local, Parameter, Method, Field, Property, Type, Expression, Attribute, Assembly, AState, Variable> analysis, DFAController controller)
         {
+          //VD: Ignoring the controller parameter
           return new StringWrapperPlugIn((StringValueAnalysis)analysis, id, methodName, mdriver, options, cachePCs);
         }
       }
@@ -62,7 +63,7 @@ namespace Microsoft.Research.CodeAnalysis
       {
         public static GenericPlugInAnalysisForComposedAnalysis Create(IMethodAnalysis strAnalysis, int id, string methodName, IMethodDriver<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable, ILogOptions> mdriver, ILogOptions options, Predicate<APC> cachePCs)
         {
-                    //TODO: VD: using null as controller, will be ignored in Create above...
+          //VD: using null as controller, will be ignored in Create method above
           return strAnalysis.Instantiate(methodName, mdriver, cachePCs, new ClassStringWrapperPluginFactory(id, methodName, mdriver, options, cachePCs), null);
         }
 
@@ -113,7 +114,7 @@ namespace Microsoft.Research.CodeAnalysis
 
         public override ArrayState Ldelem(APC pc, Type type, Variable dest, Variable array, Variable index, ArrayState data)
         {
-          return MakeState(this.stringAnalysis.Ldelem(pc, type, dest, array, index, Select(data)), data);
+          return MakeState(this.stringAnalysis.LdelemWithNumerical(pc, type, dest, array, index, Select(data), data.Numerical), data);
         }
 
         public override ArrayState Starg(APC pc, Parameter argument, Variable source, ArrayState data)

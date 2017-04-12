@@ -85,8 +85,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return value ? canBeTrue : canBeFalse;
         }
 
+        public virtual IStringPredicate RenameVariable<Variable>(Variable oldName, Variable newName)
+           where Variable : class, IEquatable<Variable>
+        {
+            return this;
+        }
 
         public virtual IStringPredicate AssignInParallel<Variable>(Dictionary<Variable, FList<Variable>> sourcesToTargets)
+            where Variable : class, IEquatable<Variable>
         {
             return this;
         }
@@ -136,7 +142,10 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }                
         }
 
-
+        public virtual bool RefersToVariable<Variable>(Variable variable)
+        {
+            return false;
+        }
         public abstract IAbstractDomain Meet(IAbstractDomain a);
         public abstract object Clone();
     }
