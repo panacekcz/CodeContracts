@@ -6,10 +6,10 @@ using System.Diagnostics.Contracts;
 
 namespace PrefixPentagons
 {
-#if false
+
   class BuilderGenerator
   {
-    [ContractVerification(false)]
+   
     public void GenerateSth(StringBuilder pre, int abc, int def)
     {
       Contract.Ensures(pre.ToString().StartsWith(Contract.OldValue(pre.ToString()), StringComparison.Ordinal));
@@ -17,7 +17,7 @@ namespace PrefixPentagons
       pre.Append(" ");
       pre.Append(def.ToString());
     }
-    [ContractVerification(false)]
+   
     public void CompositionBranches(StringBuilder pre, int x, int y)
     {
       Contract.Ensures(pre.ToString().StartsWith(Contract.OldValue(pre.ToString()), StringComparison.Ordinal));
@@ -42,5 +42,5 @@ namespace PrefixPentagons
       }
     }
   }
-#endif
+
 }
