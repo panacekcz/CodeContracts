@@ -63,14 +63,101 @@ namespace Microsoft.Research.Regex.AST
             this.negative = negative;
         }
 
+        private bool IsAsciiMatch(char character)
+        {
+            return IsPositiveAsciiMatch(character) ^ negative;
+        }
+
+        private bool IsPositiveAsciiMatch(char character)
+        {
+            switch (kind)
+            {
+                case SetKind.Word:
+                    return character >= '0' && character <= '9' || character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' || character == '_';
+                case SetKind.Whitespace:
+                    return character >= 9 && character <= 13 || character == 32;
+                case SetKind.DecimalDigit:
+                    return character >= '0' && character <= '9';
+                default:
+                    return true;
+            }
+        }
+
         public override bool CanMatch(char character)
         {
-            return true;
+            if (character >= 128)
+                return true;
+            else
+                return IsAsciiMatch(character);
         }
         public override bool MustMatch(char character)
         {
-            return false;
+            if (character >= 128)
+                return false;
+            else
+                return IsAsciiMatch(character);
         }
+
+        private IEnumerable<CharRange> IsMatchRanges(bool overapproximate)
+        {
+            if (negative)
+                return NegativeIsMatchRanges(overapproximate);
+            else
+                return PositiveIsMatchRanges(overapproximate);
+        }
+
+        private IEnumerable<CharRange> NegativeIsMatchRanges(bool overapproximate)
+        {
+            char current = (char)0;
+
+            foreach(CharRange rng in PositiveIsMatchRanges(false))
+            {
+                if(rng.Low > current)
+                {
+                    yield return new CharRange(current, (char)(rng.Low - 1));
+                }
+                current = (char)(rng.High + 1);
+            }
+
+            if (overapproximate)
+            {
+                yield return new CharRange(current, char.MaxValue);
+            }
+            else if(current < 128)
+            {
+                yield return new CharRange(current, (char)127);
+            }
+        }
+
+        private IEnumerable<CharRange> PositiveIsMatchRanges(bool overapproximate)
+        {
+  
+            switch (kind)
+            {
+                case SetKind.DecimalDigit:
+                    yield return new CharRange('0', '9');
+                    break;
+                case SetKind.Word:
+                    yield return new CharRange('0', '9');
+                    yield return new CharRange('A', 'Z');
+                    yield return new CharRange('_', '_');
+                    yield return new CharRange('a', 'z');
+                    break;
+                case SetKind.Whitespace:
+                    yield return new CharRange((char)9, (char)13);
+                    yield return new CharRange(' ', ' ');
+                    break;
+                default:
+                    yield return new CharRange((char)0, (char)127);
+                    break;
+            }
+            
+            if (overapproximate)
+            {
+                yield return new CharRange((char)128, char.MaxValue);
+            }
+        }
+
         public override CharRanges CanMatchRanges
         {
             get { return new CharRanges(new CharRange(char.MinValue, char.MaxValue)); }
