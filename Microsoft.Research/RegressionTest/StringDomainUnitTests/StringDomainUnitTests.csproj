@@ -50,6 +50,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="PrefixIntervalOperationsTest.cs" />
     <Compile Include="StringGraphRegexTest.cs" />
     <Compile Include="BricksRegexTest.cs" />
     <Compile Include="BricksOperationsTest.cs" />

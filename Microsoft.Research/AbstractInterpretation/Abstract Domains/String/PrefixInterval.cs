@@ -50,6 +50,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         }
         /// <summary>
+        /// Constructs a prefix interval abstraction for the specified bounds.
+        /// </summary>
+        /// <param name="prefixOf">The string which the represented strings are prefixes of.</param>
+        /// <param name="prefix">The known prefix of the represented string.</param>
+        public PrefixInterval(string prefixOf, string prefix)
+          : base(Wrap(prefixOf), Wrap(prefix))
+        {
+
+        }
+        /// <summary>
         /// Constructs a new instance of prefix interval from another instance.
         /// </summary>
         /// <param name="p">The prefix interval that is copied.</param>
@@ -360,6 +370,45 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 return IndexInterval.For(shortest, longest);
             }
+
+            private IndexInt LastPossibleIndex(PrefixInterval selfAbstraction, PrefixInterval needleAbstraction) {
+                
+                if (selfAbstraction.lowerBound.IsBottom)
+                {
+                    // The haystack is not a prefix of a known string, so there can be a match at any index large enough
+                    return IndexInt.Infinity;
+                }
+                else
+                {
+                    // Up to the last possible index. May be -1, in which case it is definitely not there
+                    int lastPossible = selfAbstraction.lowerBound.prefix.LastIndexOf(needleAbstraction.upperBound.prefix);
+                    return IndexInt.For(lastPossible);
+                }
+            }
+
+            private IndexInt FirstPossibleIndex(PrefixInterval selfAbstraction, PrefixInterval needleAbstraction)
+            {
+                if (selfAbstraction.lowerBound.IsBottom)
+                {
+                    // The haystack is not a prefix of a known string, so there can be a match at any index large enough
+                    int firstPossibleKnown = selfAbstraction.UpperBound.prefix.IndexOf(needleAbstraction.upperBound.prefix);
+
+                    if (firstPossibleKnown == -1)
+                    {
+                        // No match in the known part, but there can be matches after, and partially overlapping
+                        firstPossibleKnown = Math.Max(0, selfAbstraction.upperBound.prefix.Length - needleAbstraction.upperBound.prefix.Length + 1);                        
+                    }
+
+                    return IndexInt.ForNonNegative(firstPossibleKnown);
+                }
+                else
+                {
+                    // First possible index. May be -1, in which case it is definitely not there
+                    int firstPossible = selfAbstraction.lowerBound.prefix.IndexOf(needleAbstraction.upperBound.prefix);
+                    return IndexInt.For(firstPossible);
+                }
+            }
+
             ///<inheritdoc/>
             public IndexInterval IndexOf(WithConstants<PrefixInterval> self, WithConstants<PrefixInterval> needle, IndexInterval offset, IndexInterval count, bool last)
             {
@@ -372,27 +421,32 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 PrefixInterval selfAbstraction = self.ToAbstract(this);
                 PrefixInterval needleAbstraction = needle.ToAbstract(this);
 
-                if (needleAbstraction.IsSingleton)
-                {
-                    //TODO: VD: when needle not singleton but upper bound known, at least some interval
-                    //TODO: VD: when self lower bound known, can be -1
-
-                    int index;
-                    if (last)
-                        index = selfAbstraction.upperBound.prefix.LastIndexOf(needleAbstraction.lowerBound.prefix, StringComparison.Ordinal);
-                    else
-                        index = selfAbstraction.upperBound.prefix.IndexOf(needleAbstraction.lowerBound.prefix, StringComparison.Ordinal);
-
-                    if (index >= 0)
-                    {
-                        if (last)
-                            return IndexInterval.For(IndexInt.ForNonNegative(index), IndexInt.Infinity);
-                        else
-                            return IndexInterval.For(index);
-                    }
+                // Find first/last index of a definite substring
+                int definiteSubstring;
+                if (needleAbstraction.lowerBound.IsBottom) {
+                    // The needle is not a prefix of a known string, so there is no definite match
+                    definiteSubstring = -1;
                 }
+                else if (last)
+                    definiteSubstring = selfAbstraction.upperBound.prefix.LastIndexOf(needleAbstraction.lowerBound.prefix);
+                else
+                    definiteSubstring = selfAbstraction.upperBound.prefix.IndexOf(needleAbstraction.lowerBound.prefix);
 
-                return IndexInterval.Unknown;
+                if(definiteSubstring == -1)
+                {
+                    // There is no definite substring, may return -1, and up to the last possible index
+                    return IndexInterval.For(IndexInt.Negative, LastPossibleIndex(selfAbstraction, needleAbstraction));
+                }
+                else if(last)
+                {
+                    // There is a definite substring. Try to find the last possible substring    
+                    return IndexInterval.For(IndexInt.ForNonNegative(definiteSubstring), LastPossibleIndex(selfAbstraction, needleAbstraction));
+                }
+                else
+                {
+                    // There is a definite substring. Find first possible substring
+                    return IndexInterval.For(FirstPossibleIndex(selfAbstraction, needleAbstraction), IndexInt.ForNonNegative(definiteSubstring));
+                }
             }
 
             #endregion
