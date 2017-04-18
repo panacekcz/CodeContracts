@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 
 using Microsoft.Research.CodeAnalysis;
+using System.Diagnostics.Contracts;
 
 namespace Microsoft.Research.AbstractDomains.Strings
 {
@@ -799,6 +800,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             private HashSet<string> Trim(Brick br, char[] trim, bool reverse)
             {
+                Contract.Requires(br.values != null);
+
                 HashSet<string> result = new HashSet<string>();
                 foreach (string s in br.values)
                 {
@@ -818,7 +821,9 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 List<Brick> result = new List<Brick>();
 
+                // If true, characters are definitely trimmed
                 bool before = true;
+                // If true, no characters are trimmed anymore
                 bool after = false;
 
                 IEnumerable<Brick> bricksEnumerable = bricks;
@@ -826,26 +831,33 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 if (reverse)
                     bricksEnumerable = bricksEnumerable.Reverse();
 
+                // Trim bricks one by one
                 foreach (Brick brick in bricksEnumerable)
                 {
                     if (after || brick.MustBeEmpty)
                     {
+                        // The brick is empty, or no trimming anymore, so the brick is unchanged
                         result.Add(brick);
                     }
                     else if (brick.values == null)
                     {
+                        // The Top brick is unchanged, trimming may stop there
                         result.Add(brick);
                         before = false;
                     }
                     else
                     {
-                        //TODO: VD: values == null
+                        // Trim constants inside the brick
                         HashSet<string> trimmed = Trim(brick, trim, reverse);
-                        if (!trimmed.Contains(""))
+
+                        bool containsEmpty = trimmed.Contains("");
+
+                        if (!containsEmpty && brick.min > 0)
                         {
-                            //TODO: VD: min/max
+                            // The brick does not contain a empty value. Replace the brick by a trimmed one and a non-trimmed rest.
                             if (!before)
                             {
+                                // Trimming is not definite
                                 trimmed.UnionWith(brick.values);
                             }
 
@@ -861,17 +873,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
                             after = true;
 
                         }
-                        else if (before && trimmed.Count == 1)
+                        else if (before && containsEmpty && trimmed.Count == 1)
                         {
                             // Trimmed everything
                             // No need to add any brick
                         }
                         else
                         {
+                            // General case
                             IndexInt min = brick.min;
                             IndexInt max = brick.max;
 
-                            if (before)
+                            if (before && min > 0)
                             {
                                 HashSet<string> fullyTrimmedCopy = new HashSet<string>(trimmed);
                                 Brick fullyTrimmedBrick = new Brick(fullyTrimmedCopy);
