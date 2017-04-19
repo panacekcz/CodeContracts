@@ -30,6 +30,8 @@ set arrays=-arrays -bounds -arithmetic
 set libs=-libpaths:..\..\Microsoft.Research\Contracts\bin\Debug\.NETFramework\v4.5
 ) else if "%3" == "/trace" (
 set trace=-trace:dfa
+) else if "%3" == "/absolute" (
+set file="%2"
 ) else (
 echo "Unknown option %3"
 set err="yes"
