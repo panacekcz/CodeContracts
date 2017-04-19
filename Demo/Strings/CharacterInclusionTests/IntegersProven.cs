@@ -24,41 +24,41 @@ using System.Diagnostics.Contracts;
 
 public class IntegersProven
 {
-  public void IndexOf(string value)
-  {
-    Contract.Requires(value.Contains("a"));
-    Contract.Requires(!value.Contains("z"));
+    public void IndexOf(string value)
+    {
+        Contract.Requires(value.Contains("a"));
+        Contract.Requires(!value.Contains("z"));
 
-    Contract.Assert(value.IndexOf("", StringComparison.Ordinal) == 0);
-    Contract.Assert(value.IndexOf("a", StringComparison.Ordinal) >= 0);
-    Contract.Assert(value.IndexOf("az", StringComparison.Ordinal) == -1);
-  }
+        Contract.Assert(value.IndexOf("", StringComparison.Ordinal) == 0);
+        Contract.Assert(value.IndexOf("a", StringComparison.Ordinal) >= 0);
+        Contract.Assert(value.IndexOf("az", StringComparison.Ordinal) == -1);
+    }
 
-  public void LastIndexOf(string value)
-  {
-    Contract.Requires(value.Contains("a"));
-    Contract.Requires(!value.Contains("z"));
+    public void LastIndexOf(string value)
+    {
+        Contract.Requires(value.Contains("a"));
+        Contract.Requires(!value.Contains("z"));
 
-    Contract.Assert(value.LastIndexOf("", StringComparison.Ordinal) >= 0);
-    Contract.Assert(value.LastIndexOf("a", StringComparison.Ordinal) >= 0);
-    Contract.Assert(value.LastIndexOf("az", StringComparison.Ordinal) == -1);
-  }
+        Contract.Assert(value.LastIndexOf("", StringComparison.Ordinal) >= 0);
+        Contract.Assert(value.LastIndexOf("a", StringComparison.Ordinal) >= 0);
+        Contract.Assert(value.LastIndexOf("az", StringComparison.Ordinal) == -1);
+    }
 
-  public void IndexOfChar(string value)
-  {
-    Contract.Requires(value.Contains("a"));
-    Contract.Requires(!value.Contains("z"));
+    public void IndexOfChar(string value)
+    {
+        Contract.Requires(value.Contains("a"));
+        Contract.Requires(!value.Contains("z"));
 
-    Contract.Assert(value.IndexOf('a') >= 0);
-    Contract.Assert(value.IndexOf('z') == -1);
-  }
+        Contract.Assert(value.IndexOf('a') >= 0);
+        Contract.Assert(value.IndexOf('z') == -1);
+    }
 
-  public void LastIndexOfChar(string value)
-  {
-    Contract.Requires(value.Contains("a"));
-    Contract.Requires(!value.Contains("z"));
+    public void LastIndexOfChar(string value)
+    {
+        Contract.Requires(value.Contains("a"));
+        Contract.Requires(!value.Contains("z"));
 
-    Contract.Assert(value.LastIndexOf('a') >= 0);
-    Contract.Assert(value.LastIndexOf('z') == -1);
-  }
+        Contract.Assert(value.LastIndexOf('a') >= 0);
+        Contract.Assert(value.LastIndexOf('z') == -1);
+    }
 }

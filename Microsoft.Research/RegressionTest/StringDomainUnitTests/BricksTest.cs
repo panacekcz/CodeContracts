@@ -22,78 +22,78 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class BricksTest : BricksTestBase
-  {
-    protected override IBricksPolicy CreateBricksPolicy()
+    [TestClass]
+    public class BricksTest : BricksTestBase
     {
-      return new DefaultBricksPolicy { ExpandConstantRepetitions = false, MergeConstantSets = false };
+        protected override IBricksPolicy CreateBricksPolicy()
+        {
+            return new DefaultBricksPolicy { ExpandConstantRepetitions = false, MergeConstantSets = false };
+        }
+
+        /// <summary>
+        /// Tests converting string constants to bricks.
+        /// </summary>
+        [TestMethod]
+        public void Constant()
+        {
+            Bricks bricks = MakeBricks("const");
+            Bricks empty = MakeBricks("");
+
+            Assert.AreEqual("{const}[1,1]", bricks.ToString());
+            Assert.AreEqual("", empty.ToString());
+        }
+
+        [TestMethod]
+        public void ConstantConcat()
+        {
+            Bricks one = MakeBricks("one");
+            Bricks two = MakeBricks("two");
+
+            Assert.AreEqual("{one}[1,1]{two}[1,1]", operations.Concat(Arg(one), Arg(two)).ToString());
+            Assert.AreEqual("{one}[1,1]{c}[1,1]", operations.Concat(Arg(one), MakeBricksArg("c")).ToString());
+            Assert.AreEqual("{c}[1,1]{one}[1,1]", operations.Concat(MakeBricksArg("c"), Arg(one)).ToString());
+        }
+
+        /// <summary>
+        /// Tests extending brick lists.
+        /// </summary>
+        [TestMethod]
+        public void Extend()
+        {
+            Bricks one = MakeBricks("one");
+            Bricks two = MakeBricks("two");
+            Bricks longBricks = operations.Concat(Arg(operations.Concat(Arg(one), Arg(two))), Arg(one));
+
+
+            Assert.AreEqual("{one}[1,1]{}[0,0]{}[0,0]", one.Policy.Extend(one, longBricks).ToString());
+            Assert.AreEqual("{}[0,0]{two}[1,1]{}[0,0]", two.Policy.Extend(two, longBricks).ToString());
+            Assert.AreEqual("{one}[1,1]{two}[1,1]{one}[1,1]", longBricks.Policy.Extend(longBricks, longBricks).ToString());
+
+            Assert.AreEqual("{one}[1,1]", one.Policy.Extend(one, two).ToString());
+        }
+
+        [TestMethod]
+        public void Join()
+        {
+            Bricks one = MakeBricks("one");
+            Bricks two = MakeBricks("two");
+            Bricks join = one.Join(two);
+
+            Assert.AreEqual("{one,two}[1,1]", join.ToString());
+
+            Assert.AreEqual("{one}[1,1]", one.Join(one).ToString());
+        }
+
+        [TestMethod]
+        public void Meet()
+        {
+            Bricks one = MakeBricks("one");
+            Bricks two = MakeBricks("two");
+
+            Assert.IsTrue(one.Meet(two).IsBottom);
+            Assert.AreEqual("{one}[1,1]", one.Meet(one).ToString());
+            Assert.AreEqual("{one}[1,1]", one.Meet(one.Top).ToString());
+        }
+
     }
-
-    /// <summary>
-    /// Tests converting string constants to bricks.
-    /// </summary>
-    [TestMethod]
-    public void Constant()
-    {
-      Bricks bricks = MakeBricks("const");
-      Bricks empty = MakeBricks("");
-
-      Assert.AreEqual("{const}[1,1]", bricks.ToString());
-      Assert.AreEqual("", empty.ToString());
-    }
-
-    [TestMethod]
-    public void ConstantConcat()
-    {
-      Bricks one = MakeBricks("one");
-      Bricks two = MakeBricks("two");
-
-      Assert.AreEqual("{one}[1,1]{two}[1,1]", operations.Concat(Arg(one), Arg(two)).ToString());
-      Assert.AreEqual("{one}[1,1]{c}[1,1]", operations.Concat(Arg(one), MakeBricksArg("c")).ToString());
-      Assert.AreEqual("{c}[1,1]{one}[1,1]", operations.Concat(MakeBricksArg("c"), Arg(one)).ToString());
-    }
-
-    /// <summary>
-    /// Tests extending brick lists.
-    /// </summary>
-    [TestMethod]
-    public void Extend()
-    {
-      Bricks one = MakeBricks("one");
-      Bricks two = MakeBricks("two");
-      Bricks longBricks = operations.Concat(Arg(operations.Concat(Arg(one), Arg(two))), Arg(one));
-
-
-      Assert.AreEqual("{one}[1,1]{}[0,0]{}[0,0]", one.Policy.Extend(one, longBricks).ToString());
-      Assert.AreEqual("{}[0,0]{two}[1,1]{}[0,0]", two.Policy.Extend(two, longBricks).ToString());
-      Assert.AreEqual("{one}[1,1]{two}[1,1]{one}[1,1]", longBricks.Policy.Extend(longBricks, longBricks).ToString());
-
-      Assert.AreEqual("{one}[1,1]", one.Policy.Extend(one, two).ToString());
-    }
-
-    [TestMethod]
-    public void Join()
-    {
-      Bricks one = MakeBricks("one");
-      Bricks two = MakeBricks("two");
-      Bricks join = one.Join(two);
-
-      Assert.AreEqual("{one,two}[1,1]", join.ToString());
-
-      Assert.AreEqual("{one}[1,1]", one.Join(one).ToString());
-    }
-
-    [TestMethod]
-    public void Meet()
-    {
-      Bricks one = MakeBricks("one");
-      Bricks two = MakeBricks("two");
-
-      Assert.IsTrue(one.Meet(two).IsBottom);
-      Assert.AreEqual("{one}[1,1]", one.Meet(one).ToString());
-      Assert.AreEqual("{one}[1,1]", one.Meet(one.Top).ToString());
-    }
-
-  }
 }

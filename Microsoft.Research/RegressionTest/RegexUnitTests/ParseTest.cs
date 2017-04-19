@@ -64,7 +64,7 @@ namespace RegexUnitTests
             Test("a?");
             Test("a{3}");
             Test("a{2,}");
-            
+
             Test("a{2,3}");
 
             Test("a*?");

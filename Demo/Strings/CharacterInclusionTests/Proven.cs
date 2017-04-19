@@ -25,79 +25,79 @@ using System.Text.RegularExpressions;
 
 public class Proven
 {
-  /// <summary>
-  /// Test joining prefixes
-  /// </summary>
-  public void Join(bool x)
-  {
-    string value;
-    if (x)
-      value = "something";
-    else
-      value = "other";
+    /// <summary>
+    /// Test joining prefixes
+    /// </summary>
+    public void Join(bool x)
+    {
+        string value;
+        if (x)
+            value = "something";
+        else
+            value = "other";
 
-    Contract.Assert(value.Contains("o"));
-    Contract.Assert(value.Contains("t"));
-    Contract.Assert(value.Contains("h"));
-    Contract.Assert(!value.Contains("a"));
-  }
-
-
-  public void Replace(string a)
-  {
-    string s = a.Replace('a', 'b');
-
-    Contract.Assert(!s.Contains("a"));
-  }
-
-  public void CatConst(string a)
-  {
-    string b = a + "a";
-    Contract.Assert(b.Contains("a"));
-  }
+        Contract.Assert(value.Contains("o"));
+        Contract.Assert(value.Contains("t"));
+        Contract.Assert(value.Contains("h"));
+        Contract.Assert(!value.Contains("a"));
+    }
 
 
-  public void AssumeCat(string a, string b)
-  {
-    Contract.Assume(a.Contains("a"));
-    Contract.Assume(b.Contains("b"));
+    public void Replace(string a)
+    {
+        string s = a.Replace('a', 'b');
 
-    string s = a + b;
+        Contract.Assert(!s.Contains("a"));
+    }
 
-    Contract.Assert(s.Contains("a"));
-    Contract.Assert(s.Contains("b"));
-  }
+    public void CatConst(string a)
+    {
+        string b = a + "a";
+        Contract.Assert(b.Contains("a"));
+    }
 
-  public void AssumeCatNot(string a, string b)
-  {
-    Contract.Assume(!a.Contains("a"));
-    Contract.Assume(!b.Contains("a"));
 
-    string s = a + b;
+    public void AssumeCat(string a, string b)
+    {
+        Contract.Assume(a.Contains("a"));
+        Contract.Assume(b.Contains("b"));
 
-    Contract.Assert(!s.Contains("a"));
-  }
+        string s = a + b;
 
-  public void AssumeEmpty(string s)
-  {
-    Contract.Assume(string.IsNullOrEmpty(s));
+        Contract.Assert(s.Contains("a"));
+        Contract.Assert(s.Contains("b"));
+    }
 
-    Contract.Assert(!s.Contains("a"));
-  }
+    public void AssumeCatNot(string a, string b)
+    {
+        Contract.Assume(!a.Contains("a"));
+        Contract.Assume(!b.Contains("a"));
 
-  public void RegexMatch(string s)
-  {
-    Contract.Assume(s.Contains("a"));
-    Contract.Assume(s.Contains("b"));
+        string s = a + b;
 
-    Contract.Assume(!s.Contains("x"));
-    Contract.Assume(!s.Contains("y"));
+        Contract.Assert(!s.Contains("a"));
+    }
 
-    Contract.Assert(Regex.IsMatch(s, "a"));
-    Contract.Assert(Regex.IsMatch(s, "a|u|x"));
-    Contract.Assert(!Regex.IsMatch(s, "x"));
-    Contract.Assert(!Regex.IsMatch(s, "ax"));
-    Contract.Assert(!Regex.IsMatch(s, "x|y"));
-    Contract.Assert(!Regex.IsMatch(s, "^x$"));
-  }
+    public void AssumeEmpty(string s)
+    {
+        Contract.Assume(string.IsNullOrEmpty(s));
+
+        Contract.Assert(!s.Contains("a"));
+    }
+
+    public void RegexMatch(string s)
+    {
+        Contract.Assume(s.Contains("a"));
+        Contract.Assume(s.Contains("b"));
+
+        Contract.Assume(!s.Contains("x"));
+        Contract.Assume(!s.Contains("y"));
+
+        Contract.Assert(Regex.IsMatch(s, "a"));
+        Contract.Assert(Regex.IsMatch(s, "a|u|x"));
+        Contract.Assert(!Regex.IsMatch(s, "x"));
+        Contract.Assert(!Regex.IsMatch(s, "ax"));
+        Contract.Assert(!Regex.IsMatch(s, "x|y"));
+        Contract.Assert(!Regex.IsMatch(s, "^x$"));
+    }
 }

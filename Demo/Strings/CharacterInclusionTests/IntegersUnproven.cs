@@ -24,35 +24,35 @@ using System.Threading.Tasks;
 
 public class IntegersUnproven
 {
-  public void IndexOf(string value)
-  {
-    Contract.Requires(value.Contains("a"));
-    Contract.Requires(!value.Contains("z"));
+    public void IndexOf(string value)
+    {
+        Contract.Requires(value.Contains("a"));
+        Contract.Requires(!value.Contains("z"));
 
-    Contract.Assert(value.IndexOf("b", StringComparison.Ordinal) >= 0);
-  }
+        Contract.Assert(value.IndexOf("b", StringComparison.Ordinal) >= 0);
+    }
 
-  public void LastIndexOf(string value)
-  {
-    Contract.Requires(value.Contains("a"));
-    Contract.Requires(!value.Contains("z"));
+    public void LastIndexOf(string value)
+    {
+        Contract.Requires(value.Contains("a"));
+        Contract.Requires(!value.Contains("z"));
 
-    Contract.Assert(value.LastIndexOf("b", StringComparison.Ordinal) >= 0);
-  }
+        Contract.Assert(value.LastIndexOf("b", StringComparison.Ordinal) >= 0);
+    }
 
-  public void IndexOfChar(string value)
-  {
-    Contract.Requires(value.Contains("a"));
-    Contract.Requires(!value.Contains("z"));
+    public void IndexOfChar(string value)
+    {
+        Contract.Requires(value.Contains("a"));
+        Contract.Requires(!value.Contains("z"));
 
-    Contract.Assert(value.IndexOf('b') >= 0);
-  }
+        Contract.Assert(value.IndexOf('b') >= 0);
+    }
 
-  public void LastIndexOfChar(string value)
-  {
-    Contract.Requires(value.Contains("a"));
-    Contract.Requires(!value.Contains("z"));
+    public void LastIndexOfChar(string value)
+    {
+        Contract.Requires(value.Contains("a"));
+        Contract.Requires(!value.Contains("z"));
 
-    Contract.Assert(value.LastIndexOf('b') >= 0);
-  }
+        Contract.Assert(value.LastIndexOf('b') >= 0);
+    }
 }
