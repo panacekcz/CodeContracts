@@ -235,9 +235,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
     }
 
-    /// <summary>
-    /// This one should 
-    /// </summary>
+   
     internal class TokensNegativeRegexOperations : IGeneratingOperationsForRegex<TokensNegativeRegexState>
     {
         private readonly bool underapproximate;
