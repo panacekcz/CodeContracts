@@ -35,7 +35,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// Operations for generating a non-matching CharacterInclusion for a regex.
     /// (CharacterInclusion that over-approximates the set of non-matching strings.)
     /// </summary>
-    class CharacterInclusionComplementGeneratingOperations<CharacterSet> : IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>>
+    internal class CharacterInclusionComplementGeneratingOperations<CharacterSet> : IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>>
         where CharacterSet : ICharacterSet<CharacterSet>
     {
         private readonly CharacterInclusion<CharacterSet> factoryElement;
@@ -245,6 +245,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
     internal class CharacterInclusionMatchingOperations<CharacterSet> : IMatchingOperationsForRegex<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>
         where CharacterSet : ICharacterSet<CharacterSet>
     {
+
+        private CharacterSet emptySet;
+
+        public CharacterInclusionMatchingOperations(CharacterInclusion<CharacterSet> input)
+        {
+            emptySet = input.CreateCharacterSetFor(false);
+        }
+
         public CharacterInclusionMatchingState<CharacterSet> AssumeEnd(CharacterInclusion<CharacterSet> input, CharacterInclusionMatchingState<CharacterSet> prev, bool under)
         {
             if (prev.bottom)
@@ -291,8 +299,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     // set empty and loopsafe to false
                     return new CharacterInclusionMatchingState<CharacterSet>
                     {
-                        encountered = input.CreateCharacterSetFor(false),
-                        looped = input.CreateCharacterSetFor(false),
+                        encountered = emptySet,
+                        looped = emptySet,
                         startAnchor = true,
                         endAnchor = prev.endAnchor,
                         empty = true,
@@ -309,8 +317,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 // Set encountered to false
                 return new CharacterInclusionMatchingState<CharacterSet>
                 {
-                    encountered = input.CreateCharacterSetFor(false),
-                    looped = input.CreateCharacterSetFor(false),
+                    encountered = emptySet,
+                    looped = emptySet,
                     startAnchor = true,
                     endAnchor = prev.endAnchor,
                     empty = true,
@@ -323,8 +331,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             return new CharacterInclusionMatchingState<CharacterSet>
             {
-                encountered = input.CreateCharacterSetFor(false),
-                looped = input.CreateCharacterSetFor(false),
+                encountered = emptySet,
+                looped = emptySet,
                 startAnchor = false,
                 endAnchor = false,
                 empty = false,
@@ -336,8 +344,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             return new CharacterInclusionMatchingState<CharacterSet>
             {
-                encountered = input.CreateCharacterSetFor(false),
-                looped = input.CreateCharacterSetFor(false),
+                encountered = emptySet,
+                looped = emptySet,
                 startAnchor = false,
                 endAnchor = false,
                 empty = true,
@@ -358,6 +366,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 looped = left.looped.Intersection(right.looped),
                 startAnchor = under ? (left.startAnchor || right.startAnchor) : left.startAnchor && right.startAnchor,
                 endAnchor = under ? (left.endAnchor || right.endAnchor) : left.endAnchor && right.endAnchor,
+                //TODO: VD: empty
                 bottom = false,
             };
         }
@@ -378,7 +387,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return new CharacterInclusionMatchingState<CharacterSet>
                 {
                     encountered = cs,
-                    looped = input.CreateCharacterSetFor(false),
+                    looped = emptySet,
                     startAnchor = prev.startAnchor,
                     endAnchor = false,
                     empty = false,
@@ -394,11 +403,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return new CharacterInclusionMatchingState<CharacterSet>
                 {
                     encountered = prev.encountered.Union(cs),
-                    looped = input.CreateCharacterSetFor(false),
+                    looped = emptySet,
                     startAnchor = prev.startAnchor,
                     endAnchor = false,
-                    empty = false,
-                    bottom = false,
+                    empty = false, //TODO: char after end anchor, should go to bottom
+                    bottom = false, 
                 };
             }
         }
@@ -456,6 +465,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     else
                     {
                         return prev;
+                        //TODO: VD: remove?
                         /*return new CharacterInclusionMatchingState<CharacterSet>
                         {
                             encountered = setFactory.Create(false, classification.Buckets),
@@ -541,6 +551,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             this.value = value;
         }
+
+        //TODO: VD: remove
 #if false
         #region Convert matched regex to CharacterSet
 
@@ -711,24 +723,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public ProofOutcome IsMatch(Microsoft.Research.Regex.Model.Element regex)
         {
-
-            var operations = new CharacterInclusionMatchingOperations<CharacterSet>();
+            // Create forward matching interpreter
+            var operations = new CharacterInclusionMatchingOperations<CharacterSet>(this.value);
             var interpretation = new MatchingInterpretation<CharacterInclusionMatchingState<CharacterSet>, CharacterInclusion<CharacterSet>>(operations, this.value);
             var interpreter = new ForwardRegexInterpreter<MatchingState<CharacterInclusionMatchingState<CharacterSet>>>(interpretation);
 
             var result = interpreter.Interpret(regex);
 
-
             bool canMatch = !result.Over.bottom;
             bool mustMatch = result.Under.Accepts(value);
 
             return ProofOutcomeUtils.Build(canMatch, !mustMatch);
-
         }
 
         public CharacterInclusion<CharacterSet> Assume(Microsoft.Research.Regex.Model.Element regex, bool match)
         {
-
+            // Create forward generating interpreter
             IGeneratingOperationsForRegex<CharacterInclusion<CharacterSet>> operations;
             if (match)
                 operations = new CharacterInclusionGeneratingOperations<CharacterSet>(value);
@@ -742,7 +752,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return result.Open;
 
         }
-
 
         public IStringPredicate PredicateFromRegex<Variable>(Microsoft.Research.Regex.Model.Element regex, Variable thisVar)
                 where Variable : class, IEquatable<Variable>
