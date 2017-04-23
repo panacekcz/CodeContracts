@@ -25,9 +25,11 @@ set file="%2\bin\debug\%2.dll"
 if not "%~3" == "" (
 
 if "%3" == "/arrays" (
-set arrays=-arrays -bounds -arithmetic
+set arrays=-arrays -bounds -arithmetic -nonnull
 ) else if "%3" == "/libs" (
 set libs=-libpaths:..\..\Microsoft.Research\Contracts\bin\Debug\.NETFramework\v4.5
+) else if "%3" == "/infer" (
+set infer=-suggest:methodensures -infer:methodensures
 ) else if "%3" == "/trace" (
 set trace=-trace:dfa
 ) else if "%3" == "/absolute" (
@@ -41,9 +43,9 @@ goto :loop
 )
 
 if "%err%" == "" (
-..\..\Microsoft.Research\Clousot\bin\debug\clousot.exe -show:validations !arrays! !libs! !domain! !trace! !file!
+..\..\Microsoft.Research\Clousot\bin\debug\clousot.exe -show:validations !infer! !arrays! !libs! !domain! !trace! !file!
 ) else (
-echo ..\..\Microsoft.Research\Clousot\bin\debug\clousot.exe -show:validations !arrays! !libs! !domain! !trace! !file!
+echo ..\..\Microsoft.Research\Clousot\bin\debug\clousot.exe -show:validations !infer! !arrays! !libs! !domain! !trace! !file!
 )
 
 )
