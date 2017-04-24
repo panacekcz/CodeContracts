@@ -20,5 +20,11 @@ namespace Microsoft.Research.Regex
 
             return modelCreator.CreateModelForAST(ast);
         }
+
+        public static string RegexForModel(Model.Element e)
+        {
+            var astCreator = new ModelASTVisitor();
+            return astCreator.CreateASTForModel(e).ToString();
+        }
     }
 }

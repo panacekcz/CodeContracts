@@ -32,6 +32,13 @@ namespace Microsoft.Research.Regex.Model
             this.canMatch = canMatch;
         }
 
+        public Character(char c)
+        {
+            var ranges = new CharRanges(new CharRange(c, c));
+            this.canMatch = ranges;
+            this.mustMatch = ranges;
+        }
+
         internal override void GenerateString(StringBuilder builder)
         {
             builder.Append("char(");
