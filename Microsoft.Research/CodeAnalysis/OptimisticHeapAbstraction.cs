@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// Modified by Vlastimil Dort (2016-2017)
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -870,6 +872,10 @@ namespace Microsoft.Research.CodeAnalysis
                 /// </summary>
                 public readonly Constructor Length;
                 /// <summary>
+                /// Model field for toString
+                /// </summary>
+                public readonly Constructor ToStringCall;
+                /// <summary>
                 /// Model field for writable extent of pointers
                 /// </summary>
                 public readonly Constructor WritableBytes;
@@ -958,6 +964,7 @@ namespace Microsoft.Research.CodeAnalysis
                     ElementAddress = For("$Element");
                     Length = For("$Length");
                     WritableBytes = For("$WritableBytes");
+                    ToStringCall = For("$ToString");
                     VoidAddr = For("$VoidAddr");
                     UnaryNot = For("$UnaryNot");
                     IsInst = For("$IsInst");
@@ -3268,6 +3275,22 @@ namespace Microsoft.Research.CodeAnalysis
                 return this.mdDecoder.IsArray(type) || this.mdDecoder.System_String.Equals(type); // || this.IsIEnumerable(type);
             }
 
+            private TypeCache StringBuilderType = new TypeCache("System.Text.StringBuilder");
+
+            private bool NeedsToStringManifested(Type type)
+            {
+                return IsStringBuilder(type);
+            }
+            private bool IsStringBuilder(Type type)
+            {
+                Type stringBuilder;
+                if (StringBuilderType.TryGet(this.mdDecoder, out stringBuilder))
+                {
+                    if (mdDecoder.Equal(type, stringBuilder)) return true;
+                }
+                return false;
+            }
+
             private TypeCache IEnumerableType = new TypeCache("System.Collections.IEnumerable");
             private TypeCache IEnumerable1Type = new TypeCache("System.Collections.Generic.IEnumerable`1");
 
@@ -4258,6 +4281,14 @@ namespace Microsoft.Research.CodeAnalysis
                 SetType(destAddr, mdDecoder.ManagedPointer(mdDecoder.System_Int32));
             }
 
+            private void AssignToString(ESymValue destAddr, ESymValue array)
+            {
+                ESymValue str = egraph[Constructors.ToStringCall, array];
+                SetType(str, mdDecoder.System_String);
+                egraph[Constructors.ValueOf, destAddr] = str;
+                SetType(destAddr, mdDecoder.ManagedPointer(mdDecoder.System_String));
+            }
+
             private void AssignWritableBytes(ESymValue destAddr, ESymValue pointer)
             {
                 ESymValue len = egraph[Constructors.WritableBytes, pointer];
@@ -4468,6 +4499,12 @@ namespace Microsoft.Research.CodeAnalysis
             {
                 ESymValue len = egraph[Constructors.Length, arrayValue];
                 SetType(len, mdDecoder.System_Int32);
+            }
+
+            private void ManifestToString(ESymValue arrayValue)
+            {
+                ESymValue str = egraph[Constructors.ToStringCall, arrayValue];
+                SetType(str, mdDecoder.System_String);
             }
 
             private void ManifestWritableBytes(ESymValue pointerValue)
@@ -4810,6 +4847,13 @@ namespace Microsoft.Research.CodeAnalysis
                             data.AssignArrayLength(data.Address(dest), data.Value(args[0]));
                             return data;
                         }
+
+                        if (data.IsStringBuilder(declaringType) && methodName == "ToString")
+                        {
+                            data.AssignToString(data.Address(dest), data.Value(args[0]));
+                            return data;
+                        }
+
                         if (mdDecoder.Equal(declaringType, mdDecoder.System_Object)
                           && methodName == "MemberwiseClone")
                         {
@@ -6608,6 +6652,12 @@ namespace Microsoft.Research.CodeAnalysis
                         return;
                     }
 
+                    if (data.NeedsToStringManifested(t))
+                    {
+                        data.ManifestToString(value);
+                        return;
+                    }
+
                     if (mdDecoder.IsUnmanagedPointer(t))
                     {
                         data.ManifestWritableBytes(value);
@@ -7422,6 +7472,12 @@ namespace Microsoft.Research.CodeAnalysis
                 return lengthValue != null;
             }
 
+            internal bool TryGetToString(ESymValue objValue, out ESymValue toStringValue)
+            {
+                toStringValue = egraph.TryLookup(Constructors.ToStringCall, objValue);
+                return toStringValue != null;
+            }
+
             internal bool TryGetWritableBytes(ESymValue arrayValue, out ESymValue lengthValue)
             {
                 lengthValue = egraph.TryLookup(Constructors.WritableBytes, arrayValue);
@@ -7906,7 +7962,8 @@ namespace Microsoft.Research.CodeAnalysis
                     else if (
                         constructor == Constructors.ValueOf ||
                         constructor == Constructors.WritableBytes ||
-                        constructor == Constructors.Length
+                        constructor == Constructors.Length ||
+                        constructor == Constructors.ToStringCall
                        )
                     {
                         sofar = AccumulatePathContexts(eterm.Args[0], sofar, visited);
@@ -9310,6 +9367,21 @@ namespace Microsoft.Research.CodeAnalysis
                 length = new SymbolicValue(len);
                 return success;
             }
+
+            public bool TryGetToString(APC at, SymbolicValue obj, out SymbolicValue toStr)
+            {
+                Domain d;
+                if (!parent.PreStateLookup(at, out d))
+                {
+                    toStr = default(SymbolicValue);
+                    return false;
+                }
+                ESymValue str;
+                bool success = d.TryGetToString(obj.symbol, out str);
+                toStr = new SymbolicValue(str);
+                return success;
+            }
+
 
             public bool TryGetModelArray(APC at, SymbolicValue enumerable, out SymbolicValue modelArray)
             {

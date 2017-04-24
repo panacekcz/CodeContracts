@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// Modified by Vlastimil Dort (2016-2017)
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -1348,6 +1350,13 @@ namespace Microsoft.Research.CodeAnalysis
         bool TryGetArrayLength(APC at, SymbolicValue array, out SymbolicValue length);
 
         /// <summary>
+        /// VD: Returns the value of ToString call
+        /// </summary>
+        [Pure]
+        bool TryGetToString(APC at, SymbolicValue array, out SymbolicValue length);
+
+
+        /// <summary>
         /// Returns the writable bytes extent of a pointer if known
         /// </summary>
         [Pure]
@@ -1609,6 +1618,11 @@ namespace Microsoft.Research.CodeAnalysis
         }
 
         public bool TryGetArrayLength(APC at, SymbolicValue array, out SymbolicValue length)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool TryGetToString(APC at, SymbolicValue obj, out SymbolicValue str)
         {
             throw new NotImplementedException();
         }
