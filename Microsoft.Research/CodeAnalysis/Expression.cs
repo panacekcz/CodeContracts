@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// Modified by Vlastimil Dort (2016-2017)
+
 using System;
 using Generics = System.Collections.Generic;
 using Microsoft.Research.DataStructures;
@@ -1219,6 +1221,16 @@ namespace Microsoft.Research.CodeAnalysis
                         formatLeft = this.Left.IsBinary ? "({0})" : "{0}";
                         format = formatLeft + ".Equals({2})";
                         break;
+                    case BinaryOperator.Contains:
+                        format = "{0}.{1}({2},StringComparison.Ordinal)";
+                        break;
+                    case BinaryOperator.StartsWith:
+                    case BinaryOperator.EndsWith:
+                        format = "{0}.{1}({2},StringComparison.Ordinal)";
+                        break;
+                    case BinaryOperator.RegexIsMatch:
+                        format = "{1}({0},{2})";
+                        break;
                 }
 
                 return format;
@@ -1482,6 +1494,8 @@ namespace Microsoft.Research.CodeAnalysis
                 // with contracts output. The solution we came up with is to simply ignore the Conv_u casts.
                 if (this.UnaryOp == UnaryOperator.Conv_u)
                     return this.Argument.ToString();
+                else if (this.UnaryOp == UnaryOperator.ToString)
+                    return string.Format("{0}.ToString()", this.Argument.ToString());
 
                 string format = "{0}" + /*(this.Argument.IsConstant ? "{1}" : */"({1})"/*)*/; // Mic: always parentheses, for example conv with negative constants
                 return string.Format(format, this.OpCodeString, this.Argument.ToString());
@@ -1493,6 +1507,8 @@ namespace Microsoft.Research.CodeAnalysis
                 // with contracts output. The solution we came up with is to simply ignore the Conv_u casts.
                 if (this.UnaryOp == UnaryOperator.Conv_u)
                     return this.Argument.ToString(converter);
+                else if (this.UnaryOp == UnaryOperator.ToString)
+                    return string.Format("{0}.ToString()", this.Argument.ToString(converter));
 
                 string format = "{0}" + /*(this.Argument.IsConstant ? "{1}" : */"({1})"/*)*/; // Mic: always parentheses, for example conv with negative constants
                 return string.Format(format, this.OpCodeString, this.Argument.ToString(converter));

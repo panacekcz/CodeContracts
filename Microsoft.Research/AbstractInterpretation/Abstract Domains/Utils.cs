@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// Modified by Vlastimil Dort (2016-2017)
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -564,6 +566,18 @@ namespace Microsoft.Research.AbstractDomains
                 case ExpressionOperator.Xor:
                     return VisitXor(decoder.LeftExpressionFor(exp), decoder.RightExpressionFor(exp), exp, data);
 
+                case ExpressionOperator.StartsWith:
+                    return VisitStartsWith(decoder.LeftExpressionFor(exp), decoder.RightExpressionFor(exp), exp, data);
+
+                case ExpressionOperator.EndsWith:
+                    return VisitEndsWith(decoder.LeftExpressionFor(exp), decoder.RightExpressionFor(exp), exp, data);
+
+                case ExpressionOperator.Contains:
+                    return VisitContains(decoder.LeftExpressionFor(exp), decoder.RightExpressionFor(exp), exp, data);
+
+                case ExpressionOperator.RegexIsMatch:
+                    return VisitRegexIsMatch(decoder.LeftExpressionFor(exp), decoder.RightExpressionFor(exp), exp, data);
+
                 default:
                     Contract.Assert(false);
                     throw new AbstractInterpretationException("I do not know this expression symbol " + decoder.OperatorFor(exp));
@@ -1049,6 +1063,38 @@ namespace Microsoft.Research.AbstractDomains
         }
 
         virtual public Out VisitXor(Expression left, Expression right, Expression original, In data)
+        {
+            Contract.Requires(left != null);
+            Contract.Requires(right != null);
+
+            return Default(data);
+        }
+
+        virtual public Out VisitStartsWith(Expression left, Expression right, Expression original, In data)
+        {
+            Contract.Requires(left != null);
+            Contract.Requires(right != null);
+
+            return Default(data);
+        }
+
+        virtual public Out VisitEndsWith(Expression left, Expression right, Expression original, In data)
+        {
+            Contract.Requires(left != null);
+            Contract.Requires(right != null);
+
+            return Default(data);
+        }
+
+        virtual public Out VisitContains(Expression left, Expression right, Expression original, In data)
+        {
+            Contract.Requires(left != null);
+            Contract.Requires(right != null);
+
+            return Default(data);
+        }
+
+        virtual public Out VisitRegexIsMatch(Expression left, Expression right, Expression original, In data)
         {
             Contract.Requires(left != null);
             Contract.Requires(right != null);

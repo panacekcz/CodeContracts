@@ -14,6 +14,8 @@
 
 // The instantiation for the numerical analysis, based on the optimistic heap abstraction
 
+// Modified by Vlastimil Dort (2016-2017)
+
 using System;
 using Generics = System.Collections.Generic;
 using Microsoft.Research.AbstractDomains.Expressions;
@@ -115,6 +117,8 @@ namespace Microsoft.Research.CodeAnalysis
           case UnaryOperator.WritableBytes:
             return ExpressionOperator.WritableBytes;
 
+          case UnaryOperator.ToString: //VD: String operators
+            return ExpressionOperator.ToStringCall;
           default:
             return ExpressionOperator.Unknown;
         }
@@ -206,6 +210,16 @@ namespace Microsoft.Research.CodeAnalysis
 
           case BinaryOperator.Xor:
             return ExpressionOperator.Xor;
+
+          case BinaryOperator.StartsWith: // VD: string expressions
+            return ExpressionOperator.StartsWith;
+          case BinaryOperator.EndsWith: 
+            return ExpressionOperator.EndsWith;
+          case BinaryOperator.Contains:
+            return ExpressionOperator.Contains;
+          case BinaryOperator.RegexIsMatch:
+            return ExpressionOperator.RegexIsMatch;
+
 
           default:
             return ExpressionOperator.Unknown;

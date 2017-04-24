@@ -4,6 +4,8 @@
 // The interfaces for the pure expressions used internally by the abstract domains
 // When instantiating the framework for an analysis, these are the interfaces that must implemented
 
+// Modified by Vlastimil Dort (2016-2017)
+
 using System.Collections.Generic;
 using Microsoft.Research.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -37,8 +39,12 @@ namespace Microsoft.Research.AbstractDomains.Expressions
         ConvertToFloat32, ConvertToFloat64,
         SizeOf,                                                                     // SizeOf
         WritableBytes,                                                              // The writable bytes of a pointer
-        Unknown                                                                     // All the other cases  
+
+        RegexIsMatch, StartsWith, EndsWith, Contains, ToStringCall,                 // VD: String operations
+
+        Unknown,                                                                    // All the other cases  
                                                                                     // TODO: Add type expressions as "cast", "is", "as"
+        
     }
 
     public enum ExpressionType

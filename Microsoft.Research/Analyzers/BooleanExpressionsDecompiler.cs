@@ -12,6 +12,8 @@
 // 
 // THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// Modified by Vlastimil Dort (2016-2017)
+
 
 using System.Collections.Generic;
 using System;
@@ -352,7 +354,9 @@ namespace Microsoft.Research.CodeAnalysis
               case UnaryOperator.WritableBytes:
                 type = this.DecoderForMetaData.System_UInt64;
                 break;
-
+              case UnaryOperator.ToString:
+                type = this.DecoderForMetaData.System_String;
+                break;
               default:
                 // return false;
                 return Status.False;
@@ -460,6 +464,11 @@ namespace Microsoft.Research.CodeAnalysis
                 case BinaryOperator.Cobjeq:
                 case BinaryOperator.LogicalAnd:
                 case BinaryOperator.LogicalOr:
+
+                case BinaryOperator.StartsWith: //VD: string operators
+                case BinaryOperator.EndsWith:
+                case BinaryOperator.Contains:
+                case BinaryOperator.RegexIsMatch:
                   {
                     type = this.DecoderForMetaData.System_Boolean;
                   }
@@ -1014,6 +1023,11 @@ namespace Microsoft.Research.CodeAnalysis
                 return new LiftedType(left); // no need to cast, C# rules will do it for us
               else if (DecoderForMetaData.DerivesFrom(right, left))
                 return new LiftedType(right); // no need to cast, C# rules will do it for us
+            }
+            else if(bop == BinaryOperator.RegexIsMatch || bop == BinaryOperator.StartsWith || bop == BinaryOperator.EndsWith || bop == BinaryOperator.Contains) // VD: string operators
+            {
+              if (left.Equals(right))
+                return new LiftedType(left);
             }
           }
           else if (left.Equals(right))

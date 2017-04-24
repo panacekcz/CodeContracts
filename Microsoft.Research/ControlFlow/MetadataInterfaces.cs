@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// Modified by Vlastimil Dort (2016-2017)
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -85,6 +87,8 @@ namespace Microsoft.Research.CodeAnalysis
         /// A synthetic conversion to Decimal. We insert this instead of Decimal constructors.
         /// </summary>
         Conv_dec,
+        //VD: string analysis
+        ToString,
     }
 
     /// <summary>
@@ -125,6 +129,11 @@ namespace Microsoft.Research.CodeAnalysis
         Sub_Ovf,
         Sub_Ovf_Un,
         Xor,
+
+        RegexIsMatch, // VD: String operators (Regex.IsMatch(left, right))
+        StartsWith, // VD: String operators (left.StartsWith(right, StringComparison.Ordinal))
+        EndsWith, // VD: String operators (left.EndsWith(right, StringComparison.Ordinal))
+        Contains, // VD: String operators (left.Contains(right))
     }
 
     public static class OperatorExtensions
@@ -184,6 +193,14 @@ namespace Microsoft.Research.CodeAnalysis
                     return "-";
                 case BinaryOperator.Xor:
                     return "^";
+                case BinaryOperator.RegexIsMatch:
+                    return "Regex.IsMatch";
+                case BinaryOperator.StartsWith:
+                    return "StartsWith";
+                case BinaryOperator.EndsWith:
+                    return "EndsWith";
+                case BinaryOperator.Contains:
+                    return "Contains";
 
                 default:
                     throw new InvalidOperationException("Unknown binary operator");
@@ -228,6 +245,8 @@ namespace Microsoft.Research.CodeAnalysis
                     return "Contracts.WritableBytes";
                 case UnaryOperator.Conv_dec:
                     return "new Decimal";
+                case UnaryOperator.ToString:
+                    return "ToString";
                 default:
                     throw new InvalidOperationException("Unknown unary op");
             }
