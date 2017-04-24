@@ -1202,6 +1202,10 @@ namespace Microsoft.Research.CodeAnalysis
                                 {
                                     pathElementCache = new SpecialPathElement(SpecialPathElementKind.Length, this);
                                 }
+                                if (value == "$ToString")
+                                {
+                                    pathElementCache = new SpecialPathElement(SpecialPathElementKind.ToString, this);
+                                }
                                 else if (value == "$Value")
                                 {
                                     // don't cache this, as we have different types on each path element
@@ -2083,6 +2087,14 @@ namespace Microsoft.Research.CodeAnalysis
                     }
                 }
 
+                public override bool IsMethodCall
+                {
+                    get
+                    {
+                        return this.Element == SpecialPathElementKind.ToString;
+                    }
+                }
+
                 public override bool IsDeref
                 {
                     get
@@ -2126,6 +2138,10 @@ namespace Microsoft.Research.CodeAnalysis
                             result = default(Type);
                             return false;
 
+                        case SpecialPathElementKind.ToString:
+                            result = mdDecoder.System_String;
+                            return true;
+
                         case SpecialPathElementKind.Length:
                             // Mic: if it's not an array, cast it to array (string.Length does not use this particular case)
                             if (!mdDecoder.IsArray(prevType) && !mdDecoder.System_String.Equals(prevType))
@@ -2158,6 +2174,9 @@ namespace Microsoft.Research.CodeAnalysis
                         case SpecialPathElementKind.WritableBytes:
                             return visitor.Unary(pc, UnaryOperator.WritableBytes, false, true, Unit.Value, Unit.Value, data);
 
+                        case SpecialPathElementKind.ToString:
+                            return visitor.Unary(pc, UnaryOperator.ToString, false, false, Unit.Value, Unit.Value, data);
+
                         default:
                             throw new NotImplementedException("Unknown kind");
                     }
@@ -2169,6 +2188,7 @@ namespace Microsoft.Research.CodeAnalysis
             {
                 WritableBytes,
                 Length,
+                ToString,
                 Deref
             }
 
@@ -2323,7 +2343,7 @@ namespace Microsoft.Research.CodeAnalysis
             }
 
             private ESymValue Address(Parameter p)
-            {
+             {
                 Constructor loc = Constructors.For(p);
                 ESymValue addr = egraph.TryLookup(loc);
                 if (addr == null)
@@ -6614,6 +6634,12 @@ namespace Microsoft.Research.CodeAnalysis
                         ManifestProperties(value, depth, data, fromType, true, t);
                     }
 
+                    if (data.NeedsToStringManifested(t))
+                    {
+                        data.ManifestToString(value);
+                        return;
+                    }
+
                     if (mdDecoder.IsClass(t))
                     {
                         foreach (Field f in mdDecoder.Fields(t))
@@ -6643,18 +6669,13 @@ namespace Microsoft.Research.CodeAnalysis
                                 }
                             }
                         }
+
                         return;
                     }
 
                     if (data.NeedsArrayLengthManifested(t))
                     {
                         data.ManifestArrayLength(value);
-                        return;
-                    }
-
-                    if (data.NeedsToStringManifested(t))
-                    {
-                        data.ManifestToString(value);
                         return;
                     }
 

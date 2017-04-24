@@ -566,6 +566,9 @@ namespace Microsoft.Research.AbstractDomains
                 case ExpressionOperator.Xor:
                     return VisitXor(decoder.LeftExpressionFor(exp), decoder.RightExpressionFor(exp), exp, data);
 
+                case ExpressionOperator.ToStringCall:
+                    return VisitToString(decoder.LeftExpressionFor(exp), exp, data);
+
                 case ExpressionOperator.StartsWith:
                     return VisitStartsWith(decoder.LeftExpressionFor(exp), decoder.RightExpressionFor(exp), exp, data);
 
@@ -1069,6 +1072,15 @@ namespace Microsoft.Research.AbstractDomains
 
             return Default(data);
         }
+
+
+        virtual public Out VisitToString(Expression left, Expression original, In data)
+        {
+            Contract.Requires(left != null);
+
+            return Default(data);
+        }
+
 
         virtual public Out VisitStartsWith(Expression left, Expression right, Expression original, In data)
         {
