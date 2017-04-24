@@ -26,45 +26,45 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  /// <summary>
-  /// Base class for test for the <see cref="Bricks"/> abstract domain.
-  /// </summary>
-  public abstract class BricksTestBase
-  {
-    protected readonly IBricksPolicy policy;
-    protected readonly Bricks.Operations<TestVariable> operations;
+    /// <summary>
+    /// Base class for test for the <see cref="Bricks"/> abstract domain.
+    /// </summary>
+    public abstract class BricksTestBase
+    {
+        protected readonly IBricksPolicy policy;
+        protected readonly Bricks.Operations<TestVariable> operations;
 
-    protected Bricks MakeBricks(string value)
-    {
-      return new Bricks(value, policy);
-    }
+        protected Bricks MakeBricks(string value)
+        {
+            return new Bricks(value, policy);
+        }
 
-    protected Bricks MakeBricks(params string[] values)
-    {
-      Bricks bricks = new Bricks(false, policy);
-      foreach (string value in values)
-        bricks = bricks.Join(new Bricks(value, policy));
-      return bricks;
-    }
-    protected WithConstants<Bricks> MakeBricksArg(params string[] values)
-    {
-      return Arg(MakeBricks(values));
-    }
-    protected WithConstants<Bricks> Arg(Bricks br)
-    {
-      return new WithConstants<Bricks>(br);
-    }
+        protected Bricks MakeBricks(params string[] values)
+        {
+            Bricks bricks = new Bricks(false, policy);
+            foreach (string value in values)
+                bricks = bricks.Join(new Bricks(value, policy));
+            return bricks;
+        }
+        protected WithConstants<Bricks> MakeBricksArg(params string[] values)
+        {
+            return Arg(MakeBricks(values));
+        }
+        protected WithConstants<Bricks> Arg(Bricks br)
+        {
+            return new WithConstants<Bricks>(br);
+        }
 
-    protected virtual IBricksPolicy CreateBricksPolicy()
-    {
-      return new DefaultBricksPolicy();
-    }
+        protected virtual IBricksPolicy CreateBricksPolicy()
+        {
+            return new DefaultBricksPolicy();
+        }
 
-    protected BricksTestBase()
-    {
-      policy = CreateBricksPolicy();
-      operations = new Bricks.Operations<TestVariable>(policy);
-    }
+        protected BricksTestBase()
+        {
+            policy = CreateBricksPolicy();
+            operations = new Bricks.Operations<TestVariable>(policy);
+        }
 
-  }
+    }
 }

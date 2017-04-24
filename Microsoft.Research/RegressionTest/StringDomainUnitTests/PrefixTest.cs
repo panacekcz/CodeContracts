@@ -26,82 +26,82 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class PrefixTests
-  {
-    Prefix somePrefix = new Prefix("somePrefix");
-    Prefix some = new Prefix("some");
-    Prefix something = new Prefix("something");
-    Prefix bottom = new Prefix((string)null);
-    Prefix top = new Prefix("");
-
-    [TestMethod]
-    public void TestPrefixJoin()
+    [TestClass]
+    public class PrefixTests
     {
-      Assert.AreEqual(some, something.Join(somePrefix));
-      Assert.AreEqual(some, some.Join(somePrefix));
-      Assert.AreEqual(some, something.Join(some));
+        Prefix somePrefix = new Prefix("somePrefix");
+        Prefix some = new Prefix("some");
+        Prefix something = new Prefix("something");
+        Prefix bottom = new Prefix((string)null);
+        Prefix top = new Prefix("");
 
-      Assert.AreEqual(somePrefix, bottom.Join(somePrefix));
-      Assert.AreEqual(somePrefix, somePrefix.Join(bottom));
+        [TestMethod]
+        public void TestPrefixJoin()
+        {
+            Assert.AreEqual(some, something.Join(somePrefix));
+            Assert.AreEqual(some, some.Join(somePrefix));
+            Assert.AreEqual(some, something.Join(some));
 
-      Assert.AreEqual(top, top.Join(somePrefix));
-      Assert.AreEqual(top, somePrefix.Join(top));
+            Assert.AreEqual(somePrefix, bottom.Join(somePrefix));
+            Assert.AreEqual(somePrefix, somePrefix.Join(bottom));
+
+            Assert.AreEqual(top, top.Join(somePrefix));
+            Assert.AreEqual(top, somePrefix.Join(top));
+        }
+
+        [TestMethod]
+        public void TestPrefixMeet()
+        {
+            Assert.AreEqual(bottom, something.Meet(somePrefix));
+            Assert.AreEqual(somePrefix, some.Meet(somePrefix));
+            Assert.AreEqual(something, something.Meet(some));
+
+            Assert.AreEqual(bottom, bottom.Meet(somePrefix));
+            Assert.AreEqual(bottom, somePrefix.Meet(bottom));
+
+            Assert.AreEqual(somePrefix, top.Meet(somePrefix));
+            Assert.AreEqual(somePrefix, somePrefix.Meet(top));
+        }
+
+        [TestMethod]
+        public void TestTop()
+        {
+            Assert.IsTrue(top.IsTop);
+            Assert.IsFalse(somePrefix.IsTop);
+            Assert.IsFalse(bottom.IsTop);
+        }
+
+        [TestMethod]
+        public void TestBottom()
+        {
+            Assert.IsFalse(top.IsBottom);
+            Assert.IsFalse(somePrefix.IsBottom);
+            Assert.IsTrue(bottom.IsBottom);
+        }
+
+        [TestMethod]
+        public void TestPrefixCompare()
+        {
+            Assert.IsTrue(somePrefix.LessThanEqual(somePrefix));
+            Assert.IsTrue(somePrefix.LessThanEqual(some));
+            Assert.IsFalse(some.LessThanEqual(somePrefix));
+            Assert.IsFalse(somePrefix.LessThanEqual(something));
+
+            Assert.IsTrue(some.LessThanEqual(top));
+
+            Assert.IsTrue(bottom.LessThanEqual(bottom));
+            Assert.IsTrue(bottom.LessThanEqual(somePrefix));
+            Assert.IsFalse(somePrefix.LessThanEqual(bottom));
+        }
+
+        [TestMethod]
+        public void TestPrefixEqual()
+        {
+            Assert.AreNotEqual(top, bottom);
+            Assert.AreNotEqual(some, somePrefix);
+            Assert.AreNotEqual(some, top);
+            Assert.AreNotEqual(some, bottom);
+        }
     }
-
-    [TestMethod]
-    public void TestPrefixMeet()
-    {
-      Assert.AreEqual(bottom, something.Meet(somePrefix));
-      Assert.AreEqual(somePrefix, some.Meet(somePrefix));
-      Assert.AreEqual(something, something.Meet(some));
-
-      Assert.AreEqual(bottom, bottom.Meet(somePrefix));
-      Assert.AreEqual(bottom, somePrefix.Meet(bottom));
-
-      Assert.AreEqual(somePrefix, top.Meet(somePrefix));
-      Assert.AreEqual(somePrefix, somePrefix.Meet(top));
-    }
-
-    [TestMethod]
-    public void TestTop()
-    {
-      Assert.IsTrue(top.IsTop);
-      Assert.IsFalse(somePrefix.IsTop);
-      Assert.IsFalse(bottom.IsTop);
-    }
-
-    [TestMethod]
-    public void TestBottom()
-    {
-      Assert.IsFalse(top.IsBottom);
-      Assert.IsFalse(somePrefix.IsBottom);
-      Assert.IsTrue(bottom.IsBottom);
-    }
-
-    [TestMethod]
-    public void TestPrefixCompare()
-    {
-      Assert.IsTrue(somePrefix.LessThanEqual(somePrefix));
-      Assert.IsTrue(somePrefix.LessThanEqual(some));
-      Assert.IsFalse(some.LessThanEqual(somePrefix));
-      Assert.IsFalse(somePrefix.LessThanEqual(something));
-
-      Assert.IsTrue(some.LessThanEqual(top));
-
-      Assert.IsTrue(bottom.LessThanEqual(bottom));
-      Assert.IsTrue(bottom.LessThanEqual(somePrefix));
-      Assert.IsFalse(somePrefix.LessThanEqual(bottom));
-    }
-
-    [TestMethod]
-    public void TestPrefixEqual()
-    {
-      Assert.AreNotEqual(top, bottom);
-      Assert.AreNotEqual(some, somePrefix);
-      Assert.AreNotEqual(some, top);
-      Assert.AreNotEqual(some, bottom);
-    }
-  }
 
 }

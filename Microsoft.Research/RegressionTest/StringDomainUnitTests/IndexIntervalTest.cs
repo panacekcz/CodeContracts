@@ -23,26 +23,26 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class IndexIntervalTest
-  {
-    [TestMethod]
-    public void JoinTest()
+    [TestClass]
+    public class IndexIntervalTest
     {
-      IndexInterval low = IndexInterval.For(4, 10);
-      IndexInterval high = IndexInterval.For(30, 43);
+        [TestMethod]
+        public void JoinTest()
+        {
+            IndexInterval low = IndexInterval.For(4, 10);
+            IndexInterval high = IndexInterval.For(30, 43);
 
-      Assert.AreEqual(IndexInterval.For(4, 43), low.Join(high));
+            Assert.AreEqual(IndexInterval.For(4, 43), low.Join(high));
+        }
+
+        [TestMethod]
+        public void MeetTest()
+        {
+            IndexInterval low = IndexInterval.For(4, 20);
+            IndexInterval high = IndexInterval.For(15, 43);
+
+            Assert.AreEqual(IndexInterval.For(15, 20), low.Meet(high));
+        }
+
     }
-
-    [TestMethod]
-    public void MeetTest()
-    {
-      IndexInterval low = IndexInterval.For(4, 20);
-      IndexInterval high = IndexInterval.For(15, 43);
-
-      Assert.AreEqual(IndexInterval.For(15, 20), low.Meet(high));
-    }
-
-  }
 }

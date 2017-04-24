@@ -27,82 +27,82 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-  [TestClass]
-  public class SuffixTests
-  {
-    Suffix someSuffix = new Suffix("someSuffix");
-    Suffix suffix = new Suffix("Suffix");
-    Suffix otherSuffix = new Suffix("otherSuffix");
-    Suffix bottom = new Suffix((string)null);
-    Suffix top = new Suffix("");
-
-    [TestMethod]
-    public void TestJoin()
+    [TestClass]
+    public class SuffixTests
     {
-      Assert.AreEqual(suffix, otherSuffix.Join(someSuffix));
-      Assert.AreEqual(suffix, suffix.Join(someSuffix));
-      Assert.AreEqual(suffix, otherSuffix.Join(suffix));
+        Suffix someSuffix = new Suffix("someSuffix");
+        Suffix suffix = new Suffix("Suffix");
+        Suffix otherSuffix = new Suffix("otherSuffix");
+        Suffix bottom = new Suffix((string)null);
+        Suffix top = new Suffix("");
 
-      Assert.AreEqual(someSuffix, bottom.Join(someSuffix));
-      Assert.AreEqual(someSuffix, someSuffix.Join(bottom));
+        [TestMethod]
+        public void TestJoin()
+        {
+            Assert.AreEqual(suffix, otherSuffix.Join(someSuffix));
+            Assert.AreEqual(suffix, suffix.Join(someSuffix));
+            Assert.AreEqual(suffix, otherSuffix.Join(suffix));
 
-      Assert.AreEqual(top, top.Join(someSuffix));
-      Assert.AreEqual(top, someSuffix.Join(top));
+            Assert.AreEqual(someSuffix, bottom.Join(someSuffix));
+            Assert.AreEqual(someSuffix, someSuffix.Join(bottom));
+
+            Assert.AreEqual(top, top.Join(someSuffix));
+            Assert.AreEqual(top, someSuffix.Join(top));
+        }
+
+        [TestMethod]
+        public void TestMeet()
+        {
+            Assert.AreEqual(bottom, otherSuffix.Meet(someSuffix));
+            Assert.AreEqual(someSuffix, suffix.Meet(someSuffix));
+            Assert.AreEqual(otherSuffix, otherSuffix.Meet(suffix));
+
+            Assert.AreEqual(bottom, bottom.Meet(someSuffix));
+            Assert.AreEqual(bottom, someSuffix.Meet(bottom));
+
+            Assert.AreEqual(someSuffix, top.Meet(someSuffix));
+            Assert.AreEqual(someSuffix, someSuffix.Meet(top));
+        }
+
+        [TestMethod]
+        public void TestTop()
+        {
+            Assert.IsTrue(top.IsTop);
+            Assert.IsFalse(someSuffix.IsTop);
+            Assert.IsFalse(bottom.IsTop);
+        }
+
+        [TestMethod]
+        public void TestBottom()
+        {
+            Assert.IsFalse(top.IsBottom);
+            Assert.IsFalse(someSuffix.IsBottom);
+            Assert.IsTrue(bottom.IsBottom);
+        }
+
+        [TestMethod]
+        public void TestCompare()
+        {
+            Assert.IsTrue(someSuffix.LessThanEqual(someSuffix));
+            Assert.IsTrue(someSuffix.LessThanEqual(suffix));
+            Assert.IsFalse(suffix.LessThanEqual(someSuffix));
+            Assert.IsFalse(someSuffix.LessThanEqual(otherSuffix));
+
+            Assert.IsTrue(suffix.LessThanEqual(top));
+
+            Assert.IsTrue(bottom.LessThanEqual(bottom));
+            Assert.IsTrue(bottom.LessThanEqual(someSuffix));
+            Assert.IsFalse(someSuffix.LessThanEqual(bottom));
+        }
+
+        [TestMethod]
+        public void TestEqual()
+        {
+            Assert.AreNotEqual(top, bottom);
+            Assert.AreNotEqual(suffix, someSuffix);
+            Assert.AreNotEqual(suffix, top);
+            Assert.AreNotEqual(suffix, bottom);
+        }
     }
-
-    [TestMethod]
-    public void TestMeet()
-    {
-      Assert.AreEqual(bottom, otherSuffix.Meet(someSuffix));
-      Assert.AreEqual(someSuffix, suffix.Meet(someSuffix));
-      Assert.AreEqual(otherSuffix, otherSuffix.Meet(suffix));
-
-      Assert.AreEqual(bottom, bottom.Meet(someSuffix));
-      Assert.AreEqual(bottom, someSuffix.Meet(bottom));
-
-      Assert.AreEqual(someSuffix, top.Meet(someSuffix));
-      Assert.AreEqual(someSuffix, someSuffix.Meet(top));
-    }
-
-    [TestMethod]
-    public void TestTop()
-    {
-      Assert.IsTrue(top.IsTop);
-      Assert.IsFalse(someSuffix.IsTop);
-      Assert.IsFalse(bottom.IsTop);
-    }
-
-    [TestMethod]
-    public void TestBottom()
-    {
-      Assert.IsFalse(top.IsBottom);
-      Assert.IsFalse(someSuffix.IsBottom);
-      Assert.IsTrue(bottom.IsBottom);
-    }
-
-    [TestMethod]
-    public void TestCompare()
-    {
-      Assert.IsTrue(someSuffix.LessThanEqual(someSuffix));
-      Assert.IsTrue(someSuffix.LessThanEqual(suffix));
-      Assert.IsFalse(suffix.LessThanEqual(someSuffix));
-      Assert.IsFalse(someSuffix.LessThanEqual(otherSuffix));
-
-      Assert.IsTrue(suffix.LessThanEqual(top));
-
-      Assert.IsTrue(bottom.LessThanEqual(bottom));
-      Assert.IsTrue(bottom.LessThanEqual(someSuffix));
-      Assert.IsFalse(someSuffix.LessThanEqual(bottom));
-    }
-
-    [TestMethod]
-    public void TestEqual()
-    {
-      Assert.AreNotEqual(top, bottom);
-      Assert.AreNotEqual(suffix, someSuffix);
-      Assert.AreNotEqual(suffix, top);
-      Assert.AreNotEqual(suffix, bottom);
-    }
-  }
 
 }
