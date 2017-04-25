@@ -20,23 +20,46 @@ namespace Microsoft.Research.Regex
             return new AST.Anchor(AnchorKind.LineStart);
         }
 
+        private AST.SingleElement CharRange(char low, char high)
+        {
+            if (low == high)
+                return new AST.Character(low);
+            else
+                return new AST.Range(low, high);
+        }
+
         protected override AST.Element VisitCharacter(Model.Character character, ref Void data)
         {
             var ranges = character.CanMatch.Ranges.ToArray();
 
             if (ranges.Length == 1 && ranges[0].Low == ranges[0].High)
+            {
+                // Single character
                 return new AST.Character(ranges[0].Low);
+            }
             else
             {
-                var setRanges = new List<AST.SingleElement>();
+                Array.Sort(ranges, (r1, r2) => r1.Low.CompareTo(r2.Low));
 
-                foreach(var range in ranges)
+                // Set of characters
+                var setRanges = new List<AST.SingleElement>();
+                int lastLow = 0;
+                int lastHigh = -1;
+
+                foreach (var range in ranges)
                 {
-                    if(range.Low == range.High)
-                        setRanges.Add(new AST.Character(range.Low));
-                    else
-                        setRanges.Add(new AST.Range(range.Low, range.High));
+                    if(range.Low - 1 != lastHigh)
+                    {
+                        if(lastHigh != -1)
+                            setRanges.Add(CharRange((char)lastLow, (char)lastHigh));
+                        lastLow = range.Low;
+                    }
+
+                    lastHigh = range.High;
                 }
+
+                if (lastHigh != -1)
+                    setRanges.Add(CharRange((char)lastLow, (char)lastHigh));
 
                 AST.CharacterSet characterSet = new CharacterSet(false, setRanges, null);
                 return characterSet;
@@ -68,7 +91,17 @@ namespace Microsoft.Research.Regex
 
         protected override AST.Element VisitLoop(Model.Loop loop, ref Void data)
         {
-            return new AST.Loop(loop.Min, loop.Max, VisitElement(loop.Pattern, ref data), false);
+            var inner = VisitElement(loop.Pattern, ref data);
+            if (loop.Min == 1 && loop.Max == 1)
+            {
+                return inner;
+            }
+            else
+            {
+                if (!(inner is AST.SingleElement))
+                    inner = new AST.SimpleGroup(inner);
+                return new AST.Loop(loop.Min, loop.Max, inner, false);
+            }
             
         }
 

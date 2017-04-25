@@ -75,11 +75,19 @@ namespace Microsoft.Research.Regex.AST
                 return new CharRanges(IsMatchRanges());
             }
         }
+
+        private void GenerateChar(StringBuilder builder, char value)
+        {
+            if (value >= '0' && value <= '9' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z')
+                builder.Append(value);
+            else
+                builder.AppendFormat("\\u{0:X4}", (int)value);
+        }
         internal override void GenerateString(StringBuilder builder)
         {
-            builder.Append(low);
+            GenerateChar(builder, low);
             builder.Append('-');
-            builder.Append(high);
+            GenerateChar(builder, high);
         }
     }
 }

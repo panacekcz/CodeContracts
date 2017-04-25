@@ -11,7 +11,7 @@ namespace Microsoft.Research.Regex
         /// <summary>
         /// Converts a regex string to a model.
         /// </summary>
-        /// <param name="regex">Regex </param>
+        /// <param name="regex">Regex string.</param>
         /// <returns>Model of <paramref name="regex"/>.</returns>
         public static Model.Element ModelForRegex(string regex)
         {
@@ -21,10 +21,15 @@ namespace Microsoft.Research.Regex
             return modelCreator.CreateModelForAST(ast);
         }
 
-        public static string RegexForModel(Model.Element e)
+        /// <summary>
+        /// Converts a regex model to a string.
+        /// </summary>
+        /// <param name="model">Regex model </param>
+        /// <returns>String representation of <paramref name="model"/>.</returns>
+        public static string RegexForModel(Model.Element model)
         {
             var astCreator = new ModelASTVisitor();
-            return astCreator.CreateASTForModel(e).ToString();
+            return astCreator.CreateASTForModel(model).ToString();
         }
     }
 }
