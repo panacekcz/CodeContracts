@@ -959,5 +959,22 @@ namespace Microsoft.Research.AbstractDomains.Strings
             predicates[decoder.UnderlyingVariable(target)] = targetPredicate;
         }
         #endregion
+
+        public override IEnumerable<StringRelation<Variable>> RelationsForVariable(Variable var)
+        {
+            SetOfConstraints<Variable> vars;
+            if(upperBounds.TryGetValue(var, out vars))
+            {
+                // TODO: implement inference for other orderings
+                if (typeof(StringAbstraction) == typeof(PrefixInterval))
+                {
+                    return vars.Values.Select(relVar => new StringRelation<Variable> { Operator = ExpressionOperator.StartsWith, RelatedVariable = relVar });
+                }
+            }
+
+            return Enumerable.Empty<StringRelation<Variable>>();
+        }
     }
+
+
 }

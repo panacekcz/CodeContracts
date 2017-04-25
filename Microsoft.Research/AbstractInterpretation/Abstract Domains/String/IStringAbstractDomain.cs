@@ -254,6 +254,30 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="variable">The variable to be evaluated.</param>
         /// <returns>An overapproximation of the value of variable.</returns>
         CodeAnalysis.ProofOutcome EvalBool(Variable variable);
+
+        /// <summary>
+        /// Suggests a regex representing a language over-approximating possible values of a variable.
+        /// </summary>
+        /// <param name="variable">A string variable</param>
+        /// <returns>Sequence of regular expressions such that all possible values of
+        /// <paramref name="variable"/> match all returned regexes.</returns>
+        IEnumerable<string> RegexForVariable(Variable variable);
+
+        /// <summary>
+        /// Suggests known relations of a variable.
+        /// </summary>
+        /// <param name="variable">A string variable</param>
+        /// <returns>Sequence of relations between
+        /// <paramref name="variable"/> and other strin variables.</returns>
+        IEnumerable<StringRelation<Variable>> RelationsForVariable(Variable variable);
+
+        /// <summary>
+        /// Checks whether a string variable is known to have a non-null value.
+        /// </summary>
+        /// <param name="variable">A string variable.</param>
+        /// <param name="nullQuery">Provides non-null information.</param>
+        /// <returns>True, if <paramref name="variable"/> is known not to be null.</returns>
+        bool CheckMustBeNonNull(Variable variable, INullQuery<Variable> nullQuery);
     }
 
     /// <summary>
@@ -275,5 +299,21 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="variable">A string variable.</param>
         /// <returns><see langword="true"/>, if <paramref name="variable"/> must not be <see langword="null"/>.</returns>
         bool IsNonNull(Variable variable);
+    }
+
+    /// <summary>
+    /// Relation of a string variable.
+    /// </summary>
+    /// <typeparam name="Variable">Type of the related variables.</typeparam>
+    public struct StringRelation<Variable>
+    {
+        /// <summary>
+        /// The second (right) variable of the relation.
+        /// </summary>
+        public Variable RelatedVariable;
+        /// <summary>
+        /// Relation operator.
+        /// </summary>
+        public Expressions.ExpressionOperator Operator;
     }
 }

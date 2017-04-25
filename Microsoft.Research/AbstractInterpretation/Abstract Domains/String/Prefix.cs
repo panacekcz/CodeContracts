@@ -545,6 +545,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
             #endregion
 
             ///<inheritdoc/>
+            public IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(Prefix self)
+            {
+                return new PrefixRegex(self).GetRegex();
+            }
+
+            #region Array operations
+            ///<inheritdoc/>
             public Prefix SetCharAt(Prefix self, IndexInterval index, CharInterval value)
             {
                 if (index.LowerBound > self.prefix.Length)
@@ -589,6 +596,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
         }
+        #endregion
 
         #endregion
 

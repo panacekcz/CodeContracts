@@ -72,6 +72,20 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
 
         /// <summary>
+        /// Creates a regular expression for the stored suffix.
+        /// </summary>
+        /// <returns>A single regular expression matching the suffix.</returns>
+        public IEnumerable<Element> GetRegex()
+        {
+            //Sequence of characters followed by anchor
+            Concatenation sequence = new Concatenation();
+            foreach (char c in value.suffix)
+                sequence.Parts.Add(new Character(c));
+            sequence.Parts.Add(Anchor.End);
+            return new Element[] { sequence };
+        }
+
+        /// <summary>
         /// Computes a suffix which overapproximates all strings matching a regex.
         /// </summary>
         /// <param name="regex">The model of the regex.</param>

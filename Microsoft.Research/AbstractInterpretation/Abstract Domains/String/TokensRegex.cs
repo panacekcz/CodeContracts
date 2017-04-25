@@ -303,7 +303,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public TokensNegativeRegexState Join(TokensNegativeRegexState left, TokensNegativeRegexState right, bool widen)
         {
-            //TODO: VD: chech if all the cases work
+            //TODO: VD: check if all the cases work
 
             // The tree does not contain any repeat nodes
 
@@ -359,6 +359,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
             var result = interpreter.Interpret(regex);
 
             return new Tokens(operations.GetResult(result.Open));
+        }
+
+
+        public static IEnumerable<Element> RegexForTokens(Tokens self)
+        {
+            // TODO: VD: regex
+            yield break;
         }
 
     }

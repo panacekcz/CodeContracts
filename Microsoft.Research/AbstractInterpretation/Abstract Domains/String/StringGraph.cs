@@ -684,6 +684,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return slicer.CharAt(index);
             }
             #endregion
+            #region Regex operations
             ///<inheritdoc/>
             public IStringPredicate RegexIsMatch(StringGraph self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
@@ -702,6 +703,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     return StringAbstractionPredicate.ForTrue(selfVariable, graph);
                 }
             }
+            ///<inheritdoc/>
+            public IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(StringGraph self)
+            {
+                return new StringGraphRegex(self).GetRegex();
+            }
+            #endregion
 
             #region Factory methods
             ///<inheritdoc/>

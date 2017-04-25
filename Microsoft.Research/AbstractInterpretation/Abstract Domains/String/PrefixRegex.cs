@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Research.CodeAnalysis;
 using Microsoft.Research.Regex;
-using Microsoft.Research.Regex.AST;
+using Microsoft.Research.Regex.Model;
 using Microsoft.Research.AbstractDomains.Strings.Regex;
 
 namespace Microsoft.Research.AbstractDomains.Strings
@@ -73,11 +73,26 @@ namespace Microsoft.Research.AbstractDomains.Strings
         }
 
         /// <summary>
+        /// Creates a regular expression for the stored prefix.
+        /// </summary>
+        /// <returns>A single regular expression matching the prefix.</returns>
+        public IEnumerable<Element> GetRegex()
+        {
+            // Sequence of characters preceded by anchor
+            Concatenation sequence = new Concatenation();
+            sequence.Parts.Add(Anchor.Begin);
+            foreach(char c in value.prefix)
+                sequence.Parts.Add(new Character(c));
+
+            return new Element[] { sequence };
+        }
+
+        /// <summary>
         /// Computes a prefix which overapproximates all strings matching a regex.
         /// </summary>
         /// <param name="regex">The model of the regex.</param>
         /// <returns>The suffix overapproximating <paramref name="regex"/>.</returns>
-        public Prefix AssumeMatch(Microsoft.Research.Regex.Model.Element regex)
+        public Prefix AssumeMatch(Element regex)
         {
             PrefixMatchingOperations operations = new PrefixMatchingOperations();
             var interpretation = new MatchingInterpretation<LinearMatchingState<Prefix>, Prefix>(operations, this.value);

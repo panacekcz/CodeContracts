@@ -297,6 +297,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <param name="regex">The AST of the regex.</param>
         /// <returns>Abstraction of the return value.</returns>
         IStringPredicate RegexIsMatch(StringAbstraction self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex);
+
+        /// <summary>
+        /// Converts the abstract method to a (over-approximating) regular expressions.
+        /// </summary>
+        /// <param name="self">Abstraction of a string.</param>
+        /// <returns>Regular expressions matching all strings represented by <paramref name="self"/>, or more.</returns>
+        IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(StringAbstraction self);
     }
 
     /// <summary>

@@ -611,6 +611,12 @@ namespace Microsoft.Research.AbstractDomains.Strings
             #endregion
 
             ///<inheritdoc/>
+            public IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(PrefixInterval self)
+            {
+                return prefixOperations.ToRegex(self.upperBound);
+            }
+
+            ///<inheritdoc/>
             public PrefixInterval SetCharAt(PrefixInterval self, IndexInterval index, CharInterval value)
             {
                 if (index.IsConstant && value.IsConstant && !self.lowerBound.IsBottom)

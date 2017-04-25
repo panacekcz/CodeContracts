@@ -661,6 +661,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return result;
             }
 
+            #region Regex operations
             public IStringPredicate RegexIsMatch(Tokens self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
                 //regex underapprox less equal self -> return true
@@ -681,6 +682,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 return StringAbstractionPredicate.For(selfVariable, regexOver, negRegexOver);
             }
+
+            ///<inheritdoc/>
+            public IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(Tokens self)
+            {
+                return TokensRegex.RegexForTokens(self);
+            }
+            #endregion
 
             public Tokens Constant(string constant)
             {

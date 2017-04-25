@@ -22,7 +22,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.Research.Regex;
-using Microsoft.Research.Regex.AST;
+using Microsoft.Research.Regex.Model;
 using Microsoft.Research.CodeAnalysis;
 using System.Collections;
 using Microsoft.Research.AbstractDomains.Strings.Regex;
@@ -550,6 +550,73 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public CharacterInclusionRegex(CharacterInclusion<CharacterSet> value)
         {
             this.value = value;
+        }
+
+        /// <summary>
+        /// Creates a regular expression for the stored character inclusion.
+        /// </summary>
+        /// <returns>A single regular expression matching the character inclusion.</returns>
+        public IEnumerable<Element> GetRegex()
+        {
+            List<Element> regexes = new List<Element>();
+
+            if (!value.allowed.IsFull(value.classification.Buckets))
+            {
+                if (value.allowed.IsEmpty)
+                {
+                    // Must be empty
+                    var concat = new Concatenation();
+                    concat.Parts.Add(Anchor.Begin);
+                    concat.Parts.Add(Anchor.End);
+                    regexes.Add(concat);
+                }
+                else
+                {
+
+                    // Iteration of a set of characters
+                    var rangeList = new List<CharRange>();
+
+                    for (int i = 0; i < value.classification.Buckets; ++i)
+                    {
+                        if (value.allowed.Contains(i))
+                        {
+                            CharInterval interval = value.classification.ToInterval(i);
+                            rangeList.Add(new CharRange(interval.LowerBound, interval.UpperBound));
+                        }
+                    }
+                    CharRanges ranges = new CharRanges(rangeList);
+
+                    var set = new Character(ranges, ranges);
+
+                    int lower = value.MustBeNonEmpty ? 1 : 0;
+
+                    var loop = new Loop(set, lower, Loop.Unbounded);
+
+                    var concat = new Concatenation();
+                    concat.Parts.Add(Anchor.Begin);
+                    concat.Parts.Add(loop);
+                    concat.Parts.Add(Anchor.End);
+
+                    regexes.Add(concat);
+                }
+            }
+
+            if (!value.mandatory.IsEmpty)
+            {
+                // For each mandatory class, add a regex
+                for (int i = 0; i < value.classification.Buckets; ++i)
+                {
+                    if (value.mandatory.Contains(i))
+                    {
+                        CharInterval interval = value.classification.ToInterval(i);
+                        CharRanges ranges = new CharRanges(new CharRange(interval.LowerBound, interval.UpperBound));
+                        var set = new Character(ranges, ranges);
+                        regexes.Add(set);
+                    }
+                }
+            }
+
+            return regexes;
         }
 
         //TODO: VD: remove

@@ -41,6 +41,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
             this.element = element;
         }
 
+        public IEnumerable<Element> GetRegex()
+        {
+            // TODO: VD: regex
+            yield break;
+        }
+
+
         private class StringGraphGeneratingOperations : IGeneratingOperationsForRegex<Node>
         {
             private bool underapproximate;

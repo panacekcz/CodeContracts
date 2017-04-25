@@ -1182,6 +1182,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     return StringAbstractionPredicate.ForTrue(selfVariable, regexBricks);
                 }
             }
+
+            ///<inheritdoc/>
+            public IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(Bricks self)
+            {
+                return new BricksRegex(self).GetRegex();
+            }
+
             ///<inheritdoc/>
             public CharInterval GetCharAt(Bricks self, IndexInterval index)
             {

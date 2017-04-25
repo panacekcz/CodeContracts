@@ -1123,6 +1123,42 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
         #endregion
+
+        #region Inference
+        public virtual IEnumerable<string> RegexForVariable(Variable var)
+        {
+            StringAbstraction abstraction;
+            if (!strings.TryGetValue(var, out abstraction) || abstraction.IsTop || abstraction.IsBottom)
+                return Enumerable.Empty<string>();
+            else
+            {
+                return operations.ToRegex(abstraction).Select(Microsoft.Research.Regex.RegexUtil.RegexForModel);
+            }
+        }
+        public virtual IEnumerable<StringRelation<Variable>> RelationsForVariable(Variable var)
+        {
+            return Enumerable.Empty<StringRelation<Variable>>();
+        }
+        public virtual bool CheckMustBeNonNull(Variable variable, INullQuery<Variable> nullQuery)
+        {
+            StringAbstraction abstraction;
+
+            if (nullQuery != null)
+            {
+                return nullQuery.IsNonNull(variable);
+            }
+            else if(strings.TryGetValue(variable, out abstraction))
+            {
+                return !abstraction.ContainsValue("");
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        #endregion
+
         #region Evaluate expressions
 
         private Variable VariableFor(Expression expression)

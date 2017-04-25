@@ -554,6 +554,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 return FlatPredicate.ForProofOutcome(outcome);
             }
+
+            ///<inheritdoc/>
+            public IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(Suffix self)
+            {
+                return new SuffixRegex(self).GetRegex();
+            }
+
             ///<inheritdoc/>
             public Suffix Top
             {

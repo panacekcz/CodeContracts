@@ -964,7 +964,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
 
-#endregion
+            #endregion
+            #region Regex operations
             ///<inheritdoc/>
             public IStringPredicate RegexIsMatch(CharacterInclusion<CharacterSet> self, Variable selfVariable, Microsoft.Research.Regex.Model.Element regex)
             {
@@ -979,6 +980,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 return FlatPredicate.ForProofOutcome(isMatch);
             }
+            ///<inheritdoc/>
+            public IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(CharacterInclusion<CharacterSet> self)
+            {
+                return new CharacterInclusionRegex<CharacterSet>(self).GetRegex();
+            }
+            #endregion
+            #region Array operations
             ///<inheritdoc/>
             public CharacterInclusion<CharacterSet> SetCharAt(CharacterInclusion<CharacterSet> self, IndexInterval index, CharInterval value)
             {
@@ -1008,7 +1016,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 return CharInterval.For((char)min, (char)max);
             }
-
+            #endregion
 
 
             internal CharacterInclusion<CharacterSet> Extend(CharacterInclusion<CharacterSet> self)
