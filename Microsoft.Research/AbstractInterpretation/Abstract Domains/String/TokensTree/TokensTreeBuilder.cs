@@ -36,11 +36,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             return new InnerNode(true);
         }
 
-        /// <summary>
-        /// Builds a tokens tree representing all strings.
-        /// </summary>
-        /// <returns>Root node of the tree.</returns>
-        public static InnerNode Unknown()
+        private static InnerNode MakeUnknown()
         {
             InnerNode top = new InnerNode(true);
             for (int i = char.MinValue; i <= char.MaxValue; ++i)
@@ -49,6 +45,18 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
             }
 
             return top;
+        }
+
+        private static Lazy<InnerNode> unknownCache = new Lazy<InnerNode>(MakeUnknown);
+
+
+        /// <summary>
+        /// Builds a tokens tree representing all strings.
+        /// </summary>
+        /// <returns>Root node of the tree.</returns>
+        public static InnerNode Unknown()
+        {
+            return unknownCache.Value;
         }
 
         /// <summary>

@@ -364,8 +364,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public static IEnumerable<Element> RegexForTokens(Tokens self)
         {
-            Element repeat = ToRegexVisitor.ToRegex(self.root, true);
-            Element suffix = ToRegexVisitor.ToRegex(self.root, false);
+            Element repeat = ToRegexVisitor.ToRegex(self.GetRoot(), true);
+            Element suffix = ToRegexVisitor.ToRegex(self.GetRoot(), false);
             Concatenation concat = new Concatenation();
             concat.Parts.Add(Anchor.Begin);
             if (repeat != null)
