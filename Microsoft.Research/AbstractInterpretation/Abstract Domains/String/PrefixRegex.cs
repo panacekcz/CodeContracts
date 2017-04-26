@@ -72,17 +72,37 @@ namespace Microsoft.Research.AbstractDomains.Strings
             this.value = value;
         }
 
+        private Concatenation GetRegexElement()
+        {
+            // Sequence of characters preceded by anchor
+            Concatenation sequence = new Concatenation();
+            sequence.Parts.Add(Anchor.Begin);
+            foreach (char c in value.prefix)
+                sequence.Parts.Add(new Character(c));
+
+            return GetRegexElement();
+        }
+
         /// <summary>
         /// Creates a regular expression for the stored prefix.
         /// </summary>
         /// <returns>A single regular expression matching the prefix.</returns>
         public IEnumerable<Element> GetRegex()
         {
-            // Sequence of characters preceded by anchor
-            Concatenation sequence = new Concatenation();
-            sequence.Parts.Add(Anchor.Begin);
-            foreach(char c in value.prefix)
-                sequence.Parts.Add(new Character(c));
+            return new Element[] { GetRegexElement() };
+        }
+
+        public IEnumerable<Element> GetRegexWithLowerBound(Prefix lowerBound)
+        {
+            Concatenation sequence = GetRegexElement();
+
+            if (!lowerBound.IsBottom) {
+                for (int i = value.prefix.Length; i<lowerBound.prefix.Length;++i)
+                {
+                    sequence.Parts.Add(new Loop(new Character(lowerBound.prefix[i]), 0, 1));
+                }
+                sequence.Parts.Add(Anchor.End);
+            }
 
             return new Element[] { sequence };
         }

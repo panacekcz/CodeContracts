@@ -294,7 +294,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             public PrefixInterval Replace(PrefixInterval self, CharInterval from, CharInterval to)
             {
 
-                if (from.IsConstant && to.IsConstant)
+                if (from.IsConstant && to.IsConstant && !self.lowerBound.IsBottom)
                     return For(self.lowerBound.prefix.Replace(from.LowerBound, to.LowerBound), self.upperBound.prefix.Replace(from.LowerBound, to.LowerBound));
                 else
                     return ForUpperBound(prefixOperations.Replace(self.upperBound, from, to));
@@ -613,7 +613,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             ///<inheritdoc/>
             public IEnumerable<Microsoft.Research.Regex.Model.Element> ToRegex(PrefixInterval self)
             {
-                return prefixOperations.ToRegex(self.upperBound);
+                return new PrefixRegex(self.upperBound).GetRegexWithLowerBound(self.lowerBound);
             }
 
             ///<inheritdoc/>
