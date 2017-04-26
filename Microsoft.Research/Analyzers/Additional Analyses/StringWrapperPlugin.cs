@@ -185,6 +185,16 @@ namespace Microsoft.Research.CodeAnalysis
           return substate;
         }
 
+
+        public override bool SuggestAnalysisSpecificPostconditions(
+            ContractInferenceManager inferenceManager,
+            IFixpointInfo<APC, ArrayState> fixpointInfo,
+            List<BoxedExpression> postconditions)
+        {
+            // The string analysis may use non-null information to provide better postconditions
+            return stringAnalysis.SuggestAnalysisSpecificPostconditions(inferenceManager, new FixPointInfoProjectionOnStringState(this, fixpointInfo), new FixpointInfoProjectionOnNullQuery(this, fixpointInfo), postconditions);
+        }
+
         public override IFactQuery<BoxedExpression, Variable> FactQuery(IFixpointInfo<APC, ArrayState> fixpoint)
         {
           return this.stringAnalysis.FactQuery(new FixPointInfoProjectionOnStringState(this, fixpoint));
@@ -267,7 +277,49 @@ namespace Microsoft.Research.CodeAnalysis
           }
         }
 
-      }
+        public class FixpointInfoProjectionOnNullQuery
+        : FixPointInfoProjection<ArrayState, INullQuery<BoxedVariable<Variable>>>
+                {
+                    private readonly StringWrapperPlugIn analysis;
+
+                    public FixpointInfoProjectionOnNullQuery(StringWrapperPlugIn analysis, IFixpointInfo<APC, ArrayState> fixpoint)
+                      : base(fixpoint)
+                    {
+                        Contract.Requires(analysis != null);
+                        Contract.Requires(fixpoint != null);
+
+                        this.analysis = analysis;
+                    }
+
+                    protected override ArrayState
+                      InitialValue
+                    {
+                        get
+                        {
+                            var result = this.analysis.GetTopValue();
+                            // Contract.Assume(result != null);
+
+                            return result;
+                        }
+                    }
+
+                    protected override ArrayState
+                      MakeProductState(
+                      INullQuery<BoxedVariable<Variable>> init,
+                      ArrayState top)
+                    {
+                        // Not needed
+                        throw new NotImplementedException();
+                    }
+
+                    protected override INullQuery<BoxedVariable<Variable>>
+                      Project(ArrayState productAD)
+                    {
+                        return new NullQuery(productAD);
+                    }
+                }
+
+            }
 
     }
   }

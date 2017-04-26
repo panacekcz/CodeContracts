@@ -283,7 +283,7 @@ namespace Microsoft.Research.CodeAnalysis
 
                     var slack = new BoxedVariable<Variable>(true);
                     var slackExp = BoxedExpression.Var(slack);
-                    
+
                     switch (method)
                     {
                         case "Append(System.String)":
@@ -485,7 +485,7 @@ namespace Microsoft.Research.CodeAnalysis
                     for (int i = 0; i < args.Count; ++i)
                     {
                         Variable arg = args[i];
-                        
+
                         if (HasStringBuilderType(pc, arg) || HasCharArrayType(pc, arg))
                         {
                             domain.Mutate(ExprAt(pc, args[i]));
@@ -530,7 +530,7 @@ namespace Microsoft.Research.CodeAnalysis
                 public IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> LdelemWithNumerical(APC pc, Type type, Variable dest, Variable array, Variable index, IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> data, AbstractDomains.INumericalAbstractDomain<BoxedVariable<Variable>, BoxedExpression> numerical)
                 {
                     IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> state = base.Ldelem(pc, type, dest, array, index, data);
-                    if(type.Equals(DecoderForMetaData.System_Char))
+                    if (type.Equals(DecoderForMetaData.System_Char))
                     {
                         state.GetChar(ExprAt(pc, dest), ExprAt(pc, array), ExprAt(pc, index), numerical);
                     }
@@ -613,6 +613,34 @@ namespace Microsoft.Research.CodeAnalysis
                     return state;
                 }
 
+                public override IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> Entry(
+                    APC pc, Method method, IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> state)
+                {
+                    state = base.Entry(pc, method, state);
+
+                    // Relate string builder values to the ToString call 
+                    foreach (var param in this.DecoderForMetaData.Parameters(method).Enumerate())
+                    {
+                        Variable sbParam;
+                        var postPC = Context.MethodContext.CFG.Post(pc);
+                        if (this.Context.ValueContext.TryParameterValue(postPC, param, out sbParam))
+                        {
+                            var paramType = this.DecoderForMetaData.ParameterType(param);
+                            if (IsStringBuilderType(paramType))
+                            {
+                                Variable sbToString;
+                                if (this.Context.ValueContext.TryGetToString(postPC, sbParam, out sbToString))
+                                {
+                                    BoxedExpression paramExp = ExprAt(pc,sbParam);
+                                    BoxedExpression toStringExp = ExprAt(pc, sbToString);
+                                    state.Copy(paramExp, toStringExp);
+                                }
+                            }
+                        }
+                    }
+
+                    return state;
+                }
                 /// <summary>
                 /// Here we catch the calls to methods of String, so that we can apply operations on string, as concatenations. etc.
                 /// </summary>
@@ -659,7 +687,7 @@ namespace Microsoft.Research.CodeAnalysis
                     {
                         result = HandleToStringCall(pc, dest, args, baseResult);
                     }
-                    else if(methodName == "System.Array.get_Length" && HasCharArrayType(pc, args[0]))
+                    else if (methodName == "System.Array.get_Length" && HasCharArrayType(pc, args[0]))
                     {
                         result = baseResult;
                         result.GetLength(ExprAt(pc, dest), ExprAt(pc, args[0]), numerical);
@@ -676,8 +704,119 @@ namespace Microsoft.Research.CodeAnalysis
 
                 #region Implementation of the abstract interface
 
+                private BoxedExpression GetExpressionWithPath(APC exitPC, Variable arrVar)
+                {
+                    var vc = this.Context.ValueContext;
+                    var arrayPath = vc.VisibleAccessPathListFromPost(exitPC, arrVar);
+
+                    if (arrayPath != null)
+                    {
+                        return BoxedExpression.Var(arrVar, arrayPath);
+                    }
+
+                    Variable retVar;
+                    if (vc.TryResultValue(exitPC, out retVar) && retVar.Equals(arrVar))
+                    {
+                        return BoxedExpression.Result<Type>(this.DecoderForMetaData.ReturnType(this.MethodDriver.CurrentMethod));
+                    }
+
+                    return null;
+                }
+
                 public override bool SuggestAnalysisSpecificPostconditions(ContractInferenceManager inferenceManager, IFixpointInfo<APC, IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression>> fixpointInfo, List<BoxedExpression> postconditions)
                 {
+                    return SuggestAnalysisSpecificPostconditions(inferenceManager, fixpointInfo, null, postconditions);
+                }
+
+                private BoxedExpression RegexPostcondittion(BoxedExpression varExp, string regex)
+                {
+                    var regexExpr = BoxedExpression.Const(regex, DecoderForMetaData.System_String, DecoderForMetaData);
+                    return BoxedExpression.Binary(BinaryOperator.RegexIsMatch, varExp, regexExpr);
+                }
+
+                private BoxedExpression RelationPostcondition(BoxedExpression varExp, BoxedExpression relatedExp, AbstractDomains.Expressions.ExpressionOperator op)
+                {
+                    
+                    var relatedExpOld = BoxedExpression.Old(relatedExp, DecoderForMetaData.System_String);
+
+                    switch (op)
+                    {
+                        case AbstractDomains.Expressions.ExpressionOperator.StartsWith:
+                            return BoxedExpression.Binary(BinaryOperator.StartsWith, varExp, relatedExpOld);
+                        case AbstractDomains.Expressions.ExpressionOperator.EndsWith:
+                            return BoxedExpression.Binary(BinaryOperator.EndsWith, varExp, relatedExpOld);
+                        case AbstractDomains.Expressions.ExpressionOperator.Contains:
+                            return BoxedExpression.Binary(BinaryOperator.Contains, varExp, relatedExpOld);
+                        default:
+                            throw new InvalidOperationException("Bad enum value");
+                    }
+                }
+
+                public bool SuggestAnalysisSpecificPostconditions(
+                    ContractInferenceManager inferenceManager,
+                    IFixpointInfo<APC, IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression>> fixpointInfo,
+                    IFixpointInfo<APC, INullQuery<BoxedVariable<Variable>>> nullInfo,
+                    List<BoxedExpression> postconditions)
+                {
+                    // Entry and exit program points
+                    var normalExitPC = this.Context.MethodContext.CFG.NormalExit;
+                    var entryPC = this.Context.MethodContext.CFG.EntryAfterRequires;
+
+                    // Get string and non-null information at exit
+                    IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> astate;
+                    INullQuery<BoxedVariable<Variable>> nullQuery = null;
+                    if (PreState(normalExitPC, fixpointInfo, out astate) && !astate.IsTop && (nullInfo == null || nullInfo.PreState(normalExitPC, out nullQuery)))
+                    {
+                        foreach(var boxedVar in astate.Variables)
+                        {
+                            // Ignore variables that are null
+                            if (nullQuery != null && nullQuery.IsNull(boxedVar))
+                                continue;
+
+                            Variable variable;
+                            if(boxedVar.TryUnpackVariable(out variable))
+                            {
+                                BoxedExpression varExp = GetExpressionWithPath(normalExitPC, variable);
+                                if (varExp != null)
+                                {
+                                    // Non-relational properties
+                                    foreach (string regex in astate.RegexForVariable(boxedVar))
+                                    {
+                                        var regexPostcondition = RegexPostcondittion(varExp, regex);
+
+                                        if (!astate.CheckMustBeNonNull(boxedVar, nullQuery))
+                                        {
+                                            var nullCheckExpr = BoxedExpression.Binary(BinaryOperator.Ceq, varExp, BoxedExpression.Const(null, DecoderForMetaData.System_String, DecoderForMetaData));
+                                            regexPostcondition = BoxedExpression.BinaryLogicalOr(nullCheckExpr, regexPostcondition);
+                                        }
+
+                                        postconditions.Add(regexPostcondition);
+                                        // TODO: simpler exprs for starts/ends/contains
+                                        // this.Encoder.CompoundExpressionFor(AbstractDomains.Expressions.ExpressionType.String, AbstractDomains.Expressions.ExpressionOperator.RegexIsMatch, )
+                                    }
+
+                                    // Relational properties
+                                    foreach (StringRelation<BoxedVariable<Variable>> relation in astate.RelationsForVariable(boxedVar))
+                                    {
+                                        var relatedBoxedVar = relation.RelatedVariable;
+                                        Variable relatedVar;
+                                        if (relatedBoxedVar.TryUnpackVariable(out relatedVar))
+                                        {
+                                            var relatedPath = Context.ValueContext.AccessPathList(entryPC, relatedVar, false, false);
+
+                                            if (relatedPath != null)
+                                            {
+                                                var relatedExp = BoxedExpression.Var(relatedVar, relatedPath);
+                                                postconditions.Add(RelationPostcondition(varExp, relatedExp, relation.Operator));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+
                     return false;
                 }
 
