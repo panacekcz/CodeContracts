@@ -774,45 +774,47 @@ namespace Microsoft.Research.CodeAnalysis
                                 continue;
 
                             Variable variable;
-                            if(boxedVar.TryUnpackVariable(out variable))
+                            if (!boxedVar.TryUnpackVariable(out variable))
+                                continue;
+                            if (!HasStringType(normalExitPC, variable))
+                                continue;
+
+                            BoxedExpression varExp = GetExpressionWithPath(normalExitPC, variable);
+                            if (varExp == null)
+                                continue;
+                            // Non-relational properties
+                            foreach (string regex in astate.RegexForVariable(boxedVar))
                             {
-                                BoxedExpression varExp = GetExpressionWithPath(normalExitPC, variable);
-                                if (varExp != null)
+                                var regexPostcondition = RegexPostcondittion(varExp, regex);
+
+                                if (!astate.CheckMustBeNonNull(boxedVar, nullQuery))
                                 {
-                                    // Non-relational properties
-                                    foreach (string regex in astate.RegexForVariable(boxedVar))
+                                    var nullCheckExpr = BoxedExpression.Binary(BinaryOperator.Ceq, varExp, BoxedExpression.Const(null, DecoderForMetaData.System_String, DecoderForMetaData));
+                                    regexPostcondition = BoxedExpression.BinaryLogicalOr(nullCheckExpr, regexPostcondition);
+                                }
+
+                                postconditions.Add(regexPostcondition);
+                                // TODO: simpler exprs for starts/ends/contains
+                                // this.Encoder.CompoundExpressionFor(AbstractDomains.Expressions.ExpressionType.String, AbstractDomains.Expressions.ExpressionOperator.RegexIsMatch, )
+                            }
+
+                            // Relational properties
+                            foreach (StringRelation<BoxedVariable<Variable>> relation in astate.RelationsForVariable(boxedVar))
+                            {
+                                var relatedBoxedVar = relation.RelatedVariable;
+                                Variable relatedVar;
+                                if (relatedBoxedVar.TryUnpackVariable(out relatedVar))
+                                {
+                                    var relatedPath = Context.ValueContext.AccessPathList(entryPC, relatedVar, false, false);
+
+                                    if (relatedPath != null)
                                     {
-                                        var regexPostcondition = RegexPostcondittion(varExp, regex);
-
-                                        if (!astate.CheckMustBeNonNull(boxedVar, nullQuery))
-                                        {
-                                            var nullCheckExpr = BoxedExpression.Binary(BinaryOperator.Ceq, varExp, BoxedExpression.Const(null, DecoderForMetaData.System_String, DecoderForMetaData));
-                                            regexPostcondition = BoxedExpression.BinaryLogicalOr(nullCheckExpr, regexPostcondition);
-                                        }
-
-                                        postconditions.Add(regexPostcondition);
-                                        // TODO: simpler exprs for starts/ends/contains
-                                        // this.Encoder.CompoundExpressionFor(AbstractDomains.Expressions.ExpressionType.String, AbstractDomains.Expressions.ExpressionOperator.RegexIsMatch, )
-                                    }
-
-                                    // Relational properties
-                                    foreach (StringRelation<BoxedVariable<Variable>> relation in astate.RelationsForVariable(boxedVar))
-                                    {
-                                        var relatedBoxedVar = relation.RelatedVariable;
-                                        Variable relatedVar;
-                                        if (relatedBoxedVar.TryUnpackVariable(out relatedVar))
-                                        {
-                                            var relatedPath = Context.ValueContext.AccessPathList(entryPC, relatedVar, false, false);
-
-                                            if (relatedPath != null)
-                                            {
-                                                var relatedExp = BoxedExpression.Var(relatedVar, relatedPath);
-                                                postconditions.Add(RelationPostcondition(varExp, relatedExp, relation.Operator));
-                                            }
-                                        }
+                                        var relatedExp = BoxedExpression.Var(relatedVar, relatedPath);
+                                        postconditions.Add(RelationPostcondition(varExp, relatedExp, relation.Operator));
                                     }
                                 }
                             }
+                            
                         }
 
                     }
