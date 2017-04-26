@@ -49,11 +49,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         {
             return new Element[] { GetRegexForBricks(element.bricks) };
         }
-        private static Element GetRegexForTop()
-        {
-            var allChars = new CharRanges(new CharRange(char.MinValue, char.MaxValue));
-            return new Loop(new Character(allChars, allChars), 0, Loop.Unbounded);
-        }
+
         private static Element GetRegexForBricks(List<Brick> bricks) { 
             Concatenation concat = new Concatenation();
 
@@ -73,7 +69,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     if (lastBrickIsTop && !allBricksAreTop) {
                         // Add the deferred brick
-                        concat.Parts.Add(GetRegexForTop());
+                        concat.Parts.Add(ModelBuilder.AllStrings());
                     }
                     if (allBricksAreTop && !lastBrickIsTop)
                     {

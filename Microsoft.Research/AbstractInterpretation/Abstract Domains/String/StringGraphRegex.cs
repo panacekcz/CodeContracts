@@ -30,6 +30,159 @@ using Microsoft.Research.AbstractDomains.Strings.Regex;
 namespace Microsoft.Research.AbstractDomains.Strings
 {
     /// <summary>
+    /// Extracts a regular expression.
+    /// </summary>
+    internal class StringGraphRegexVisitor : Graphs.Visitor<Element, Void>
+    {
+        public static Element RegexForSG(Node root)
+        {
+            StringGraphRegexVisitor sgv = new StringGraphRegexVisitor();
+            Void v = null;
+            Element element = sgv.VisitNode(root, VisitContext.Root, ref v);
+            Concatenation rootElement = new Concatenation();
+            rootElement.Parts.Add(Anchor.Begin);
+            rootElement.Parts.Add(element);
+            rootElement.Parts.Add(Anchor.End);
+            return rootElement;
+        }
+
+        protected override Element Visit(MaxNode maxNode, VisitContext context, ref Void data)
+        {
+            return ModelBuilder.AllStrings();
+        }
+
+        protected override Element Visit(BottomNode bottomNode, VisitContext context, ref Void data)
+        {
+            // Should not happen
+            throw new InvalidOperationException();
+        }
+
+        protected override Element VisitBackwardEdge(Node graphNode, Element result, VisitContext context, ref Void data)
+        {
+            throw new InvalidOperationException();
+        }
+
+        protected override Element Visit(OrNode orNode, VisitContext context, ref Void data)
+        {
+            if(orNode.indegree > 1)
+            {
+                return GetCharacterSet(orNode);
+            }
+            else
+            {
+                return new Union();
+            }
+        }
+
+        protected override Element Visit(CharNode charNode, VisitContext context, ref Void data)
+        {
+            return new Character(charNode.Value);
+        }
+
+        protected override Element Visit(ConcatNode concatNode, VisitContext context, ref Void data)
+        {
+            if (concatNode.indegree > 1)
+            {
+                return GetCharacterSet(concatNode);
+            }
+            else
+                return new Concatenation();
+        }
+
+        protected override Element VisitChildren(OrNode orNode, Element result, ref Void data)
+        {
+            if (orNode.indegree > 1)
+                return result;
+            else
+            {
+                Union union = new Union();
+                foreach (var child in orNode.children)
+                {
+                    union.Patterns.Add(VisitNode(child, VisitContext.Or, ref data));
+                }
+                return union;
+            }
+        }
+
+        protected override Element VisitChildren(ConcatNode concatNode, Element result, ref Void data)
+        {
+            if (concatNode.indegree > 1)
+                return result;
+            else
+            {
+                Concatenation concat = new Concatenation();
+                foreach (var child in concatNode.children) {
+                    concat.Parts.Add(VisitNode(child, VisitContext.Concat, ref data));
+                }
+                return concat;
+            }
+        }
+
+        private Element GetCharacterSet(Node node)
+        {
+            var charset = CharSetVisitor.GetCharSet(node);
+            if (charset == null)
+            {
+                return ModelBuilder.AllStrings();
+            }
+            else
+            {
+                CharRanges ranges = new CharRanges(charset.Select(x => new CharRange(x, x)));
+                return new Loop(new Character(ranges, ranges), 0, Loop.Unbounded);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extracts a set of possibly occuring characters.
+    /// </summary>
+    class CharSetVisitor : Visitor<Void, Void>
+    {
+        private readonly HashSet<char> chars;
+        bool isTop;
+
+        public CharSetVisitor()
+        {
+            this.chars = new HashSet<char>();
+            isTop = false;
+        }
+
+        public static HashSet<char> GetCharSet(Node root)
+        {
+            Void v = null;
+            CharSetVisitor csv = new CharSetVisitor();
+            csv.VisitNode(root, VisitContext.Root, ref v);
+            return csv.isTop ? null : csv.chars;
+        }
+
+        protected override Void Visit(ConcatNode concatNode, VisitContext context, ref Void data)
+        {
+            return data;
+        }
+
+        protected override Void Visit(CharNode charNode, VisitContext context, ref Void data)
+        {
+            chars.Add(charNode.Value);
+            return data;
+        }
+
+        protected override Void Visit(MaxNode maxNode, VisitContext context, ref Void data)
+        {
+            isTop = true;
+            return data;
+        }
+
+        protected override Void Visit(OrNode orNode, VisitContext context, ref Void data)
+        {
+            return data;
+        }
+        protected override Void Visit(BottomNode bottomNode, VisitContext context, ref Void data)
+        {
+            return data;
+        }
+    }
+
+    /// <summary>
     /// Provides regex-related functionality to <see cref="StringGraph"/>.
     /// </summary>
     public class StringGraphRegex
@@ -43,8 +196,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public IEnumerable<Element> GetRegex()
         {
-            // TODO: VD: regex
-            yield break;
+            return new[] { StringGraphRegexVisitor.RegexForSG(element.root) };
         }
 
 

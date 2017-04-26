@@ -76,6 +76,7 @@
     <Compile Include="CharRange.cs" />
     <Compile Include="CreateModelVisitor.cs" />
     <Compile Include="ModelASTVisitor.cs" />
+    <Compile Include="ModelBuilder.cs" />
     <Compile Include="Model\Lookaround.cs" />
     <Compile Include="Model\Anchor.cs" />
     <Compile Include="Model\Character.cs" />

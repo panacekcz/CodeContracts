@@ -33,7 +33,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
         /// <summary>
         /// The root node of the graph. Not <see langword="null"/>.
         /// </summary>
-        private readonly Node root;
+        internal readonly Node root;
         #endregion
         #region Construction
 
