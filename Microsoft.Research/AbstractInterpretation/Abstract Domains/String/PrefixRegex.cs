@@ -80,7 +80,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             foreach (char c in value.prefix)
                 sequence.Parts.Add(new Character(c));
 
-            return GetRegexElement();
+            return sequence;
         }
 
         /// <summary>
