@@ -32,7 +32,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// </summary>
     public class Tokens : IStringAbstraction<Tokens>
     {
-        private readonly InnerNode root;
+        internal readonly InnerNode root;
 
         internal Tokens(InnerNode root)
         {
@@ -260,10 +260,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 Tokens selfTokens = self.ToAbstract(this), otherTokens = other.ToAbstract(this);
                 InnerNode selfRoot = selfTokens.root, otherRoot = otherTokens.root;
-                /*if(imv.Nodes.Count == 1 && imv.GetInterval(imv.Nodes.First()).IsSingleton())
-                {
-                    //TODO: VD: optimize
-                }*/
 
                 //Split at the index, merge with the inserted part
                 TokensTreeMerger merger = new TokensTreeMerger();

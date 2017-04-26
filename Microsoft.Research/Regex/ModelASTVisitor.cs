@@ -78,7 +78,12 @@ namespace Microsoft.Research.Regex
             var concatAST = new AST.Concatenation();
             foreach(var part in concatenation.Parts)
             {
-                concatAST.Parts.Add(VisitElement(part, ref data));
+                var element = VisitElement(part, ref data);
+
+                if (element is Alternation)
+                    element = new SimpleGroup(element);
+
+                concatAST.Parts.Add(element);
             }
             return concatAST;
         }

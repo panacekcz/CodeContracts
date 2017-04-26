@@ -364,10 +364,90 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public static IEnumerable<Element> RegexForTokens(Tokens self)
         {
-            // TODO: VD: regex
-            yield break;
+            Element repeat = ToRegexVisitor.ToRegex(self.root, true);
+            Element suffix = ToRegexVisitor.ToRegex(self.root, false);
+            Concatenation concat = new Concatenation();
+            concat.Parts.Add(Anchor.Begin);
+            if (repeat != null)
+            {
+                concat.Parts.Add(new Loop(repeat, 0, Loop.Unbounded));
+            }
+            concat.Parts.Add(suffix);
+            concat.Parts.Add(Anchor.End);
+            return new Element[] { concat };
         }
 
+    }
+
+    class ToRegexVisitor : TokensTree.TokensTreeVisitor<Element>
+    {
+        bool repeatMode;
+
+        public static Element ToRegex(InnerNode root, bool repeatMode)
+        {
+            ToRegexVisitor visitor = new ToRegexVisitor();
+            visitor.repeatMode = repeatMode;
+            return visitor.VisitNode(root);
+        }
+
+        protected override Element VisitRepeatNode(RepeatNode repeatNode)
+        {
+            if (repeatMode)
+                return new Concatenation();
+            else
+                return null;
+        }
+        
+
+        protected override Element VisitInnerNode(InnerNode innerNode)
+        {
+            Dictionary<TokensTreeNode, List<char>> nodesToChars = new Dictionary<TokensTreeNode, List<char>>();
+            foreach(var c in innerNode.children)
+            {
+                List<char> chars;
+                if(!nodesToChars.TryGetValue(c.Value, out chars))
+                {
+                    chars = new List<char>();
+                    nodesToChars[c.Value] = chars;
+                }
+
+                chars.Add(c.Key);
+            }
+
+            Union un = new Union();
+
+            foreach(var n in nodesToChars)
+            {
+                Element sub = VisitNode(n.Key);
+                
+                if(sub != null)
+                {
+                    CharRanges ranges = new CharRanges(n.Value.Select(c => new CharRange(c, c)));
+                    Character chr = new Character(ranges, ranges);
+                    Concatenation concat = new Concatenation();
+                    concat.Parts.Add(chr);
+                    if (sub is Concatenation)
+                    {
+                        concat.Parts.AddRange(((Concatenation)sub).Parts);
+                    }
+                    else { 
+                        concat.Parts.Add(sub);
+                    }
+                    un.Patterns.Add(concat);
+                }
+            }
+
+            if (!repeatMode && innerNode.Accepting)
+                un.Patterns.Add(new Concatenation());
+
+            if (un.Patterns.Count == 0)
+                return null;
+
+            if (un.Patterns.Count == 1)
+                return un.Patterns[0];
+
+            return un;
+        }
     }
 
 }
