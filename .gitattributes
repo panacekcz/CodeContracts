@@ -1,2 +1,5 @@
 # Automatically detect text files by default
 * text=auto
+
+*.sln text
+*.cs text
