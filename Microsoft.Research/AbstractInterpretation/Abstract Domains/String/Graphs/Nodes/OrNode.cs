@@ -38,6 +38,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
         {
         }
 
+        /// </inheritdoc>
         public override Label Label
         {
             get { return new Label(NodeKind.Or); }

@@ -32,6 +32,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
     /// </remarks>
     class BottomNode : Node
     {
+        /// </inheritdoc>
         public override Label Label
         {
             get { return new Label(NodeKind.Bottom); }

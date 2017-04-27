@@ -43,6 +43,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
             this.value = value;
         }
 
+        /// </inheritdoc>
         public override Label Label
         {
             get { return new Label(NodeKind.Char, value); }
