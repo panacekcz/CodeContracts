@@ -24,8 +24,6 @@ using System.Diagnostics.Contracts;
 
 namespace Microsoft.Research.CodeAnalysis
 {
-
-
     public static partial class AnalysisWrapper
     {
         public static IMethodResult<Variable> AnalyzeStrings<Local, Parameter, Method, Field, Property, Event, Type, Attribute, Assembly, Expression, Variable>
@@ -47,12 +45,23 @@ namespace Microsoft.Research.CodeAnalysis
           where Expression : IEquatable<Expression>
           where Type : IEquatable<Type>
         {
-
+            #region String abstract domain factory
+            /// <summary>
+            /// Factory for string abstract domains.
+            /// </summary>
             internal interface IStringAbstractDomainFactory
             {
+                /// <summary>
+                /// Creates a top element for a string abstract domain.
+                /// </summary>
+                /// <param name="decoder">Expression decoder.</param>
+                /// <returns>Top element of the abstract domain.</returns>
                 IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> CreateTopValue(BoxedExpressionDecoder<Variable> decoder);
             }
-
+            /// <summary>
+            /// Factory for non-relational string abstract domains.
+            /// </summary>
+            /// <typeparam name="StringAbstraction">String abstraction used by the non-relational abstract domain.</typeparam>
             internal class StringAbstractDomainFactory<StringAbstraction> : IStringAbstractDomainFactory
               where StringAbstraction : class, IStringAbstraction<StringAbstraction>
             {
@@ -62,12 +71,16 @@ namespace Microsoft.Research.CodeAnalysis
                 {
                     this.operations = operations;
                 }
-
+                /// </inheritdoc>
                 public IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> CreateTopValue(BoxedExpressionDecoder<Variable> decoder)
                 {
                     return new StringAbstractDomain<BoxedVariable<Variable>, BoxedExpression, StringAbstraction>(decoder, operations);
                 }
             }
+            /// <summary>
+            /// Factory for string pentagons (relational) abstract domains.
+            /// </summary>
+            /// <typeparam name="StringAbstraction">Interval-based string abstraction used by the string pentagons domain.</typeparam>
             internal class StringPentagonsFactory<StringAbstraction> : IStringAbstractDomainFactory
               where StringAbstraction : class, IStringInterval<StringAbstraction>
             {
@@ -77,7 +90,7 @@ namespace Microsoft.Research.CodeAnalysis
                 {
                     this.operations = operations;
                 }
-
+                /// </inheritdoc>
                 public IStringAbstractDomain<BoxedVariable<Variable>, BoxedExpression> CreateTopValue(BoxedExpressionDecoder<Variable> decoder)
                 {
                     return new StringPentagons<BoxedVariable<Variable>, BoxedExpression, StringAbstraction>(decoder, operations);
@@ -123,7 +136,8 @@ namespace Microsoft.Research.CodeAnalysis
                 }
 
             }
-
+            #endregion
+  
             /// <summary>
             /// It runs the analysis. 
             /// It is there because so we can use the typebinding, and make the code less verbose

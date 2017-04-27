@@ -22,12 +22,19 @@ namespace Microsoft.Research.CodeAnalysis
 {
   public static partial class Analyzers
   {
+    /// <summary>
+    /// Analyzer for string values.
+    /// </summary>
     public class Strings
       : ValueAnalyzer<Strings, Strings.StringOptions>
     {
+      /// <summary>
+      /// Kinds of string abstract domains to be selected from.
+      /// </summary>
       public enum StringDomainKind
       {
-        Prefix, Suffix, CharacterInclusionFull, CharacterInclusionASCII, Bricks, StringGraphs,
+        Prefix, Suffix, CharacterInclusionFull, CharacterInclusionASCII,
+        Bricks, StringGraphs,
         PrefixIntervals, PrefixPentagons,
         Tokens,
       }
