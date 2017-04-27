@@ -29,10 +29,9 @@ namespace StringDomainUnitTests
         [TestMethod]
         public void JoinTest()
         {
-            IndexInterval low = IndexInterval.For(4, 10);
-            IndexInterval high = IndexInterval.For(30, 43);
-
-            Assert.AreEqual(IndexInterval.For(4, 43), low.Join(high));
+            Assert.AreEqual(IndexInterval.For(4, 43), IndexInterval.For(4, 10).Join(IndexInterval.For(30, 43)));
+            Assert.AreEqual(IndexInterval.For(4, 10), IndexInterval.For(4, 10).Join(IndexInterval.Unreached));
+            Assert.AreEqual(IndexInterval.Unknown, IndexInterval.For(4, 10).Join(IndexInterval.Unknown));
         }
 
         [TestMethod]
@@ -42,6 +41,8 @@ namespace StringDomainUnitTests
             IndexInterval high = IndexInterval.For(15, 43);
 
             Assert.AreEqual(IndexInterval.For(15, 20), low.Meet(high));
+            Assert.AreEqual(IndexInterval.Unreached, IndexInterval.For(4, 10).Meet(IndexInterval.Unreached));
+            Assert.AreEqual(IndexInterval.For(4, 10), IndexInterval.For(4, 10).Meet(IndexInterval.Unknown));
         }
 
     }

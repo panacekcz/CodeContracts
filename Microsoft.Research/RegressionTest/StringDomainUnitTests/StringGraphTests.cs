@@ -29,7 +29,7 @@ namespace StringDomainUnitTests
 {
 
     [TestClass]
-    public class StringGraphTests
+    public class StringGraphTests : StringGraphTestBase
     {
 
         [TestMethod]

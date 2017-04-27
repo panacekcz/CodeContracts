@@ -101,7 +101,7 @@ namespace StringDomainUnitTests
             Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(operations.Constant("a"), null, RegexUtil.ModelForRegex("[a-f]")));
             Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(operations.Constant("a"), null, RegexUtil.ModelForRegex("a|bcd")));
             
-            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(operations.Constant("const"), null, RegexUtil.ModelForRegex("^const$")));
+            Assert.AreEqual(FlatPredicate.True, operations.RegexIsMatch(operations.Constant("const"), null, RegexUtil.ModelForRegex("^const\\z")));
 
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(operations.Top, TestVariable.Var1, RegexUtil.ModelForRegex("^prefix")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(operations.Concat(Arg("prefix"), Arg(operations.Top)), TestVariable.Var1, RegexUtil.ModelForRegex("^prefix")).ProofOutcome);

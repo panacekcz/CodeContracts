@@ -25,17 +25,8 @@ using Microsoft.Research.CodeAnalysis;
 namespace StringDomainUnitTests
 {
     [TestClass]
-    public class StringGraphRegexTest
+    public class StringGraphRegexTest : StringGraphTestBase
     {
-        private StringGraph top;
-        private StringGraph.Operations<TestVariable> operations;
-
-        public StringGraphRegexTest()
-        {
-            this.top = StringGraph.ForMax;
-            operations = new StringGraph.Operations<TestVariable>();
-        }
-
         private StringGraph SGForRegex(string regexString)
         {
             Element regex = RegexUtil.ModelForRegex(regexString);

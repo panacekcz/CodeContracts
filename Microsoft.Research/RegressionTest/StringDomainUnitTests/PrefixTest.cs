@@ -27,13 +27,11 @@ using Microsoft.Research.CodeAnalysis;
 namespace StringDomainUnitTests
 {
     [TestClass]
-    public class PrefixTests
+    public class PrefixTests : PrefixTestBase
     {
         Prefix somePrefix = new Prefix("somePrefix");
         Prefix some = new Prefix("some");
         Prefix something = new Prefix("something");
-        Prefix bottom = new Prefix((string)null);
-        Prefix top = new Prefix("");
 
         [TestMethod]
         public void TestPrefixJoin()

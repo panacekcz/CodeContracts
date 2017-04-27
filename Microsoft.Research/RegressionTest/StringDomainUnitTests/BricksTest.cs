@@ -39,20 +39,10 @@ namespace StringDomainUnitTests
             Bricks bricks = MakeBricks("const");
             Bricks empty = MakeBricks("");
 
-            Assert.AreEqual("{const}[1,1]", bricks.ToString());
-            Assert.AreEqual("", empty.ToString());
+            AssertString("{const}[1,1]", bricks);
+            AssertString("", empty);
         }
 
-        [TestMethod]
-        public void ConstantConcat()
-        {
-            Bricks one = MakeBricks("one");
-            Bricks two = MakeBricks("two");
-
-            Assert.AreEqual("{one}[1,1]{two}[1,1]", operations.Concat(Arg(one), Arg(two)).ToString());
-            Assert.AreEqual("{one}[1,1]{c}[1,1]", operations.Concat(Arg(one), MakeBricksArg("c")).ToString());
-            Assert.AreEqual("{c}[1,1]{one}[1,1]", operations.Concat(MakeBricksArg("c"), Arg(one)).ToString());
-        }
 
         /// <summary>
         /// Tests extending brick lists.

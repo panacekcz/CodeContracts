@@ -29,13 +29,9 @@ namespace StringDomainUnitTests
 {
     public abstract class TokensTestBase : StringAbstractionTestBase<Tokens>
     {
-        protected Tokens.Operations<TestVariable> operations = new Tokens.Operations<TestVariable>();
-        protected Tokens bottom, top;
-
         public TokensTestBase()
         {
-            top = operations.Top;
-            bottom = top.Bottom;
+            SetOperations(new Tokens.Operations<TestVariable>());
         }
 
         protected void AssertAreEqual(Tokens expected, Tokens actual)
@@ -66,7 +62,9 @@ namespace StringDomainUnitTests
     {
 
 
-
+        /// <summary>
+        /// Tests the Concat operation on Tokens.
+        /// </summary>
         [TestMethod]
         public void TestConcat()
         {
@@ -76,6 +74,7 @@ namespace StringDomainUnitTests
             Tokens leftRightConstant = operations.Constant("leftright");
 
             AssertAreEqual(leftRightConstant, operations.Concat(Arg(leftConstant), Arg(rightConstant)));
+            //TODO: VD: non-constant strings
         }
 
         [TestMethod]
@@ -138,21 +137,21 @@ namespace StringDomainUnitTests
             Tokens constant = operations.Constant("const");
             Tokens longConstant = operations.Constant("constant");
 
-            Assert.AreEqual(ProofOutcome.True, operations.StartsWithOrdinal(Arg(longConstant), null, Arg(constant), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(Arg(constant), null, Arg(longConstant), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(Arg(constant), null, Arg(top), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(Arg(longConstant), null, Arg(constant), null, false).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(constant), null, Arg(longConstant), null, false).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(Arg(constant), null, Arg(top), null, false).ProofOutcome);
 
-            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(Arg(ParseTokens("{a{b{}!c{}!}.}.")), null, Arg("ab"), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.False, operations.StartsWithOrdinal(Arg(ParseTokens("{a{b{}!c{}!}.}.")), null, Arg("ad"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(Arg(ParseTokens("{a{b{}!c{}!}.}.")), null, Arg("ab"), null, false).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(ParseTokens("{a{b{}!c{}!}.}.")), null, Arg("ad"), null, false).ProofOutcome);
 
-            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(Arg(ParseTokens("{a*b{}!}.")), null, Arg("b"), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.Top, operations.StartsWithOrdinal(Arg(ParseTokens("{a*b{}!}.")), null, Arg("a"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(Arg(ParseTokens("{a*b{}!}.")), null, Arg("b"), null, false).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.Top, operations.StartsEndsWithOrdinal(Arg(ParseTokens("{a*b{}!}.")), null, Arg("a"), null, false).ProofOutcome);
         }
         [TestMethod]
         public void TestEndsWith()
         {
-            Assert.AreEqual(ProofOutcome.False, operations.EndsWithOrdinal(Arg(ParseTokens("{a*b{}!}.")), null, Arg("a"), null).ProofOutcome);
-            Assert.AreEqual(ProofOutcome.True, operations.EndsWithOrdinal(Arg(ParseTokens("{a*b{}!}.")), null, Arg("b"), null).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.False, operations.StartsEndsWithOrdinal(Arg(ParseTokens("{a*b{}!}.")), null, Arg("a"), null, true).ProofOutcome);
+            Assert.AreEqual(ProofOutcome.True, operations.StartsEndsWithOrdinal(Arg(ParseTokens("{a*b{}!}.")), null, Arg("b"), null, true).ProofOutcome);
         }
 
         [TestMethod]

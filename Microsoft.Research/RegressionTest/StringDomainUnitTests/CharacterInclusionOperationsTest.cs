@@ -25,16 +25,12 @@ namespace StringDomainUnitTests
 {
     public class CharacterInclusionTestBase : StringAbstractionTestBase<CharacterInclusion<BitArrayCharacterSet>>
     {
-        protected readonly ICharacterClassification classification = new CompleteClassification();
-        protected readonly CharacterInclusion<BitArrayCharacterSet>.Operations<TestVariable> operations;
-        protected readonly CharacterInclusion<BitArrayCharacterSet> top;
-        protected readonly ICharacterSetFactory<BitArrayCharacterSet> setFactory;
+        protected ICharacterClassification classification = new CompleteClassification();
+        protected ICharacterSetFactory<BitArrayCharacterSet> setFactory = new BitArrayCharacterSetFactory();
 
         public CharacterInclusionTestBase()
         {
-            setFactory = new BitArrayCharacterSetFactory();
-            operations = new CharacterInclusion<BitArrayCharacterSet>.Operations<TestVariable>(classification,setFactory);
-            top = operations.Top;
+            SetOperations(new CharacterInclusion<BitArrayCharacterSet>.Operations<TestVariable>(classification, setFactory));
         }
 
         protected CharacterInclusion<BitArrayCharacterSet> Build(string mandatory, string additionalAllowed)

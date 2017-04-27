@@ -28,10 +28,8 @@ using Microsoft.Research.AbstractDomains.Strings;
 namespace StringDomainUnitTests
 {
     [TestClass]
-    public class SuffixRegexTest
+    public class SuffixRegexTest : SuffixTestBase
     {
-        private Suffix.Operations<TestVariable> operations = new Suffix.Operations<TestVariable>();
-
         [TestMethod]
         public void Match()
         {

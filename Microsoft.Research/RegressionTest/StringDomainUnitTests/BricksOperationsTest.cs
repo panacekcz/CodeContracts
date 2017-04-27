@@ -26,97 +26,123 @@ using Microsoft.Research.AbstractDomains.Strings;
 namespace StringDomainUnitTests
 {
 
-  [TestClass]
-  public class BricksOperationsTest : BricksTestBase
-  {
-    protected override IBricksPolicy CreateBricksPolicy()
+    [TestClass]
+    public class BricksOperationsTest : BricksTestBase
     {
-      return new DefaultBricksPolicy { ExpandConstantRepetitions = false, MergeConstantSets = false };
-    }
+        protected override IBricksPolicy CreateBricksPolicy()
+        {
+            return new DefaultBricksPolicy { ExpandConstantRepetitions = false, MergeConstantSets = false };
+        }
 
-    [TestMethod]
-    public void Insert()
-    {
-      Bricks onetwo = MakeBricks("one", "two");
-      Assert.AreEqual("{one,two}[1,1]{three}[1,1]", operations.Insert(Arg(onetwo), IndexInterval.For(3), MakeBricksArg("three")).ToString());
-      //In case of expanding bricks, would be
-      //Assert.AreEqual("{onethree,twothree}[1,1]", operations.Insert(Arg(onetwo), IndexInterval.For(3), MakeBricksArg("three")).ToString());
-    }
+        /// <summary>
+        /// Tests the Concat operation of Bricks.
+        /// </summary>
+        [TestMethod]
+        public void Concat()
+        {
+            Bricks one = MakeBricks("one");
+            Bricks two = MakeBricks("two");
+
+            AssertString("{one}[1,1]{two}[1,1]", operations.Concat(Arg(one), Arg(two)));
+            AssertString("{one}[1,1]{c}[1,1]", operations.Concat(Arg(one), MakeBricksArg("c")));
+            AssertString("{c}[1,1]{one}[1,1]", operations.Concat(MakeBricksArg("c"), Arg(one)));
+        }
 
 
-    [TestMethod]
-    public void SubstringEnd()
-    {
-      Bricks longer = MakeBricks("abcdefgh");
-      Assert.AreEqual("{efgh}[1,1]", operations.Substring(longer, IndexInterval.For(4), IndexInterval.Infinity).ToString());
-    }
-    [TestMethod]
-    public void Substring()
-    {
-      Bricks longer = MakeBricks("abcdefgh");
-      Assert.AreEqual("{abcd}[1,1]", operations.Substring(longer, IndexInterval.For(0), IndexInterval.For(4)).ToString());
-      Assert.AreEqual("{efgh}[1,1]", operations.Substring(longer, IndexInterval.For(4), IndexInterval.For(4)).ToString());
-    }
+        [TestMethod]
+        public void Insert()
+        {
+            Bricks onetwo = MakeBricks("one", "two");
+            AssertString("{one,two}[1,1]{three}[1,1]", operations.Insert(Arg(onetwo), IndexInterval.For(3), MakeBricksArg("three")));
+            //In case of expanding bricks, would be
+            //AssertString("{onethree,twothree}[1,1]", operations.Insert(Arg(onetwo), IndexInterval.For(3), MakeBricksArg("three")));
+        }
+
+
+        [TestMethod]
+        public void SubstringEnd()
+        {
+            Bricks longer = MakeBricks("abcdefgh");
+            AssertString("{efgh}[1,1]", operations.Substring(longer, IndexInterval.For(4), IndexInterval.Infinity));
+        }
+        [TestMethod]
+        public void Substring()
+        {
+            Bricks longer = MakeBricks("abcdefgh");
+            AssertString("{abcd}[1,1]", operations.Substring(longer, IndexInterval.For(0), IndexInterval.For(4)));
+            AssertString("{efgh}[1,1]", operations.Substring(longer, IndexInterval.For(4), IndexInterval.For(4)));
+        }
+
+        [TestMethod]
+        public void ReplaceChar()
+        {
+            Bricks br = MakeBricks("abc", "bbb", "ab");
+
+            // Not replaced
+            AssertString("{abc,bbb,ab}[1,1]", operations.Replace(br, CharInterval.For('x'), CharInterval.For('y')));
+            // Definitely replaced by single character
+            AssertString("{ayc,yyy,ay}[1,1]", operations.Replace(br, CharInterval.For('b'), CharInterval.For('y')));
+        }
 
         [TestMethod]
         public void PadLeftRight()
         {
 
-      IndexInterval index5 = IndexInterval.For(5);
-      CharInterval charX = CharInterval.For('x');
+            IndexInterval index5 = IndexInterval.For(5);
+            CharInterval charX = CharInterval.For('x');
 
-      Bricks empty = MakeBricks("");
-      Assert.AreEqual("{x}[5,5]", operations.PadLeftRight(empty, index5, charX, false).ToString());
-      Assert.AreEqual("{x}[5,5]", operations.PadLeftRight(empty, index5, charX, true).ToString());
+            Bricks empty = MakeBricks("");
+            AssertString("{x}[5,5]", operations.PadLeftRight(empty, index5, charX, false));
+            AssertString("{x}[5,5]", operations.PadLeftRight(empty, index5, charX, true));
 
-      Bricks longer = MakeBricks("abcdefgh");
-      Assert.AreEqual("{abcdefgh}[1,1]", operations.PadLeftRight(longer, index5, charX, false).ToString());
-      Assert.AreEqual("{abcdefgh}[1,1]", operations.PadLeftRight(longer, index5, charX, true).ToString());
+            Bricks longer = MakeBricks("abcdefgh");
+            AssertString("{abcdefgh}[1,1]", operations.PadLeftRight(longer, index5, charX, false));
+            AssertString("{abcdefgh}[1,1]", operations.PadLeftRight(longer, index5, charX, true));
 
-      Bricks shorter = MakeBricks("ij");
-      Assert.AreEqual("{x}[3,3]{ij}[1,1]", operations.PadLeftRight(shorter, index5, charX, false).ToString());
-      Assert.AreEqual("{ij}[1,1]{x}[3,3]", operations.PadLeftRight(shorter, index5, charX, true).ToString());
+            Bricks shorter = MakeBricks("ij");
+            AssertString("{x}[3,3]{ij}[1,1]", operations.PadLeftRight(shorter, index5, charX, false));
+            AssertString("{ij}[1,1]{x}[3,3]", operations.PadLeftRight(shorter, index5, charX, true));
 
-      Bricks emptyOrLonger = empty.Join(longer);
-      Assert.AreEqual("{x}[0,5]{abcdefgh}[0,1]", operations.PadLeftRight(emptyOrLonger, index5, charX, false).ToString());
-      Assert.AreEqual("{abcdefgh}[0,1]{x}[0,5]", operations.PadLeftRight(emptyOrLonger, index5, charX, true).ToString());
+            Bricks emptyOrLonger = empty.Join(longer);
+            AssertString("{x}[0,5]{abcdefgh}[0,1]", operations.PadLeftRight(emptyOrLonger, index5, charX, false));
+            AssertString("{abcdefgh}[0,1]{x}[0,5]", operations.PadLeftRight(emptyOrLonger, index5, charX, true));
 
-      Bricks emptyOrShorter = empty.Join(shorter);
-      Assert.AreEqual("{x}[3,3]{x}[0,2]{ij}[0,1]", operations.PadLeftRight(emptyOrShorter, index5, charX, false).ToString());
-      Assert.AreEqual("{ij}[0,1]{x}[3,3]{x}[0,2]", operations.PadLeftRight(emptyOrShorter, index5, charX, true).ToString());
+            Bricks emptyOrShorter = empty.Join(shorter);
+            AssertString("{x}[3,3]{x}[0,2]{ij}[0,1]", operations.PadLeftRight(emptyOrShorter, index5, charX, false));
+            AssertString("{ij}[0,1]{x}[3,3]{x}[0,2]", operations.PadLeftRight(emptyOrShorter, index5, charX, true));
 
-      Bricks longerOrShorter = longer.Join(shorter);
-      Assert.AreEqual("{x}[0,3]{abcdefgh,ij}[1,1]", operations.PadLeftRight(longerOrShorter, index5, charX, false).ToString());
-      Assert.AreEqual("{abcdefgh,ij}[1,1]{x}[0,3]", operations.PadLeftRight(longerOrShorter, index5, charX, true).ToString());
+            Bricks longerOrShorter = longer.Join(shorter);
+            AssertString("{x}[0,3]{abcdefgh,ij}[1,1]", operations.PadLeftRight(longerOrShorter, index5, charX, false));
+            AssertString("{abcdefgh,ij}[1,1]{x}[0,3]", operations.PadLeftRight(longerOrShorter, index5, charX, true));
+        }
+
+        [TestMethod]
+        public void Contains()
+        {
+            Bricks one = MakeBricks("one");
+            Bricks onetwo = MakeBricks("one", "two");
+            Bricks o = MakeBricks("o");
+
+            Assert.AreEqual(FlatPredicate.True, operations.Contains(Arg(onetwo), null, Arg(o), null));
+            Assert.AreEqual(FlatPredicate.True, operations.Contains(Arg(one), null, Arg(o), null));
+        }
+
+        [TestMethod]
+        public void StartsWith()
+        {
+            Bricks strings = MakeBricks("string", "strong");
+            Bricks prefix = MakeBricks("str");
+
+            Assert.AreEqual(FlatPredicate.True, operations.StartsEndsWithOrdinal(Arg(strings), null, Arg(prefix), null, false));
+        }
+
+        [TestMethod]
+        public void EndsWith()
+        {
+            Bricks strings = MakeBricks("string", "strong");
+            Bricks suffix = MakeBricks("ng");
+
+            Assert.AreEqual(FlatPredicate.True, operations.StartsEndsWithOrdinal(Arg(strings), null, Arg(suffix), null, true));
+        }
     }
-
-    [TestMethod]
-    public void Contains()
-    {
-      Bricks one = MakeBricks("one");
-      Bricks onetwo = MakeBricks("one", "two");
-      Bricks o = MakeBricks("o");
-
-      Assert.AreEqual(FlatPredicate.True, operations.Contains(Arg(onetwo), null, Arg(o), null));
-      Assert.AreEqual(FlatPredicate.True, operations.Contains(Arg(one), null, Arg(o), null));
-    }
-
-    [TestMethod]
-    public void StartsWith()
-    {
-      Bricks strings = MakeBricks("string", "strong");
-      Bricks prefix = MakeBricks("str");
-
-      Assert.AreEqual(FlatPredicate.True, operations.StartsEndsWithOrdinal(Arg(strings), null, Arg(prefix), null, false));
-    }
-
-    [TestMethod]
-    public void EndsWith()
-    {
-      Bricks strings = MakeBricks("string", "strong");
-      Bricks suffix = MakeBricks("ng");
-
-      Assert.AreEqual(FlatPredicate.True, operations.StartsEndsWithOrdinal(Arg(strings), null, Arg(suffix), null, true));
-    }
-  }
 }

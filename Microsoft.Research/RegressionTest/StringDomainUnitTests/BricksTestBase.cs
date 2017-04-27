@@ -29,15 +29,20 @@ namespace StringDomainUnitTests
     /// <summary>
     /// Base class for test for the <see cref="Bricks"/> abstract domain.
     /// </summary>
-    public abstract class BricksTestBase
+    public abstract class BricksTestBase : StringAbstractionTestBase<Bricks>
     {
         protected readonly IBricksPolicy policy;
-        protected readonly Bricks.Operations<TestVariable> operations;
 
         protected Bricks MakeBricks(string value)
         {
             return new Bricks(value, policy);
         }
+
+        //TODO: VD: use or remove
+    /*    protected Bricks MakeBricks(int min, int max, string value)
+        {
+            return new Bricks(new[] { new Brick(value, IndexInt.For(min), IndexInt.For(max)) }, policy);
+        }*/
 
         protected Bricks MakeBricks(params string[] values)
         {
@@ -50,10 +55,6 @@ namespace StringDomainUnitTests
         {
             return Arg(MakeBricks(values));
         }
-        protected WithConstants<Bricks> Arg(Bricks br)
-        {
-            return new WithConstants<Bricks>(br);
-        }
 
         protected virtual IBricksPolicy CreateBricksPolicy()
         {
@@ -63,8 +64,7 @@ namespace StringDomainUnitTests
         protected BricksTestBase()
         {
             policy = CreateBricksPolicy();
-            operations = new Bricks.Operations<TestVariable>(policy);
+            SetOperations(new Bricks.Operations<TestVariable>(policy));
         }
-
     }
 }

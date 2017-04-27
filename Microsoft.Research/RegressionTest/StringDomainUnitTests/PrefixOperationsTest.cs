@@ -26,16 +26,23 @@ using Microsoft.Research.CodeAnalysis;
 
 namespace StringDomainUnitTests
 {
-    [TestClass]
-    public class PrefixOperationsTests : StringAbstractionTestBase<Prefix>
+    public class PrefixTestBase : StringAbstractionTestBase<Prefix>
     {
-        Prefix.Operations<TestVariable> operations = new Prefix.Operations<TestVariable>();
+        public PrefixTestBase()
+        {
+            SetOperations(new Prefix.Operations<TestVariable>());
+        }
+    }
+
+    [TestClass]
+    public class PrefixOperationsTests : PrefixTestBase
+    {
+        
 
         Prefix somePrefix = new Prefix("somePrefix");
         Prefix some = new Prefix("some");
         Prefix something = new Prefix("something");
-        Prefix bottom = new Prefix((string)null);
-        Prefix top = new Prefix("");
+       
 
         [TestMethod]
         public void TestPrefixStartsWith()

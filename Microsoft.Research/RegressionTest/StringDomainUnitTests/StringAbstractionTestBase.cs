@@ -23,26 +23,43 @@ using System.Threading.Tasks;
 using Microsoft.Research.Regex;
 using Microsoft.Research.CodeAnalysis;
 using Microsoft.Research.AbstractDomains.Strings;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace StringDomainUnitTests
 {
-  /// <summary>
-  /// Base class for testing IStringAbstraction implementations.
-  /// </summary>
-  /// <typeparam name="StringAbstraction">The tested implementation type.</typeparam>
-  public abstract class StringAbstractionTestBase<StringAbstraction>
-  where StringAbstraction : IStringAbstraction<StringAbstraction>
-  {
-
-    protected WithConstants<StringAbstraction> Arg(StringAbstraction abst)
+    /// <summary>
+    /// Base class for testing IStringAbstraction implementations.
+    /// </summary>
+    /// <typeparam name="StringAbstraction">The tested implementation type.</typeparam>
+    public abstract class StringAbstractionTestBase<StringAbstraction>
+    where StringAbstraction : IStringAbstraction<StringAbstraction>
     {
-      return new WithConstants<StringAbstraction>(abst);
-    }
+        protected IStringOperations<StringAbstraction, TestVariable> operations;
+        protected StringAbstraction top, bottom;
 
-    protected WithConstants<StringAbstraction> Arg(string constant)
-    {
-      return new WithConstants<StringAbstraction>(constant);
+        protected void SetOperations(IStringOperations<StringAbstraction, TestVariable> operations)
+        {
+            this.operations = operations;
+            this.top = operations.Top;
+            this.bottom = top.Bottom;
+        }
+
+        protected WithConstants<StringAbstraction> Arg(StringAbstraction abst)
+        {
+            return new WithConstants<StringAbstraction>(abst);
+        }
+
+        protected WithConstants<StringAbstraction> Arg(string constant)
+        {
+            return new WithConstants<StringAbstraction>(constant);
+        }
+
+
+        public void AssertString(string bricksString, StringAbstraction abst)
+        {
+            Assert.AreEqual(bricksString, abst.ToString());
+        }
+
     }
-  }
 
 }

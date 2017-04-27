@@ -27,13 +27,6 @@ namespace StringDomainUnitTests
     [TestClass]
     public class BricksRegexTest : BricksTestBase
     {
-        private Bricks top;
-
-        public BricksRegexTest()
-        {
-            this.top = operations.Top;
-        }
-
         protected override IBricksPolicy CreateBricksPolicy()
         {
             return new DefaultBricksPolicy { MergeConstantSets = false };

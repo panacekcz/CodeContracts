@@ -28,10 +28,8 @@ using Microsoft.Research.CodeAnalysis;
 namespace StringDomainUnitTests
 {
     [TestClass]
-    public class PrefixRegexTest
+    public class PrefixRegexTest : PrefixTestBase
     {
-        Prefix.Operations<TestVariable> operations = new Prefix.Operations<TestVariable>();
-
         [TestMethod]
         public void MatchEmpty()
         {

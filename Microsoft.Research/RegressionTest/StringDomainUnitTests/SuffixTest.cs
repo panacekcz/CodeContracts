@@ -28,13 +28,11 @@ using Microsoft.Research.CodeAnalysis;
 namespace StringDomainUnitTests
 {
     [TestClass]
-    public class SuffixTests
+    public class SuffixTests : SuffixTestBase
     {
         Suffix someSuffix = new Suffix("someSuffix");
         Suffix suffix = new Suffix("Suffix");
         Suffix otherSuffix = new Suffix("otherSuffix");
-        Suffix bottom = new Suffix((string)null);
-        Suffix top = new Suffix("");
 
         [TestMethod]
         public void TestJoin()

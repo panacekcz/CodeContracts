@@ -27,10 +27,17 @@ using Microsoft.Research.CodeAnalysis;
 namespace StringDomainUnitTests
 {
     [TestClass]
-    public class StringGraphOperationsTest : StringAbstractionTestBase<StringGraph>
+    public class StringGraphTestBase : StringAbstractionTestBase<StringGraph>
     {
-        protected StringGraph.Operations<TestVariable> operations = new StringGraph.Operations<TestVariable>();
+        public StringGraphTestBase()
+        {
+            SetOperations(new StringGraph.Operations<TestVariable>());
+        }
+    }
 
+    [TestClass]
+    public class StringGraphOperationsTest : StringGraphTestBase
+    {
         [TestMethod]
         public void Contains()
         {
