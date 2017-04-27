@@ -73,10 +73,10 @@ namespace Microsoft.Research.Regex
         /// <inheritdoc cref="VisitElement"/>
         protected abstract Result Visit(Empty element, ref Data data);
         /// <summary>
-        /// Visits the <see cref="Loop" /> regex element.
+        /// Visits the <see cref="Quantifier" /> regex element.
         /// </summary>
         /// <inheritdoc cref="VisitElement"/>
-        protected abstract Result Visit(Loop element, ref Data data);
+        protected abstract Result Visit(Quantifier element, ref Data data);
         /// <summary>
         /// Visits the <see cref="NonBacktracking" /> regex element.
         /// </summary>
@@ -154,9 +154,9 @@ namespace Microsoft.Research.Regex
             {
                 return Visit((Empty)element, ref data);
             }
-            else if (element is Loop)
+            else if (element is Quantifier)
             {
-                return Visit((Loop)element, ref data);
+                return Visit((Quantifier)element, ref data);
             }
             else if (element is NonBacktracking)
             {

@@ -58,9 +58,36 @@ namespace RegexUnitTests
         public void ParseQuantifiers()
         {
             Test("a*", "loop(char(61),0,inf)");
+            Test("a+", "loop(char(61),1,inf)");
+            Test("a?", "loop(char(61),0,1)");
+            Test("a{3}", "loop(char(61),3,3)");
+            Test("a{2,}", "loop(char(61),2,inf)");
+
+            Test("a{2,3}", "loop(char(61),2,3)");
+
             Test("a*?", "loop(char(61),0,inf)");
-            Test("a{1,3}?", "loop(char(61),1,3)");
+            Test("a+?", "loop(char(61),1,inf)");
+            Test("a??", "loop(char(61),0,1)");
+            Test("a{3}?", "loop(char(61),3,3)");
+            Test("a{2,}?", "loop(char(61),2,inf)");
+            Test("a{2,3}?", "loop(char(61),2,3)");
         }
+
+        [TestMethod]
+        public void ParseFakeQuantifiers()
+        {
+            Test("{,3}?", "concat(char(7B)char(2C)char(33)loop(char(7D),0,1))");
+            Test("a{,3}", "concat(char(61)char(7B)char(2C)char(33)char(7D))");
+            Test("a{,3}?", "concat(char(61)char(7B)char(2C)char(33)loop(char(7D),0,1))");
+            Test("a*{,3}", "concat(loop(char(61),0,inf)char(7B)char(2C)char(33)char(7D))");
+            Test("a*{,3}?", "concat(loop(char(61),0,inf)char(7B)char(2C)char(33)loop(char(7D),0,1))");
+            Test("a{x", "concat(char(61)char(7B)char(78))");
+            Test("a{1x", "concat(char(61)char(7B)char(31)char(78))");
+            Test("a{2,x", "concat(char(61)char(7B)char(32)char(2C)char(78))");
+            Test("a{2,3x", "concat(char(61)char(7B)char(32)char(2C)char(33)char(78))");
+        }
+
+
         [TestMethod]
         public void ParseAlternations()
         {
@@ -134,7 +161,7 @@ namespace RegexUnitTests
         [TestMethod]
         public void ParseRangeEscape()
         {
-            Test("[\\s]", "char()");
+            Test("[\\s]", "union(char(9-D,20,80-FFFF)unknown(char(0-FFFF))");
             Test("[\\s\\w\\d]", "char()");
         }
     }

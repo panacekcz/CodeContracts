@@ -62,7 +62,7 @@ namespace Microsoft.Research.Regex
             return false;
         }
 
-        protected override bool Visit(AST.Loop element, ref Void data)
+        protected override bool Visit(AST.Quantifier element, ref Void data)
         {
             return VisitElement(element.Content, ref data);
         }
@@ -180,7 +180,7 @@ namespace Microsoft.Research.Regex
             return concat;
         }
 
-        protected override Model.Element Visit(AST.Loop element, ref Void data)
+        protected override Model.Element Visit(AST.Quantifier element, ref Void data)
         {
             // Max 0 occurences = empty
             if (element.Max == 0)

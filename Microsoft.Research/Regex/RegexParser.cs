@@ -20,9 +20,61 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Research.Regex.AST;
 
 namespace Microsoft.Research.Regex
 {
+    internal struct ParserInput
+    {
+        /// <summary>
+        /// Input string.
+        /// </summary>
+        private readonly string inputString;
+        /// <summary>
+        /// Current position.
+        /// </summary>
+        private int current;
+
+        public ParserInput(string inputString)
+        {
+            this.inputString = inputString;
+            this.current = 0;
+        }
+
+
+        public bool HasNext()
+        {
+            return current < inputString.Length;
+        }
+        public char Current()
+        {
+            return inputString[current];
+        }
+        public char Next()
+        {
+            return inputString[current++];
+        }
+        public void Prev()
+        {
+            --current;
+        }
+
+        public int Position { get { return current; } set { current = value; } }
+
+        public string ParseUntil(char end)
+        {
+            int index = inputString.IndexOf(end, current);
+            if (index < 0)
+            {
+                throw new ParseException("expected " + end);
+            }
+            int old = current;
+            current = index + 1;
+            return inputString.Substring(old, index - old);
+        }
+
+    }
+
     /// <summary>
     /// Parser for regular expression.
     /// </summary>
@@ -40,54 +92,44 @@ namespace Microsoft.Research.Regex
         }
 
         #region Private state
-        private readonly string input;
-        private int current;
+        /// <summary>
+        /// Input string.
+        /// </summary>
+        ParserInput input;
+        /// <summary>
+        /// Current number for an unnamed group.
+        /// </summary>
         private int groupCounter;
         #endregion
 
-        private RegexParser(string input)
+        private RegexParser(string inputString)
         {
-            this.input = input;
-            this.current = 0;
+            this.input = new ParserInput(inputString);
             this.groupCounter = 1;
         }
-
-        private bool HasNext()
-        {
-            return current < input.Length;
-        }
-        private char Current()
-        {
-            return input[current];
-        }
-        private char Next()
-        {
-            return input[current++];
-        }
-        private void Prev()
-        {
-            --current;
-        }
-
+       
         AST.Element ParseUnicodeEscapeSeq()
         {
             int c = ParseHexadecimal(4);
-            return new AST.Character((char)c);
+            return new AST.UnicodeEscapeCharacter((char)c);
         }
-
 
         AST.Element ParseOctalEscapeSeq()
         {
             return null;
         }
 
+        /// <summary>
+        /// Parses control sequence such as "\\cA".
+        /// </summary>
+        /// <returns>AST element for the control sequence.</returns>
         AST.Element ParseControlSeq()
         {
-            char c = Next();
+            char c = input.Next();
 
             if (c >= 'A' && c <= 'Z')
             {
-                return new AST.Character((char)(c - 'A' + 1));
+                return new AST.ControlEscapeCharacter((char)(c - 'A' + 1));
             }
             else
             {
@@ -97,7 +139,7 @@ namespace Microsoft.Research.Regex
 
         AST.Element ParseNamedCategory(bool negative)
         {
-            string name = ParseUntil('>');
+            string name = input.ParseUntil('>');
             AST.NamedSet namedSet = new AST.NamedSet(name, negative);
             return namedSet;
         }
@@ -105,42 +147,47 @@ namespace Microsoft.Research.Regex
         AST.Element ParseHexadecimal()
         {
             int c = ParseHexadecimal(2);
-            return new AST.Character((char)c);
+            return new AST.HexadecimalEscapeCharacter((char)c);
         }
         AST.Element ParseBackReference()
         {
-            char lt = Next();
+            char lt = input.Next();
 
             if (lt != '<')
             {
                 throw new ParseException("Invalid backreference");
             }
 
-            string name = ParseUntil('>');
+            string name = input.ParseUntil('>');
 
             return new AST.Reference(name);
         }
 
         AST.Element ParseEscapeSeq(bool set)
         {
-            if (!HasNext())
+            if (!input.HasNext())
             {
                 throw new ParseException("Invalid escape sequence");
             }
 
-            char c = Next();
+            char c = input.Next();
             switch (c)
             {
                 case 'a':
-                    return new AST.Character('\u0007');
+                case 'e':
+                case 'f':
+                case 'n':
+                case 'v':
+                case 't':
+                case 'r':
+                    return new AST.EscapeCharacter(c);
                 case 'A':
                     return new AST.Anchor(AST.AnchorKind.StringStart);
                 case 'b':
                     if (set)
-                        return new AST.Character('\u0008');
+                        return new AST.EscapeCharacter('b');
                     else
                         return new AST.Boundary(false);
-
                 case 'B':
                     return new AST.Boundary(true);
                 case 'c':
@@ -149,32 +196,20 @@ namespace Microsoft.Research.Regex
                     return new AST.PredefinedSet(AST.PredefinedSet.SetKind.DecimalDigit, false);
                 case 'D':
                     return new AST.PredefinedSet(AST.PredefinedSet.SetKind.DecimalDigit, true);
-                case 'e':
-                    return new AST.Character('\u001B');
-                case 'f':
-                    return new AST.Character('\u000C');
                 case 'G':
                     return new AST.Anchor(AST.AnchorKind.PreviousMatchEnd);
                 case 'k':
                     return ParseBackReference();
-                case 'n':
-                    return new AST.Character('\n');
                 case 'p':
                     return ParseNamedCategory(false);
                 case 'P':
                     return ParseNamedCategory(true);
-                case 'r':
-                    return new AST.Character('\u000d');
                 case 's':
                     return new AST.PredefinedSet(AST.PredefinedSet.SetKind.Whitespace, false);
                 case 'S':
                     return new AST.PredefinedSet(AST.PredefinedSet.SetKind.Whitespace, true);
-                case 't':
-                    return new AST.Character('\u0009');
                 case 'u':
                     return ParseUnicodeEscapeSeq();
-                case 'v':
-                    return new AST.Character('\u000B');
                 case 'w':
                     return new AST.PredefinedSet(AST.PredefinedSet.SetKind.Word, false);
                 case 'W':
@@ -188,7 +223,7 @@ namespace Microsoft.Research.Regex
                 case '0':
                     return ParseOctalEscapeSeq();
                 default:
-                    return new AST.Character(c);
+                    return new AST.DefaultEscapeCharacter(c);
             }
 
         }
@@ -215,9 +250,9 @@ namespace Microsoft.Research.Regex
 
             RangeState state = RangeState.Negative;
 
-            while (HasNext())
+            while (input.HasNext())
             {
-                char c = Next();
+                char c = input.Next();
 
                 if (c != ']' && state == RangeState.Subtraction)
                 {
@@ -238,7 +273,7 @@ namespace Microsoft.Research.Regex
                         if (state <= RangeState.First)
                         {
                             // if it is the first character, it is taken literally
-                            elements.Add(new AST.Character(']'));
+                            elements.Add(new AST.LiteralCharacter(']'));
                             state = RangeState.Char;
                         }
                         else
@@ -256,17 +291,17 @@ namespace Microsoft.Research.Regex
                         }
                         else
                         {
-                            elements.Add(new AST.Character('^'));
+                            elements.Add(new AST.LiteralCharacter('^'));
                             state = RangeState.Char;
                         }
                         break;
                     case '-':
-                        char end = Next();
+                        char end = input.Next();
 
                         if (end == ']')
                         {
                             // End of set, add - as character
-                            elements.Add(new AST.Character('-'));
+                            elements.Add(new AST.LiteralCharacter('-'));
                             return new AST.CharacterSet(negative, elements, subtraction);
                         }
                         else if (end == '[')
@@ -290,12 +325,12 @@ namespace Microsoft.Research.Regex
                         }
                         else
                         {
-                            elements.Add(new AST.Character('-'));
+                            elements.Add(new AST.LiteralCharacter('-'));
                             state = RangeState.Char;
                         }
                         break;
                     default:
-                        elements.Add(new AST.Character(c));
+                        elements.Add(new AST.LiteralCharacter(c));
                         state = RangeState.Char;
                         break;
                 }
@@ -308,42 +343,31 @@ namespace Microsoft.Research.Regex
             return groupCounter++.ToString();
         }
 
-        string ParseUntil(char end)
-        {
-            int index = input.IndexOf(end, current);
-            if (index < 0)
-            {
-                throw new ParseException("expected " + end);
-            }
-            int old = current;
-            current = index + 1;
-            return input.Substring(old, index - old);
-        }
 
         AST.Element ParseGroup()
         {
-            if (Next() != '?')
+            if (input.Next() != '?')
             {
                 return new AST.Capture(NextGroup(), Parse(true));
             }
             else
             {
-                switch (Next())
+                switch (input.Next())
                 {
                     case '<':
-                        if (Current() == '=') {
-                            Next();
+                        if (input.Current() == '=') {
+                            input.Next();
                             return new AST.Assertion(false, true, Parse(true));
                         }
-                        else if (Current() == '!')
+                        else if (input.Current() == '!')
                         {
-                            Next();
+                            input.Next();
                             return new AST.Assertion(true, true, Parse(true));
                         }
                         else
-                            return new AST.Capture(ParseUntil('>'), Parse(true));
+                            return new AST.Capture(input.ParseUntil('>'), Parse(true));
                     case '\'':
-                        return new AST.Capture(ParseUntil('\''), Parse(true));
+                        return new AST.Capture(input.ParseUntil('\''), Parse(true));
                     case '>':
                         return new AST.NonBacktracking(Parse(true));
                     case '=':
@@ -353,7 +377,7 @@ namespace Microsoft.Research.Regex
                     case '(':
                         return new AST.Alternation();
                     case '#':
-                        return new AST.Comment(ParseUntil(')'));
+                        return new AST.Comment(input.ParseUntil(')'));
                     case ':':
                         return new AST.SimpleGroup(Parse(true));
                     default:
@@ -367,9 +391,22 @@ namespace Microsoft.Research.Regex
             public AST.Alternation currentAlternation;
             public AST.Concatenation currentConcatenation;
             public AST.Element currentElement;
+            public QuantifierFactory quantifierFactory;
+
+            private void FinishQuantifier()
+            {
+                if (currentElement != null && quantifierFactory != null)
+                {
+                    currentElement = quantifierFactory.Create(currentElement);
+                    quantifierFactory = null;
+                }
+
+            }
 
             private void FinishCat()
             {
+                FinishQuantifier();
+
                 if (currentConcatenation != null && currentElement != null)
                 {
                     currentConcatenation.Parts.Add(currentElement);
@@ -395,6 +432,8 @@ namespace Microsoft.Research.Regex
             }
             public void CatElement(AST.Element el)
             {
+                FinishQuantifier();
+
                 if (currentElement != null)
                 {
                     if (currentConcatenation == null)
@@ -418,33 +457,34 @@ namespace Microsoft.Research.Regex
                 currentConcatenation = null;
             }
 
-            public void Loop(int min, int max)
+            public void Quantifier(QuantifierFactory factory)
             {
                 if (currentElement == null)
                 {
                     throw new ParseException("Quantifier without inner element");
                 }
-                if (currentElement is AST.Loop)
+                if (quantifierFactory != null)
                 {
                     throw new ParseException("Nested quantifier");
                 }
-                currentElement = new AST.Loop(min, max, currentElement, false);
+                quantifierFactory = factory;
             }
 
             public void MakeLoopLazy()
             {
-                AST.Loop oldLoop = (AST.Loop)currentElement;
-                currentElement = new AST.Loop(oldLoop.Min, oldLoop.Max, oldLoop.Content, true);
+                if(quantifierFactory == null)
+                    throw new ParseException("Missing quantifier");
+                quantifierFactory.Lazy = true;
             }
         }
         int ParseDecimal()
         {
             int r = 0;
 
-            while (input[current] >= '0' && input[current] <= '9')
+            while (input.Current() >= '0' && input.Current() <= '9')
             {
-                r = r * 10 + input[current] - '0';
-                ++current;
+                r = r * 10 + input.Current() - '0';
+                input.Next();
             }
 
             return r;
@@ -456,7 +496,7 @@ namespace Microsoft.Research.Regex
 
             for (int i = 0; i < l; ++i)
             {
-                char c = Next();
+                char c = input.Next();
                 int q = 0;
                 if (c >= '0' && c <= '9')
                 {
@@ -481,53 +521,53 @@ namespace Microsoft.Research.Regex
             return r;
         }
 
-        bool TryParseRepeats(AST.Element inner, out AST.Element outElement)
+        QuantifierFactory TryParseRepeats(AST.Element inner, out AST.Element outElement)
         {
-            int before = current;
+            int before = input.Position;
             int min = ParseDecimal();
 
-            if(current == before)
+            if (input.Position == before)
             {
                 //If there is no digit, it is not a quantifier
-                outElement = new AST.Character('{');
-                return false;
+                outElement = new AST.LiteralCharacter('{');
+                return null;
             }
 
-            char c = Next();
+            char c = input.Next();
 
             // If the maximum is not specified at all, it is the same as minimum.
             int max = min;
             if (c == ',')
             {
-                int beforeMax = current;
+                int beforeMax = input.Position;
                 max = ParseDecimal();
-                if(current == beforeMax)
+                if (input.Position == beforeMax)
                 {
                     // If the maximum is empty, it is unbounded
                     max = AST.Loop.UNBOUNDED;
                 }
-                c = Next();
+                c = input.Next();
             }
             if (c != '}')
             {
                 //If there is an unexpected character, treat the brace as a character
-                current = before;
-                outElement = new AST.Character('{');
-                return false;
+                input.Position = before;
+                outElement = new AST.LiteralCharacter('{');
+                return null;
             }
 
-            outElement = new AST.Loop(min, max, inner, false);
-            return true;
+            outElement = null;
+            return new LoopFactory { Min = min, Max = max };
         }
 
         private AST.Element Parse(bool group)
         {
             ExpressionBuilder builder = new ExpressionBuilder();
 
-            while (HasNext())
+            while (input.HasNext())
             {
 
-                char c = Next();
+                char c = input.Next();
                 switch (c)
                 {
                     case ')':
@@ -539,16 +579,16 @@ namespace Microsoft.Research.Regex
                         builder.Alternative();
                         break;
                     case '+':
-                        builder.Loop(1, -1);
+                        builder.Quantifier(new PositiveIterationFactory());
                         break;
                     case '?':
-                        if (builder.currentElement is AST.Loop)
+                        if (builder.quantifierFactory != null)
                         {
-                            builder.MakeLoopLazy();
+                            builder.quantifierFactory.Lazy = true;
                         }
                         else
                         {
-                            builder.Loop(0, 1);
+                            builder.Quantifier(new OptionalFactory());
                         }
                         break;
                     case '(':
@@ -561,30 +601,18 @@ namespace Microsoft.Research.Regex
                         builder.CatElement(new AST.Anchor(AST.AnchorKind.LineEnd));
                         break;
                     case '{':
-                        AST.Element repeated;
-                        if (TryParseRepeats(builder.currentElement, out repeated))
-                        {
-                            if (builder.currentElement == null)
-                            {
-                                throw new ParseException("Empty quantifier");
-                            }
-                            if (builder.currentElement is AST.Loop)
-                            {
-                                throw new ParseException("Quantifiers cannot be nested");
-                            }
-                            builder.currentElement = repeated;
-                        }
-                        else
-                        {
-                            builder.CatElement(repeated);
-                        }
-
+                        AST.Element normalElement;
+                        QuantifierFactory qf = TryParseRepeats(builder.currentElement, out normalElement);
+                        if(normalElement != null)
+                            builder.CatElement(normalElement);
+                        else if(qf != null)
+                            builder.Quantifier(qf);
                         break;
                     case '.':
                         builder.CatElement(new AST.Wildcard());
                         break;
                     case '*':
-                        builder.Loop(0, AST.Loop.UNBOUNDED);
+                        builder.Quantifier(new IterationFactory());
                         break;
                     case '[':
                         builder.CatElement(ParseRange());
@@ -593,7 +621,7 @@ namespace Microsoft.Research.Regex
                         builder.CatElement(ParseEscapeSeq(false));
                         break;
                     default:
-                        builder.CatElement(new AST.Character(c));
+                        builder.CatElement(new AST.LiteralCharacter(c));
                         break;
                 }
             }
@@ -605,6 +633,43 @@ namespace Microsoft.Research.Regex
             else
             {
                 return builder.Build();
+            }
+        }
+
+        private abstract class QuantifierFactory
+        {
+            public bool Lazy { get; set; }
+            public abstract AST.Quantifier Create(AST.Element inner);
+        }
+
+        private class LoopFactory : QuantifierFactory
+        {
+            public int Min { get; set; }
+            public int Max { get; set; }
+            public override Quantifier Create(Element inner)
+            {
+                return new Loop(Min, Max, inner, Lazy);
+            }
+        }
+        private class OptionalFactory : QuantifierFactory
+        {
+            public override Quantifier Create(Element inner)
+            {
+                return new Optional(inner, Lazy);
+            }
+        }
+        private class IterationFactory : QuantifierFactory
+        {
+            public override Quantifier Create(Element inner)
+            {
+                return new Iteration(inner, Lazy);
+            }
+        }
+        private class PositiveIterationFactory : QuantifierFactory
+        {
+            public override Quantifier Create(Element inner)
+            {
+                return new PositiveIteration(inner, Lazy);
             }
         }
     }

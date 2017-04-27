@@ -78,15 +78,15 @@ namespace RegexUnitTests
         [TestMethod]
         public void ParseFakeQuantifiers()
         {
-            Test("{,3}?", "\\u007B\\u002C3\\u007D?");
-            Test("a{,3}", "a\\u007B\\u002C3\\u007D");
-            Test("a{,3}?", "a\\u007B\\u002C3\\u007D?");
-            Test("a*{,3}", "a*\\u007B\\u002C3\\u007D");
-            Test("a*{,3}?", "a*\\u007B\\u002C3\\u007D?");
-            Test("a{x", "a\\u007Bx");
-            Test("a{1x", "a\\u007B1x");
-            Test("a{2,x", "a\\u007B2\\u002Cx");
-            Test("a{2,3x", "a\\u007B2\\u002C3x");
+            Test("{,3}?");
+            Test("a{,3}");
+            Test("a{,3}?");
+            Test("a*{,3}");
+            Test("a*{,3}?");
+            Test("a{x");
+            Test("a{1x");
+            Test("a{2,x");
+            Test("a{2,3x");
         }
 
         [TestMethod]
@@ -143,7 +143,7 @@ namespace RegexUnitTests
         [TestMethod]
         public void ParseBackslashB()
         {
-            Test("\\b[\\b]", "\\b[\\u0008]");
+            Test("\\b[\\b]");
         }
 
         [TestMethod]
@@ -176,14 +176,14 @@ namespace RegexUnitTests
         [TestMethod]
         public void ParseEscape()
         {
-            Test("\u5A6B", "\\u5A6B");
+            Test("\u5A6B", "\u5A6B");
             Test("\\u5A6B", "\\u5A6B");
             Test("\\u5a6b", "\\u5A6B");
-            Test("\\.\\$\\^\\{\\[\\(\\|\\)\\*\\+\\?\\\\", "\\u002E\\u0024\\u005E\\u007B\\u005B\\u0028\\u007C\\u0029\\u002A\\u002B\\u003F\\u005C");
-            Test("\\u0031\\u0041\\u0061", "1Aa");
-            Test("\\x5A", "Z");
-            Test("\\x5b", "\\u005B");
-            Test("\\cA\\cZ", "\\u0001\\u001A");
+            Test("\\.\\$\\^\\{\\[\\(\\|\\)\\*\\+\\?\\\\");
+            Test("\\u0031\\u0041\\u0061");
+            Test("\\x5A");
+            Test("\\x5b", "\\x5B");
+            Test("\\cA\\cZ");
         }
 
         [TestMethod]
@@ -192,19 +192,19 @@ namespace RegexUnitTests
             Test("[a]");
             Test("[abcd]");
             Test("[^s]");
-            Test("[[]", "[\\u005B]");
-            Test("[]]", "[\\u005D]");
-            Test("[^^]", "[^\\u005E]");
-            Test("[^]]", "[^\\u005D]");
-            Test("[-]", "[\\u002D]");
-            Test("[^-]", "[^\\u002D]");
-            Test("[0-]]", "[0\\u002D]\\u005D");//not a range
+            Test("[[]");
+            Test("[]]");
+            Test("[^^]");
+            Test("[^]]");
+            Test("[-]");
+            Test("[^-]");
+            Test("[0-]]");//not a range
         }
         [TestMethod]
         public void ParseRange()
         {
             Test("[a-z]");
-            Test("[a-zA-Z0-9_]", "[a-zA-Z0-9\\u005F]");
+            Test("[a-zA-Z0-9_]");
             Test("[a-zA-Z0-9\\u005F]");
 
         }

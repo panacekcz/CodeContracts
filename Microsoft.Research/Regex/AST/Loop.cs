@@ -23,56 +23,154 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.Regex.AST
 {
-    public class Loop : Element
+    public abstract class Quantifier : Element
     {
-        internal const int UNBOUNDED = -1;
-
+        
         private readonly bool lazy;
-        private readonly int min, max;
         private readonly Element content;
 
         public Element Content { get { return content; } }
-        public int Min { get { return min; } }
-        public int Max { get { return max; } }
-        public bool IsUnbounded { get { return max == UNBOUNDED; } }
         public bool Lazy { get { return lazy; } }
+        public abstract int Min { get; }
+        public abstract int Max { get; }
+        public abstract bool IsUnbounded { get; }
 
-        public Loop(int min, int max, Element content, bool lazy)
+        protected Quantifier(Element content, bool lazy)
         {
-            this.min = min;
-            this.max = max;
             this.content = content;
             this.lazy = lazy;
         }
 
+        internal abstract void GenerateQuantifier(StringBuilder builder);
         internal override void GenerateString(StringBuilder builder)
         {
-            content.GenerateString(builder);
-            if (min == 0 && max == 1)
-                builder.Append('?');
-            else if (min == 0 && max == UNBOUNDED)
-                builder.Append('*');
-            else if (min == 1 && max == UNBOUNDED)
-                builder.Append('+');
-            else
-            {
-                builder.Append('{');
-                builder.Append(min);
-                if (min != max)
-                {
-                    builder.Append(',');
-                    if (max != -1)
-                    {
-                        builder.Append(max);
-                    }
-                }
-                builder.Append('}');
-            }
+            Content.GenerateString(builder);
+            GenerateQuantifier(builder);
 
-            if (lazy)
+            if (Lazy)
             {
                 builder.Append('?');
             }
+        }
+    }
+
+    public class Iteration : Quantifier
+    {
+        public override int Max
+        {
+            get
+            {
+                return -1;
+            }
+        }
+        public override int Min
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public Iteration(Element content, bool lazy):
+            base(content, lazy)
+        {
+        }
+
+        public override bool IsUnbounded { get { return true; } }
+        internal override void GenerateQuantifier(StringBuilder builder)
+        {
+            builder.Append('*');
+        }
+    }
+
+    public class PositiveIteration : Quantifier
+    {
+        public override int Max
+        {
+            get
+            {
+                return -1;
+            }
+        }
+        public override int Min
+        {
+            get
+            {
+                return 1;
+            }
+        }
+
+        public PositiveIteration(Element content, bool lazy) :
+            base(content, lazy)
+        {
+        }
+
+        public override bool IsUnbounded { get { return true; } }
+        internal override void GenerateQuantifier(StringBuilder builder)
+        {
+            builder.Append('+');
+        }
+    }
+
+    public class Optional : Quantifier
+    {
+        public override int Max
+        {
+            get
+            {
+                return 1;
+            }
+        }
+        public override int Min
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public Optional(Element content, bool lazy) :
+            base(content, lazy)
+        {
+        }
+
+        public override bool IsUnbounded { get { return false; } }
+        internal override void GenerateQuantifier(StringBuilder builder)
+        {
+            builder.Append('?');
+        }
+    }
+
+
+    public class Loop : Quantifier
+    {
+        internal const int UNBOUNDED = -1;
+        private readonly int min, max;
+
+        public override int Min { get { return min; } }
+        public override int Max { get { return max; } }
+        public override bool IsUnbounded { get { return max == UNBOUNDED; } }
+        
+        public Loop(int min, int max, Element content, bool lazy):
+            base(content, lazy)
+        {
+            this.min = min;
+            this.max = max;
+        }
+
+        internal override void GenerateQuantifier(StringBuilder builder)
+        {
+            builder.Append('{');
+            builder.Append(min);
+            if (min != max)
+            {
+                builder.Append(',');
+                if (max != -1)
+                {
+                    builder.Append(max);
+                }
+            }
+            builder.Append('}');
         }
 
     }

@@ -10,6 +10,14 @@ namespace Microsoft.Research.Regex
 {
     class ModelASTVisitor : Model.ModelVisitor<AST.Element, Void>
     {
+        public enum EscapingStrategy
+        {
+            EscapeUnicodeExceptAlnum,
+            EscapeUnicodeAll,
+        }
+
+        public EscapingStrategy Escaping { get; set; }
+
         protected override AST.Element VisitAnchor(End anchor, ref Void data)
         {
             return new AST.Anchor(AnchorKind.End);
@@ -20,10 +28,18 @@ namespace Microsoft.Research.Regex
             return new AST.Anchor(AnchorKind.LineStart);
         }
 
+        private AST.Character Character(char value)
+        {
+            if (Escaping == EscapingStrategy.EscapeUnicodeExceptAlnum && (value >= '0' && value <= '9' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z'))
+                return new AST.LiteralCharacter(value);
+            else
+                return new AST.UnicodeEscapeCharacter(value);
+        }
+
         private AST.SingleElement CharRange(char low, char high)
         {
             if (low == high)
-                return new AST.Character(low);
+                return Character(low);
             else
                 return new AST.Range(low, high);
         }
@@ -35,7 +51,7 @@ namespace Microsoft.Research.Regex
             if (ranges.Length == 1 && ranges[0].Low == ranges[0].High)
             {
                 // Single character
-                return new AST.Character(ranges[0].Low);
+                return Character(ranges[0].Low);
             }
             else
             {

@@ -26,20 +26,16 @@ namespace Microsoft.Research.Regex.AST
     /// <summary>
     /// Represents a single character node in Regex AST.
     /// </summary>
-    public class Character : SingleElement
+    public abstract class Character : SingleElement
     {
-        private readonly char value;
+        protected readonly char value;
 
         /// <summary>
         /// Gets the matched character value.
         /// </summary>
         public char Value { get { return value; } }
 
-        /// <summary>
-        /// Constructs a character AST node for the specified character.
-        /// </summary>
-        /// <param name="value">Value of the represented character.</param>
-        public Character(char value)
+        protected Character(char value)
         {
             this.value = value;
         }
@@ -58,14 +54,6 @@ namespace Microsoft.Research.Regex.AST
             return IsMatch(character);
         }
 
-        internal override void GenerateString(StringBuilder builder)
-        {
-            if (value >= '0' && value <= '9' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z')
-                builder.Append(value);
-            else
-                builder.AppendFormat("\\u{0:X4}", (int)value);
-        }
-
         public IEnumerable<CharRange> IsMatchIntervals
         {
             get { yield return new CharRange(value, value); }
@@ -79,6 +67,137 @@ namespace Microsoft.Research.Regex.AST
         public override CharRanges MustMatchRanges
         {
             get { return new CharRanges(IsMatchIntervals); }
+        }
+    }
+
+    public class UnicodeEscapeCharacter : Character
+    {
+        /// <summary>
+        /// Constructs a character AST node for the specified character.
+        /// </summary>
+        /// <param name="value">Value of the represented character.</param>
+        public UnicodeEscapeCharacter(char value)
+            : base(value)
+        {
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.AppendFormat("\\u{0:X4}", (int)value);
+        }
+    }
+
+    public class DefaultEscapeCharacter : Character
+    {
+        /// <summary>
+        /// Constructs a character AST node for the specified character.
+        /// </summary>
+        /// <param name="value">Value of the represented character.</param>
+        public DefaultEscapeCharacter(char value)
+            : base(value)
+        {
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.AppendFormat("\\{0}", value);
+        }
+    }
+
+    public class ControlEscapeCharacter : Character
+    {
+        /// <summary>
+        /// Constructs a character AST node for the specified character.
+        /// </summary>
+        /// <param name="value">Value of the represented character.</param>
+        public ControlEscapeCharacter(char value)
+            : base(value)
+        {
+            if (value == 0 || value > 'Z' - 'A' + 1)
+                throw new ArgumentOutOfRangeException();
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.AppendFormat("\\c{0}", (char)('A' + value - 1));
+        }
+    }
+
+    public class HexadecimalEscapeCharacter : Character
+    {
+        /// <summary>
+        /// Constructs a character AST node for the specified character.
+        /// </summary>
+        /// <param name="value">Value of the represented character.</param>
+        public HexadecimalEscapeCharacter(char value)
+            : base(value)
+        {
+            if (value > 255)
+                throw new ArgumentOutOfRangeException();
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.AppendFormat("\\x{0:X2}", (int)value);
+        }
+    }
+    public class EscapeCharacter : Character
+    {
+        private readonly char escapeChar;
+
+        public static char GetValue(char escapeChar)
+        {
+            switch (escapeChar) {
+                case 'a':
+                    return '\u0007';
+                case 'b':
+                    return '\u0008';
+                case 'e':
+                    return '\u001B';
+                case 'f':
+                    return '\u000C';
+                case 'n':
+                    return '\n';
+                case 'r':
+                    return '\u000d';
+                case 't':
+                    return '\u0009';
+                case 'v':
+                    return '\u000B';
+                default:
+                    throw new ArgumentException();
+            }
+        }
+        /// <summary>
+        /// Constructs a character AST node for the specified character.
+        /// </summary>
+        /// <param name="value">Value of the represented character.</param>
+        public EscapeCharacter(char escapeChar)
+            : base(GetValue(escapeChar))
+        {
+            this.escapeChar = escapeChar;
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.AppendFormat("\\{0}", escapeChar);
+        }
+    }
+    
+    public class LiteralCharacter : Character
+    { 
+        /// <summary>
+        /// Constructs a character AST node for the specified character.
+        /// </summary>
+        /// <param name="value">Value of the represented character.</param>
+        public LiteralCharacter(char value)
+            : base(value)
+        {
+        }
+
+        internal override void GenerateString(StringBuilder builder)
+        {
+            builder.Append(value);   
         }
     }
 }
