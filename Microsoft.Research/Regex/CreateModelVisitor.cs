@@ -15,7 +15,25 @@ namespace Microsoft.Research.Regex
     /// </summary>
     internal class CollectCapturesVisitor : RegexVisitor<bool, Void>
     {
-        private Dictionary<string, AST.Element> captures = new Dictionary<string, AST.Element>();
+        private Dictionary<string, AST.Element> captures;
+        private bool fail;
+
+        public bool IsFail
+        {
+            get { return fail; }
+        }
+        public bool TryGetCapture(string name, out AST.Element capture)
+        {
+            return captures.TryGetValue(name, out capture);
+        }
+
+        internal void FindCaptures(AST.Element regex)
+        {
+            Void v;
+            fail = false;
+            captures = new Dictionary<string, AST.Element>();
+            VisitElement(regex, ref v);
+        }
 
         protected override bool Visit(Boundary element, ref Void data)
         {
@@ -114,7 +132,8 @@ namespace Microsoft.Research.Regex
 
         protected override bool VisitUnsupported(AST.Element element, ref Void data)
         {
-            throw new NotImplementedException();
+            fail = true;
+            return false;
         }
     }
 
@@ -123,12 +142,17 @@ namespace Microsoft.Research.Regex
     /// </summary>
     internal class CreateModelVisitor : RegexVisitor<Model.Element, Void>
     {
+        CollectCapturesVisitor captureCollector = new CollectCapturesVisitor();
+
         /// <summary>
         /// Creates regex model from regex AST.
         /// </summary>
         public Model.Element CreateModelForAST(AST.Element ast)
         {
             Void data;
+
+            captureCollector.FindCaptures(ast);
+
             return VisitElement(ast, ref data);
         }
 
@@ -136,7 +160,13 @@ namespace Microsoft.Research.Regex
         {
             if (element.Negative)
             {
-                // Negative assertions not supported
+                if(element.Content.IsEmptyConcatenation())
+                {
+                    // If the content is empty, it means nothing matches
+                    return new Model.Union();
+                }
+
+                // Negative assertions not supported, reurn empty or fail
                 return new Model.Unknown(new Model.Concatenation());
             }
             else
@@ -204,7 +234,16 @@ namespace Microsoft.Research.Regex
 
         protected override Model.Element Visit(Reference element, ref Void data)
         {
-            throw new NotImplementedException();
+
+            if (!captureCollector.IsFail)
+            {
+                AST.Element capture;
+                if (captureCollector.TryGetCapture(element.CaptureName, out capture))
+                {
+                    return new Model.Unknown(VisitElement(capture, ref data));
+                }
+            }
+            return VisitUnsupported(element, ref data);
         }
 
         protected override Model.Element Visit(SingleElement element, ref Void data)

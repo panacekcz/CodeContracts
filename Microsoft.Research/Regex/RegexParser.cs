@@ -222,6 +222,17 @@ namespace Microsoft.Research.Regex
                     return new AST.Anchor(AST.AnchorKind.StringEnd);
                 case '0':
                     return ParseOctalEscapeSeq();
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    input.Prev();
+                    return new AST.Reference(ParseDecimal().ToString());
                 default:
                     return new AST.DefaultEscapeCharacter(c);
             }
@@ -348,6 +359,7 @@ namespace Microsoft.Research.Regex
         {
             if (input.Next() != '?')
             {
+                input.Prev();
                 return new AST.Capture(NextGroup(), Parse(true));
             }
             else
@@ -479,15 +491,32 @@ namespace Microsoft.Research.Regex
         }
         int ParseDecimal()
         {
-            int r = 0;
-
-            while (input.Current() >= '0' && input.Current() <= '9')
+            try
             {
-                r = r * 10 + input.Current() - '0';
-                input.Next();
-            }
+                checked
+                {
+                    int r = 0;
+                    char c = input.Next();
 
-            return r;
+                    while (c >= '0' && c <= '9')
+                    {
+                        r = r * 10 + (c - '0');
+
+                        if (input.HasNext())
+                            c = input.Next();
+                        else
+                            return r;
+                    }
+
+                    input.Prev();
+
+                    return r;
+                }
+            }
+            catch(OverflowException)
+            {
+                throw new ParseException("Integer value too large");
+            }
         }
 
         int ParseHexadecimal(int l)

@@ -30,6 +30,8 @@ namespace Microsoft.Research.Regex.AST
     {
         private readonly string name;
 
+        public string CaptureName { get { return name; } }
+
         public Reference(string name)
         {
             this.name = name;

@@ -118,5 +118,10 @@ namespace Microsoft.Research.Regex
                 return true;
             }
         }
+
+        public static bool IsEmptyConcatenation(this AST.Element element)
+        {
+            return element is AST.Empty || (element is AST.Concatenation && ((AST.Concatenation)element).Parts.Count == 0);
+        }
     }
 }
