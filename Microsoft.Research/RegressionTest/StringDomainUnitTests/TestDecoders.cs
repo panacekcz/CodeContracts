@@ -104,7 +104,7 @@ namespace StringDomainUnitTests
 
         public string NameOf(TestVariable exp)
         {
-            throw new NotImplementedException();
+            return exp.Name;
         }
 
         public ExpressionOperator OperatorFor(BoxedExpression exp)

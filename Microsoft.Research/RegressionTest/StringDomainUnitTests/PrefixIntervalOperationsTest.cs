@@ -29,7 +29,10 @@ namespace StringDomainUnitTests
     [TestClass]
     public class PrefixIntervalOperationsTests : StringAbstractionTestBase<PrefixInterval>
     {
-        PrefixInterval.Operations<TestVariable> operations = new PrefixInterval.Operations<TestVariable>();
+        public PrefixIntervalOperationsTests()
+        {
+            SetOperations(new PrefixInterval.Operations<TestVariable>());
+        }
 
         [TestMethod]
         public void TestPrefixIntervalIndexOf()

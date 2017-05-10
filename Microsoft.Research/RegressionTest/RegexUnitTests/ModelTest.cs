@@ -43,7 +43,7 @@ namespace RegexUnitTests
         [TestMethod]
         public void ParseNamed()
         {
-            Test("(?<name>inner)\\k<name>", "unknown()");
+            Test("(?<name>in)\\k<name>", "concat(char(69)char(6E)unknown(concat(char(69)char(6E))))");
         }
 
         [TestMethod]
@@ -111,6 +111,7 @@ namespace RegexUnitTests
         public void ParseAssertions()
         {
             Test("(?!)", "union()");
+            Test("(?!abcd)", "unknown(concat())");
         }
 
         [TestMethod]

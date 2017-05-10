@@ -30,15 +30,28 @@ namespace StringDomainUnitTests
     /// </summary>
     public class TestVariable : IEquatable<TestVariable>
     {
-        public static readonly TestVariable Var1 = new TestVariable(ExpressionType.String);
-        public static readonly TestVariable Var2 = new TestVariable(ExpressionType.String);
-        public static readonly TestVariable Var3 = new TestVariable(ExpressionType.String);
+        public static readonly TestVariable Var1 = new TestVariable(ExpressionType.String, "s1");
+        public static readonly TestVariable Var2 = new TestVariable(ExpressionType.String, "s2");
+        public static readonly TestVariable Var3 = new TestVariable(ExpressionType.String, "s3");
 
-        public static readonly TestVariable BoolVar = new TestVariable(ExpressionType.Bool);
+        public static readonly TestVariable BoolVar = new TestVariable(ExpressionType.Bool, "b1");
+        public static readonly TestVariable BoolVar2 = new TestVariable(ExpressionType.Bool, "b2");
 
         internal ExpressionType expressionType;
+        internal string name;
 
-        private TestVariable(ExpressionType type) { expressionType = type; }
+        public string Name
+        {
+            get
+            {
+                return name;
+            }
+        }
+
+        private TestVariable(ExpressionType type, string name) {
+            expressionType = type;
+            this.name = name;
+        }
 
         public bool Equals(TestVariable other)
         {

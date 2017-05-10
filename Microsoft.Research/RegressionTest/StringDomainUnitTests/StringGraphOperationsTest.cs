@@ -73,6 +73,22 @@ namespace StringDomainUnitTests
         }
 
         [TestMethod]
+        public void TestConcatWithWidening()
+        {
+            StringGraph a = StringGraph.ForString("a");
+            StringGraph o = StringGraph.ForString("(");
+            StringGraph c = StringGraph.ForString(")");
+
+            for(int i=0; i < 10; ++i)
+            {
+                a = (StringGraph) a.Widening(operations.Concat(Arg(operations.Concat(Arg(o), Arg(a))), Arg(c)));
+            }
+
+            AssertString("abc", a);
+        }
+
+
+        [TestMethod]
         public void TestSubstring()
         {
             StringGraph graph = StringGraph.ForString("constant");

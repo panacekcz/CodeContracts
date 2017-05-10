@@ -233,10 +233,10 @@ namespace StringDomainUnitTests
         [TestMethod]
         public void TestInsert()
         {
-            Assert.AreEqual("{O{t{h{e{r*}.}.}.}.S{t{r{i{n{g{}!}.}.}.}.}.s{o{m{e*}.}.}.}.", operations.Insert(Arg(operations.Constant("someString")), IndexInterval.For(4), Arg("Other")).ToString());
-            Assert.AreEqual("{a*o{t{h{e{r*}.}.}.}.}!", operations.Insert(Arg(operations.Constant("aaaa")), IndexInterval.Unknown, Arg("other")).ToString());
-            Assert.AreEqual("{a{b*}.c{d*}.e{f*}.}!", operations.Insert(Arg(ParseTokens("{a{b*}.c{d*}.}!")), IndexInterval.For(88), Arg("ef")).ToString());
-            Assert.AreEqual("{a*b*c*d*e{f*}.}!", operations.Insert(Arg(ParseTokens("{a{b*}.c{d*}.}!")), IndexInterval.For(89), Arg("ef")).ToString());
+            AssertString("{O{t{h{e{r*}.}.}.}.S{t{r{i{n{g{}!}.}.}.}.}.s{o{m{e*}.}.}.}.", operations.Insert(Arg(operations.Constant("someString")), IndexInterval.For(4), Arg("Other")));
+            AssertString("{a*o{t{h{e{r*}.}.}.}.}!", operations.Insert(Arg(operations.Constant("aaaa")), IndexInterval.Unknown, Arg("other")));
+            AssertString("{a{b*}.c{d*}.e{f*}.}!", operations.Insert(Arg(ParseTokens("{a{b*}.c{d*}.}!")), IndexInterval.For(88), Arg("ef")));
+            AssertString("{a*b*c*d*e{f*}.}!", operations.Insert(Arg(ParseTokens("{a{b*}.c{d*}.}!")), IndexInterval.For(89), Arg("ef")));
 
         }
     }

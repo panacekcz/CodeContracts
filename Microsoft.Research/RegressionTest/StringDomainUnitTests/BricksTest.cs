@@ -85,5 +85,23 @@ namespace StringDomainUnitTests
             Assert.AreEqual("{one}[1,1]", one.Meet(one.Top).ToString());
         }
 
+        [TestMethod]
+        public void LessThanEqual()
+        {
+            Bricks one = MakeBricks("one");
+            Bricks two = MakeBricks("two");
+
+            Assert.IsTrue(one.LessThanEqual(one));
+
+            Assert.IsTrue(one.LessThanEqual(top));
+
+            Assert.IsFalse(one.LessThanEqual(two));
+
+            Assert.IsFalse(one.LessThanEqual(bottom));
+
+            Assert.IsTrue(one.LessThanEqual(one.Join(two)));
+            Assert.IsFalse(one.Join(two).LessThanEqual(one));
+        }
+
     }
 }

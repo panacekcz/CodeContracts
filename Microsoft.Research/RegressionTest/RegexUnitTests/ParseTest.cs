@@ -48,6 +48,13 @@ namespace RegexUnitTests
         }
 
         [TestMethod]
+        public void ParseCaptures()
+        {
+            Test("(a)(b)(c)\\1\\2\\3", "(?<1>a)(?<2>b)(?<3>c)\\k<1>\\k<2>\\k<3>");
+            Test("(((a)))", "(?<1>(?<2>(?<3>a)))");
+        }
+
+        [TestMethod]
         public void ParseAnchors()
         {
             Test("^abc$");

@@ -45,9 +45,10 @@ namespace StringDomainUnitTests
         public void TestComparison()
         {
             StringGraph oneConst = StringGraph.ForString("one");
-            StringGraph top = oneConst.Top;
-            StringGraph onePrefix = StringGraph.ForConcat(oneConst, top);
+            StringGraph twoConst = StringGraph.ForString("two");
 
+            StringGraph onePrefix = StringGraph.ForConcat(oneConst, top);
+            StringGraph oneOrTwo = StringGraph.ForUnion(oneConst, twoConst);
 
             Assert.IsTrue(oneConst.LessThanEqual(top));
             Assert.IsTrue(onePrefix.LessThanEqual(top));
@@ -56,8 +57,15 @@ namespace StringDomainUnitTests
             Assert.IsTrue(oneConst.LessThanEqual(oneConst));
             Assert.IsTrue(onePrefix.LessThanEqual(onePrefix));
 
+            
             Assert.IsFalse(top.LessThanEqual(oneConst));
             Assert.IsFalse(top.LessThanEqual(onePrefix));
+
+            Assert.IsFalse(oneConst.LessThanEqual(twoConst));
+            Assert.IsFalse(onePrefix.LessThanEqual(oneConst));
+
+            Assert.IsTrue(oneConst.LessThanEqual(oneOrTwo));
+            Assert.IsFalse(oneOrTwo.LessThanEqual(oneConst));
 
         }
 
