@@ -244,6 +244,8 @@
     <Compile Include="String\CharRangeExtensions.cs" />
     <Compile Include="String\CompareResult.cs" />
     <Compile Include="String\FlatPredicate.cs" />
+    <Compile Include="String\Graphs\LessEqual.cs" />
+    <Compile Include="String\Graphs\Meet.cs" />
     <Compile Include="String\Graphs\Nodes\BottomNode.cs" />
     <Compile Include="String\Graphs\Visitors\CharAtVisitor.cs" />
     <Compile Include="String\Graphs\Nodes\CharNode.cs" />
@@ -281,6 +283,7 @@
     <Compile Include="String\IndexInterval.cs" />
     <Compile Include="String\IStringOrderQuery.cs" />
     <Compile Include="String\OrderPredicate.cs" />
+    <Compile Include="String\PredicateBase.cs" />
     <Compile Include="String\PrefixInterval.cs" />
     <Compile Include="String\TokensTree\Relations\ForwardSearch.cs" />
     <Compile Include="String\TokensTree\Relations\Meet.cs" />

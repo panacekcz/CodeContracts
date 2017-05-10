@@ -22,10 +22,14 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 {
+    /// <summary>
+    /// Concatenates a tokens tree into another tokens tree.
+    /// The trees must not contain any repeat nodes.
+    /// </summary>
     internal class ConcatVisitor : TokensTreeTransformer
     {
         private InnerNode append;
-        private bool addedAsRoot = false;
+        
         public ConcatVisitor(TokensTreeMerger merger, InnerNode append) :
             base(merger)
         {
@@ -45,7 +49,6 @@ namespace Microsoft.Research.AbstractDomains.Strings.TokensTree
 
             if (innerNode.Accepting)
             {
-                //TODO: VD: not optimal
                 InnerNode newInnNotAccepting = new InnerNode((InnerNode)newInn);
                 newInnNotAccepting.accepting = false;
 

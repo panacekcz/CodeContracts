@@ -140,17 +140,41 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
 
         public GeneratingState<TState> EndLoop(GeneratingState<TState> prev, GeneratingState<TState> next, IndexInt min, IndexInt max)
         {
-            TState loopedOpen = operations.Loop(prev.Closed, next.Closed, next.Open, min, max);
-            TState loopedClosed = operations.Loop(prev.Closed, next.Closed, next.Closed, min, max);
+            bool nextCanBeEmpty = operations.CanBeEmpty(next.Closed);
 
-            if (min == 0 || operations.CanBeEmpty(next.Closed))
-            {
-                loopedOpen = operations.Join(prev.Open, loopedOpen, false);
+            if (operations.IsUnderapproximating) {
+                if (prev.IsEnd)
+                {
+                    // Prev is end, can continue only if min is zero or next can be empty
+                    if (min == 0 || nextCanBeEmpty)
+                        return prev;
+                    else
+                        return Bottom;
+                }
+                if (next.IsEnd && !nextCanBeEmpty)
+                {
+                    // Next is end, can repeat it only once
+                    if (min > 1)
+                        return Bottom;
+
+                    max = IndexInt.For(1);
+                }
             }
 
-            return new GeneratingState<TState>(loopedOpen, loopedClosed, false);
-            //TODO: VD: check code above (including isEnd)
-            //throw new NotImplementedException();
+            // Prev.cl + looped(next.cl) + next.op
+            TState loopedOpen = operations.Loop(prev.Closed, next.Closed, next.Open, min, max);
+            // prev.cl + looped(next.cl) + next.op
+            TState loopedClosed = operations.Loop(prev.Closed, next.Closed, next.Closed, min, max);
+            bool isEnd = next.IsEnd;
+
+            if (min == 0 || nextCanBeEmpty)
+            {
+                // prev.op
+                loopedOpen = operations.Join(prev.Open, loopedOpen, false);
+                isEnd = operations.IsUnderapproximating ? (isEnd || prev.IsEnd) : (isEnd && prev.IsEnd);
+            }
+
+            return new GeneratingState<TState>(loopedOpen, loopedClosed, isEnd);
         }
 
         public GeneratingState<TState> Join(GeneratingState<TState> left, GeneratingState<TState> right, bool widen)

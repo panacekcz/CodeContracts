@@ -186,7 +186,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
 
             // underapproximation
-            return false;
+            var le = new Graphs.LessEqual();
+            return le.IsLessEqual(root, other.root); ;
         }
         ///<inheritdoc/>
         public StringGraph Join(StringGraph other)

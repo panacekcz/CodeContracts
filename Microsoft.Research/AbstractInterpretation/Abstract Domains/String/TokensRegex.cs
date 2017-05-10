@@ -303,9 +303,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public TokensNegativeRegexState Join(TokensNegativeRegexState left, TokensNegativeRegexState right, bool widen)
         {
-            //TODO: VD: check if all the cases work
-
-            // The tree does not contain any repeat nodes
+            // The tree does not contain any repeat nodes, thst means merging works for both over- and under- approximation
 
             TokensTreeMerger merger = new TokensTreeMerger();
             merger.Cutoff(left.root);

@@ -8,16 +8,32 @@ using Microsoft.Research.Regex.Model;
 
 namespace Microsoft.Research.Regex
 {
-    class ModelASTVisitor : Model.ModelVisitor<AST.Element, Void>
+    /// <summary>
+    /// Generates an AST for a regex model.
+    /// </summary>
+    internal class ModelASTVisitor : Model.ModelVisitor<AST.Element, Void>
     {
+        /// <summary>
+        /// Selects when to use escape sequences to represent characters.
+        /// </summary>
         public enum EscapingStrategy
         {
+            /// <summary>
+            /// Use literals for alphanumeric characters, unicode escape sequences for all other characters.
+            /// </summary>
             EscapeUnicodeExceptAlnum,
+            /// <summary>
+            /// Use unicode escape sequences for all characters.
+            /// </summary>
             EscapeUnicodeAll,
         }
 
+        /// <summary>
+        /// Gets or sets the used escaping strategy.
+        /// </summary>
         public EscapingStrategy Escaping { get; set; }
 
+        #region ModelVisitor overrides
         protected override AST.Element VisitAnchor(End anchor, ref Void data)
         {
             return new AST.Anchor(AnchorKind.End);
@@ -64,9 +80,9 @@ namespace Microsoft.Research.Regex
 
                 foreach (var range in ranges)
                 {
-                    if(range.Low - 1 != lastHigh)
+                    if (range.Low - 1 != lastHigh)
                     {
-                        if(lastHigh != -1)
+                        if (lastHigh != -1)
                             setRanges.Add(CharRange((char)lastLow, (char)lastHigh));
                         lastLow = range.Low;
                     }
@@ -80,13 +96,7 @@ namespace Microsoft.Research.Regex
                 AST.CharacterSet characterSet = new CharacterSet(false, setRanges, null);
                 return characterSet;
             }
-            
-        }
 
-        public AST.Element CreateASTForModel(Model.Element e)
-        {
-            Void v;
-            return VisitElement(e, ref v);
         }
 
         protected override AST.Element VisitConcatenation(Model.Concatenation concatenation, ref Void data)
@@ -121,7 +131,15 @@ namespace Microsoft.Research.Regex
             {
                 if (!(inner is AST.SingleElement))
                     inner = new AST.SimpleGroup(inner);
-                return new AST.Loop(loop.Min, loop.Max, inner, false);
+
+                if (loop.Min == 0 && loop.Max == Model.Loop.Unbounded)
+                    return new AST.Iteration(inner, false);
+                else if (loop.Min == 1 && loop.Max == Model.Loop.Unbounded)
+                    return new AST.PositiveIteration(inner, false);
+                else if (loop.Min == 0 && loop.Max == 1)
+                    return new AST.Optional(inner, false);
+                else
+                    return new AST.Loop(loop.Min, loop.Max, inner, false);
             }
             
         }
@@ -139,6 +157,13 @@ namespace Microsoft.Research.Regex
         protected override AST.Element VisitUnknown(Unknown unknown, ref Void data)
         {
             throw new UnknownRegexException("Cannot create AST of regex");
+        }
+        #endregion
+
+        public AST.Element CreateASTForModel(Model.Element e)
+        {
+            Void v;
+            return VisitElement(e, ref v);
         }
     }
 }

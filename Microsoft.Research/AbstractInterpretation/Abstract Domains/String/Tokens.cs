@@ -527,7 +527,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     return StartsWithOrdinal(self, selfVariable, other, otherVariable);
             }
 
-            public IStringPredicate StartsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
+            private IStringPredicate StartsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
             {
                 Tokens selfAbstraction = self.ToAbstract(this), otherAbstraction = other.ToAbstract(this);
                 // Seems there is no possiblity to return predicate here
@@ -583,7 +583,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
             }
 
-            public IStringPredicate EndsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
+            private IStringPredicate EndsWithOrdinal(WithConstants<Tokens> self, Variable selfVariable, WithConstants<Tokens> other, Variable otherVariable)
             {
                 // Seems there is no possiblity to return predicate here 
 
