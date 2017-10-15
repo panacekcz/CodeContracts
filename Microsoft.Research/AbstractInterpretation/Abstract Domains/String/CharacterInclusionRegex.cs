@@ -91,7 +91,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
         public bool CanBeEmpty(CharacterInclusion<CharacterSet> prev)
         {
-            //TODO: VD: verify:
             // Here the meaning is "the non-matching MUST be empty"
             return prev.MustBeEmpty;
         }
@@ -108,7 +107,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
         }
 
-        public CharacterInclusion<CharacterSet> Loop(CharacterInclusion<CharacterSet> prev, CharacterInclusion<CharacterSet> loop, CharacterInclusion<CharacterSet> last, IndexInt min, IndexInt max)
+        public CharacterInclusion<CharacterSet> Loop(CharacterInclusion<CharacterSet> prev, GeneratingLoopState<CharacterInclusion<CharacterSet>> loop, IndexInt min, IndexInt max)
         {
             return Bottom;
         }
@@ -184,15 +183,15 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return widen ? (CharacterInclusion<CharacterSet>)left.Widening(right) : left.Join(right);
         }
 
-        public CharacterInclusion<CharacterSet> Loop(CharacterInclusion<CharacterSet> prev, CharacterInclusion<CharacterSet> loop, CharacterInclusion<CharacterSet> last, IndexInt min, IndexInt max)
+        public CharacterInclusion<CharacterSet> Loop(CharacterInclusion<CharacterSet> prev, GeneratingLoopState<CharacterInclusion<CharacterSet>> loop, IndexInt min, IndexInt max)
         {
             if (min == 0)
             {
-                return prev.Combine(last.Part(false, false, false, false));
+                return prev.Combine(loop.Last.Part(false, false, false, false));
             }
             else
             {
-                return prev.Combine(last);
+                return prev.Combine(loop.Last);
             }
         }
         #endregion
@@ -208,7 +207,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
         public CharacterSet encountered;
         public CharacterSet looped;
 
-        //TODO: VD: Closed start can be represented by setting encountered to full?
         public bool startAnchor;
         public bool endAnchor;
         public bool empty;
@@ -359,14 +357,13 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return right;
             if (right.bottom)
                 return left;
-            // TODO: VD:  check under-join
+            
             return new CharacterInclusionMatchingState<CharacterSet>
             {
                 encountered = left.encountered.Union(right.encountered),
                 looped = left.looped.Intersection(right.looped),
                 startAnchor = under ? (left.startAnchor || right.startAnchor) : left.startAnchor && right.startAnchor,
                 endAnchor = under ? (left.endAnchor || right.endAnchor) : left.endAnchor && right.endAnchor,
-                //TODO: VD: empty
                 bottom = false,
             };
         }
@@ -376,7 +373,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             if (prev.bottom)
                 return prev;
 
-            //TODO: VD:  convert charranges to set
             CharacterSet cs = input.CreateCharacterSetFor(next.ToIntervals());
 
             if (under)
@@ -465,16 +461,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     else
                     {
                         return prev;
-                        //TODO: VD: remove?
-                        /*return new CharacterInclusionMatchingState<CharacterSet>
-                        {
-                            encountered = setFactory.Create(false, classification.Buckets),
-                            looped = setFactory.Create(false, classification.Buckets),
-                            startAnchor = prev.startAnchor,
-                            endAnchor = false,
-                            empty = false,
-                            bottom = false,
-                        };*/
                     }
                 }
                 else if (min == 1 && !next.endAnchor && !next.startAnchor && prev.empty && !prev.endAnchor && !next.bottom)
@@ -608,6 +594,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     if (value.mandatory.Contains(i))
                     {
+                        // Overapproximates the mandatory character class by an interval
                         CharInterval interval = value.classification.ToInterval(i);
                         CharRanges ranges = new CharRanges(new CharRange(interval.LowerBound, interval.UpperBound));
                         var set = new Character(ranges, ranges);
@@ -615,7 +602,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     }
                 }
             }
-
             return regexes;
         }
 

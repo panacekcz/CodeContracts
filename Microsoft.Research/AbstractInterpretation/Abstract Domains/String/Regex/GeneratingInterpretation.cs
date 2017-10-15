@@ -161,10 +161,17 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
                 }
             }
 
+            GeneratingLoopState<TState> loopState;
+            loopState.loopOpen = next.Open;
+            loopState.loopClosed = next.Closed;
+
             // Prev.cl + looped(next.cl) + next.op
-            TState loopedOpen = operations.Loop(prev.Closed, next.Closed, next.Open, min, max);
+            loopState.resultClosed = false;
+            TState loopedOpen = operations.Loop(prev.Closed, loopState, min, max);
+
             // prev.cl + looped(next.cl) + next.op
-            TState loopedClosed = operations.Loop(prev.Closed, next.Closed, next.Closed, min, max);
+            loopState.resultClosed = true;
+            TState loopedClosed = operations.Loop(prev.Closed, loopState, min, max);
             bool isEnd = next.IsEnd;
 
             if (min == 0 || nextCanBeEmpty)

@@ -106,17 +106,16 @@ namespace Microsoft.Research.AbstractDomains.Strings
             get { return underapproximate; }
         }
 
-        public TokensRegexState Loop(TokensRegexState prev, TokensRegexState loop, TokensRegexState last, IndexInt min, IndexInt max)
+        public TokensRegexState Loop(TokensRegexState prev, GeneratingLoopState<TokensRegexState> loop, IndexInt min, IndexInt max)
         {
- 
             if (underapproximate)
             {
                 //Only allow unlimited repetition
-                if(min != 0 || !max.IsInfinite)
+                if (min != 0 || !max.IsInfinite)
                     return Bottom;
 
                 InnerNode prevResult = GetResult(prev);
-                InnerNode loopResult = GetResult(loop);
+                InnerNode loopResult = GetResult(loop.loopClosed);
 
                 UnderapproximatingMerger merger = new UnderapproximatingMerger();
                 merger.Cutoff(prevResult);
@@ -124,14 +123,14 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
                 return new TokensRegexState(emptyNode, merger.Build());
             }
-            else
+            else if (loop.resultClosed)
             {
                 // Repeat the loop and append the suffix
                 TokensTreeMerger merger = new TokensTreeMerger();
                 var rv = new RepeatVisitor(merger);
 
-                rv.Repeat(last.prefix);
-                rv.Repeat(last.result);
+                rv.Repeat(loop.loopClosed.prefix);
+                rv.Repeat(loop.loopClosed.result);
 
                 if (prev.result.IsEmpty())
                 {
@@ -144,6 +143,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
 
                 return new TokensRegexState(emptyNode, merger.Build());
+            }
+            else
+            {
+                // Open states are only over-approximated by Top
+                return Top;
             }
         }
 
@@ -312,7 +316,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             return new TokensNegativeRegexState(merger.Build(), left.isOpenStart && right.isOpenStart, left.isOpenEnd && right.isOpenEnd);
         }
 
-        public TokensNegativeRegexState Loop(TokensNegativeRegexState prev, TokensNegativeRegexState loop, TokensNegativeRegexState last, IndexInt min, IndexInt max)
+        public TokensNegativeRegexState Loop(TokensNegativeRegexState prev, GeneratingLoopState<TokensNegativeRegexState> loop, IndexInt min, IndexInt max)
         {
             return underapproximate ? Bottom : Top;
         }

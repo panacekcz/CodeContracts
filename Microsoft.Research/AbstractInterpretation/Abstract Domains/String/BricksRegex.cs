@@ -193,17 +193,44 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 else
                     return this;
             }
+
+            internal BrickGeneratingState Optional()
+            {
+                Brick newBrick = brick;
+                if(brick.MinLength > 0)
+                {
+                    newBrick = new Brick(brick.values, IndexInt.For(0), brick.max);
+                }
+
+                BrickGeneratingState newPrevious = previous;
+
+                if(newPrevious != null) {
+                    newPrevious = newPrevious.Optional();
+                }
+
+                if (newBrick == brick && newPrevious == previous)
+                    return this;
+                else
+                    return new BrickGeneratingState(newBrick, newPrevious);
+            }
+
+            public override string ToString()
+            {
+                return (previous == null ? "" : previous.ToString()) + brick.ToString();
+            }
         }
         
         private class BricksGeneratingOperations : IGeneratingOperationsForRegex<BrickGeneratingState>
         {
             private readonly IBricksPolicy bricksPolicy;
             private readonly bool underapproximate;
+            private readonly Brick topBrick;
 
             public BricksGeneratingOperations(IBricksPolicy bricksPolicy, bool underapproximate)
             {
                 this.bricksPolicy = bricksPolicy;
                 this.underapproximate = underapproximate;
+                topBrick = new Brick(true);
             }
 
             public bool IsUnderapproximating
@@ -284,7 +311,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             {
                 get
                 {
-                    return new BrickGeneratingState(new Brick(true));
+                    return new BrickGeneratingState(topBrick);
                 }
             }
             public BrickGeneratingState Bottom
@@ -302,24 +329,48 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return state.Bricks.All(b => b.CanBeEmpty);
             }
 
-            public BrickGeneratingState Loop(BrickGeneratingState prev, BrickGeneratingState loop, BrickGeneratingState last, IndexInt min, IndexInt max)
+            private BrickGeneratingState Wrap(BrickGeneratingState state, bool wrap)
+            {
+                return wrap ? new BrickGeneratingState(topBrick, state) : state;
+            }
+
+            public BrickGeneratingState Loop(BrickGeneratingState prev, GeneratingLoopState<BrickGeneratingState> loop, IndexInt min, IndexInt max)
             {
                 if (min == 1 && max == 1)
                 {
                     // Single occurence, append last to prev
-                    return BrickGeneratingState.Concat(prev.NotEmpty(), last);
+                    return BrickGeneratingState.Concat(prev.NotEmpty(), loop.Last);
                 }
 
-                if (last.previous == null && last.brick.min == 1 && last.brick.max == 1)
+                BrickGeneratingState loopedState = loop.loopClosed;
+
+                if (loopedState.previous == null && loopedState.brick.min == 1 && loopedState.brick.max == 1)
                 {
                     //A brick has single occurence, can apply the loop bounds
-                    Brick loopedBrick = new Brick(last.brick.values, min, max);
-                    return new BrickGeneratingState(loopedBrick, prev.NotEmpty());
+                    Brick loopedBrick = new Brick(loopedState.brick.values, min, max);
+                    return Wrap(new BrickGeneratingState(loopedBrick, prev.NotEmpty()), !loop.resultClosed);
+                }
+                else if (loopedState.previous == null && !underapproximate)
+                {
+                    // Multiply the bounds.
+                    Brick loopedBrick = new Brick(loopedState.brick.values, min * loopedState.brick.min, max * loopedState.brick.max);
+                    return Wrap(new BrickGeneratingState(loopedBrick, prev.NotEmpty()), !loop.resultClosed);
+                }
+                else if(!underapproximate && min == 0 && max == 1)
+                {
+                    // Optional - we can overapproximate by setting all lower bounds to 0.
+                    return BrickGeneratingState.Concat(prev.NotEmpty(), loop.Last.Optional());
+                }
+                else if (!underapproximate)
+                {
+                    // Cannot represent the loop
+                    // Add a top brick at the end
+                    return new BrickGeneratingState(topBrick, prev);
                 }
                 else
                 {
-                    // Cannot represent the loop
-                    return new BrickGeneratingState(new Brick(!underapproximate));
+                    // Cannot represent the loop, result is bottom
+                    return new BrickGeneratingState(new Brick(false));
                 }
             }
 
@@ -363,7 +414,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
             var interpreter = CreateInterpreter(underapproximate);
             var result = interpreter.Interpret(regex);
 
-            return new Bricks(result.Open.ToBrickList(), element.Policy);
+            return new Bricks(result.Open.ToBrickList(), element.Policy).Normalize(BrickNormalizationLocation.Conversion);
         }
 
         /// <summary>

@@ -96,5 +96,29 @@ namespace StringDomainUnitTests
             Assert.AreEqual(new Prefix("prefixlonger"), pr.AssumeMatch(RegexUtil.ModelForRegex("^prefixlonger|^other")));
             Assert.IsTrue(pr.AssumeMatch(RegexUtil.ModelForRegex("^other")).IsBottom);
         }
+
+        private void AssertPrefixForRegex(string regex, Prefix inputPrefix, Prefix expectedPrefix)
+        {
+            PrefixRegex pr = new PrefixRegex(inputPrefix);
+
+            Prefix result = pr.AssumeMatch(RegexUtil.ModelForRegex(regex));
+            Assert.AreEqual(expectedPrefix, result);
+        }
+
+        [TestMethod]
+        public void TestPrefixForRexRegex()
+        {
+            // Sample regexes taken from 
+            // Rex: Symbolic Regular Expression Explorer
+            // M. Veanes, P. de Halleux, N. Tillmann
+            // ICST 2010
+            AssertPrefixForRegex(@"^(([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;.](([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*\z", top, top);
+            AssertPrefixForRegex(@"^[A-Za-z0-9](([ \.\-]?[a-zA-Z0-9]+)*)@([A-Za-z0-9]+)(([\.\-]?[a-zA-Z0-9]+)*)\. ([A-Za-z][A-Za-z]+)*\z", top, top);
+            AssertPrefixForRegex(@"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?\z", top, top);
+            AssertPrefixForRegex(@"^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}\z", top, top);
+            AssertPrefixForRegex(@"^[0-9]{2}-[0-9]{2}-[0-9]{4}\z", top, top);
+            AssertPrefixForRegex(@"^\z?([0-9]{1,3},?([0-9]{3},?)*[0-9]{3}(\.[0-9]{0,2})?|[0-9]{1,3}(\.[0-9]{0,2})?|\.[0-9]{1,2}?)\z", top, top);
+            AssertPrefixForRegex(@"^([A-Z]{2}|[a-z]{2} [0-9]{2} [A-Z]{1,2}|[a-z]{1,2} [0-9]{1,4})?([A-Z]{3}|[a-z]{3} [0-9]{1,4})?\z", top, top);
+        }
     }
 }

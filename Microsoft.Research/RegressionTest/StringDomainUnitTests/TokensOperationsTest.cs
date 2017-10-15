@@ -74,7 +74,7 @@ namespace StringDomainUnitTests
             Tokens leftRightConstant = operations.Constant("leftright");
 
             AssertAreEqual(leftRightConstant, operations.Concat(Arg(leftConstant), Arg(rightConstant)));
-            //TODO: VD: non-constant strings
+            //TODO: non-constant strings
         }
 
         [TestMethod]

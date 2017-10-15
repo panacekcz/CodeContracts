@@ -37,7 +37,7 @@ namespace StringDomainUnitTests
         private void AssertSGForRegex(string testRegexString, string expectedStringGraphString)
         {
             StringGraph stringGraph = SGForRegex(testRegexString);
-            
+
             string regexStringGraph = stringGraph.ToString();
             Assert.AreEqual(expectedStringGraphString, regexStringGraph);
         }
@@ -60,7 +60,7 @@ namespace StringDomainUnitTests
             AssertSGForRegex(@"^a", "<[a]T>");
             AssertSGForRegex(@"^a*\z", "a:{<><[a]a>}");
             AssertSGForRegex(@"^(?:ab|cd)*\z", "a:{<><{<[a][b]><[c][d]>}a>}");
-            
+
         }
 
         [TestMethod]
@@ -75,6 +75,22 @@ namespace StringDomainUnitTests
             AssertSGIsMatch(ProofOutcome.Top, @"A", @"B");
             AssertSGIsMatch(ProofOutcome.False, @"^A", @"^B");
             AssertSGIsMatch(ProofOutcome.True, @"^A", @"^A");
+        }
+
+        [TestMethod]
+        public void TestSGForRexRegex()
+        {
+            // Sample regexes taken from 
+            // Rex: Symbolic Regular Expression Explorer
+            // M. Veanes, P. de Halleux, N. Tillmann
+            // ICST 2010
+            AssertSGForRegex(@"^(([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;.](([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*\z", "<a:{<><b:{<><{[ ][-][.][0][1][2][3][4][5][6][7][8][9][A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}b>}[@]c:{<><{[ ][-][.][0][1][2][3][4][5][6][7][8][9][A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}c>}[.]d:{<><e:{<><{[A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}e>}d>}a>}f:{<><{[.][;]}g:{<><h:{<><{[ ][-][.][0][1][2][3][4][5][6][7][8][9][A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}h>}[@]i:{<><{[ ][-][.][0][1][2][3][4][5][6][7][8][9][A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}i>}[.]j:{<><k:{<><{[A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}k>}j>}g>}f>}>");
+            AssertSGForRegex(@"^[A-Za-z0-9](([ \.\-]?[a-zA-Z0-9]+)*)@([A-Za-z0-9]+)(([\.\-]?[a-zA-Z0-9]+)*)\. ([A-Za-z][A-Za-z]+)*\z", "<{[0][1][2][3][4][5][6][7][8][9][A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}a:{<><{[ ][-][.]<>}b:{<><{[0][1][2][3][4][5][6][7][8][9][A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}b>}a>}[@]c:{<><{[0][1][2][3][4][5][6][7][8][9][A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}c>}d:{<><{[-][.]<>}e:{<><{[0][1][2][3][4][5][6][7][8][9][A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}e>}d>}[.][ ]f:{<><{[A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}g:{<><{[A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z][a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}g>}f>}>");
+            AssertSGForRegex(@"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?\z", "{<{[+][-]<>}a:{<><{[0][1][2][3][4][5][6][7][8][9]}a>}><>}");
+            AssertSGForRegex(@"^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}\z", "<a:{<><{[0][1][2][3][4][5][6][7][8][9]}a>}[/]b:{<><{[0][1][2][3][4][5][6][7][8][9]}b>}[/]c:{<><{[0][1][2][3][4][5][6][7][8][9]}c>}>");
+            AssertSGForRegex(@"^[0-9]{2}-[0-9]{2}-[0-9]{4}\z", "<a:{<><{[0][1][2][3][4][5][6][7][8][9]}a>}[-]b:{<><{[0][1][2][3][4][5][6][7][8][9]}b>}[-]c:{<><{[0][1][2][3][4][5][6][7][8][9]}c>}>");
+            AssertSGForRegex(@"^\z?([0-9]{1,3},?([0-9]{3},?)*[0-9]{3}(\.[0-9]{0,2})?|[0-9]{1,3}(\.[0-9]{0,2})?|\.[0-9]{1,2}?)\z", "{<[.]a:{<><{[0][1][2][3][4][5][6][7][8][9]}a>}><><[.]b:{<><{[0][1][2][3][4][5][6][7][8][9]}b>}><><{<><>}[.]c:{<><{[0][1][2][3][4][5][6][7][8][9]}c>}>}");
+            AssertSGForRegex(@"^([A-Z]{2}|[a-z]{2} [0-9]{2} [A-Z]{1,2}|[a-z]{1,2} [0-9]{1,4})?([A-Z]{3}|[a-z]{3} [0-9]{1,4})?\z", "{a:{<><{[A][B][C][D][E][F][G][H][I][J][K][L][M][N][O][P][Q][R][S][T][U][V][W][X][Y][Z]}a>}<b:<>c:{<><{[a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u][v][w][x][y][z]}c>}[ ]d:{<><{[0][1][2][3][4][5][6][7][8][9]}d>}><>}");
         }
     }
 }

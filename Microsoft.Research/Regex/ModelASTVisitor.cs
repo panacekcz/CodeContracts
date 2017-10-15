@@ -13,11 +13,20 @@ namespace Microsoft.Research.Regex
     /// </summary>
     internal class ModelASTVisitor : Model.ModelVisitor<AST.Element, Void>
     {
+        private const string regular = ";/<>!:,=";
+        private const string special = ".(){}\\?*+-$^[]";
+
         /// <summary>
         /// Selects when to use escape sequences to represent characters.
         /// </summary>
         public enum EscapingStrategy
         {
+            /// <summary>
+            /// Use literals for alphanumeric and ascii symbols without special meaning,
+            /// use simple escape for ascii symbols with special meaning,
+            /// use unicode escape sequences for non-ascii.
+            /// </summary>
+            EscapeSpecial,
             /// <summary>
             /// Use literals for alphanumeric characters, unicode escape sequences for all other characters.
             /// </summary>
@@ -46,18 +55,39 @@ namespace Microsoft.Research.Regex
 
         private AST.Character Character(char value)
         {
-            if (Escaping == EscapingStrategy.EscapeUnicodeExceptAlnum && (value >= '0' && value <= '9' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z'))
+            bool alnumLiteral = (Escaping == EscapingStrategy.EscapeUnicodeExceptAlnum || Escaping == EscapingStrategy.EscapeSpecial);
+            bool escapeSpecial = Escaping == EscapingStrategy.EscapeSpecial;
+            bool regularLiteral = Escaping == EscapingStrategy.EscapeSpecial;
+
+            if (alnumLiteral && (value >= '0' && value <= '9' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z'))
                 return new AST.LiteralCharacter(value);
+            else if (regularLiteral && regular.IndexOf(value) != -1)
+                return new AST.LiteralCharacter(value);
+            else if (escapeSpecial && special.IndexOf(value)!= -1)
+                return new AST.DefaultEscapeCharacter(value);
             else
                 return new AST.UnicodeEscapeCharacter(value);
         }
 
-        private AST.SingleElement CharRange(char low, char high)
+        private AST.SingleElement GetCharRange(char low, char high)
         {
             if (low == high)
                 return Character(low);
             else
                 return new AST.Range(low, high);
+        }
+
+        private void AddCharRange(char low, char high, List<AST.SingleElement> destination)
+        {
+            if (low < char.MaxValue && low + 1 == high)
+            {
+                destination.Add(Character(low));
+                destination.Add(Character(high));
+            }
+            else
+            {
+                destination.Add(GetCharRange(low, high));
+            }
         }
 
         protected override AST.Element VisitCharacter(Model.Character character, ref Void data)
@@ -83,7 +113,7 @@ namespace Microsoft.Research.Regex
                     if (range.Low - 1 != lastHigh)
                     {
                         if (lastHigh != -1)
-                            setRanges.Add(CharRange((char)lastLow, (char)lastHigh));
+                            AddCharRange((char)lastLow, (char)lastHigh, setRanges);
                         lastLow = range.Low;
                     }
 
@@ -91,7 +121,7 @@ namespace Microsoft.Research.Regex
                 }
 
                 if (lastHigh != -1)
-                    setRanges.Add(CharRange((char)lastLow, (char)lastHigh));
+                    AddCharRange((char)lastLow, (char)lastHigh, setRanges);
 
                 AST.CharacterSet characterSet = new CharacterSet(false, setRanges, null);
                 return characterSet;

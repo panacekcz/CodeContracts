@@ -36,8 +36,11 @@ namespace Microsoft.Research.AbstractDomains.Strings
     {
         public static Element RegexForSG(Node root)
         {
+            Console.WriteLine(root);
+
             StringGraphRegexVisitor sgv = new StringGraphRegexVisitor();
             Void v = null;
+            
             Element element = sgv.VisitNode(root, VisitContext.Root, ref v);
             Concatenation rootElement = new Concatenation();
             rootElement.Parts.Add(Anchor.Begin);
@@ -289,36 +292,43 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 return Wrap(concatNode.Compact(), closed);
             }
 
-            public Node Loop(Node prev, Node loop, Node last, IndexInt min, IndexInt max)
+            public Node Loop(Node prev, GeneratingLoopState<Node> loop, IndexInt min, IndexInt max)
             {
                 if (max == 1)
                 {
                     if (min == 1)
                     {
-                        return Concat(prev, last);
+                        // No repetition, simply concatenate
+                        return Concat(prev, loop.Last);
                     }
                     else if (min == 0)
                     {
-                        OrNode orNode = new OrNode();
-                        orNode.children.Add(last);
-                        //TODO: VD: closed/open
-                        orNode.children.Add(NodeBuilder.CreateEmptyNode());
-                        return orNode;
+                        // Optional node
+                        if (loop.resultClosed)
+                        {
+                            OrNode orNode = new OrNode();
+                            orNode.children.Add(loop.loopClosed);
+                            orNode.children.Add(NodeBuilder.CreateEmptyNode());
+                            return orNode;
+                        }
+                        else
+                        {
+                            return Wrap(prev, false);
+                        }
                     }
                 }
 
                 if (!underapproximate)
                 {
-                    return Wrap(NodeBuilder.CreateLoop(loop), (loop == last));
+                    return Concat(prev, Wrap(NodeBuilder.CreateLoop(loop.loopClosed), loop.resultClosed));
                 }
                 else if (min == 0)
                 {
-                    //TODO: VD: here we do not consider open/closed
-                    return prev;
+                    return Wrap(prev, loop.resultClosed);
                 }
                 else if (min == 1 && max >= 1)
                 {
-                    return Concat(prev, last);
+                    return Concat(prev, loop.Last);
                 }
                 else
                 {
@@ -333,7 +343,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
 
             public bool CanBeEmpty(Node node)
             {
-                //TODO: VD: underap?
                 LengthVisitor lengths = new LengthVisitor();
                 lengths.ComputeLengthsFor(node);
                 IndexInterval length = lengths.GetLengthFor(node);

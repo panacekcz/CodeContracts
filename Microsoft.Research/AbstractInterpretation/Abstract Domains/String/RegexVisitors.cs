@@ -114,7 +114,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 {
                     // Garanteed match at all indices -> fix the index to the first matching character
 
-                    //TODO: VD: should use input or currentprefix?
                     for (int i = 0; i < GetLength(input); ++i)
                     {
                         if (IsCompatible(input, i, range))
@@ -234,7 +233,6 @@ namespace Microsoft.Research.AbstractDomains.Strings
             }
             else
             {
-                //TODO: VD: could be better, use widneing
                 return GetTop(input);
             }
         }

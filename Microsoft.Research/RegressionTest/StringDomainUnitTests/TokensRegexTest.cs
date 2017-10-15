@@ -111,27 +111,27 @@ namespace StringDomainUnitTests
 
         }
         [TestMethod]
-        public void TestIsNotMatch()
-        {
-            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexUtil.ModelForRegex("b")));
-            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexUtil.ModelForRegex("[b-f]")));
-            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("a"), null, RegexUtil.ModelForRegex("bcd|ghi")));
-            Assert.AreEqual(FlatPredicate.False, operations.RegexIsMatch(operations.Constant("const"), null, RegexUtil.ModelForRegex("^c\\z")));
-        }
-        [TestMethod]
         public void TestUnknownMatch()
         {
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(top, TestVariable.Var1, RegexUtil.ModelForRegex("a")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(top, TestVariable.Var1, RegexUtil.ModelForRegex("[a-f]")).ProofOutcome);
             Assert.AreEqual(ProofOutcome.Top, operations.RegexIsMatch(top, TestVariable.Var1, RegexUtil.ModelForRegex("a|bcd")).ProofOutcome);
+        }
 
-            /*Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("a", "b"), null, RegexUtil.ModelForRegex("a\\z")));
-            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("a")));
-            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("", "a"), null, RegexUtil.ModelForRegex("[a-z]")));
-            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("x", "ab"), null, RegexUtil.ModelForRegex("a|b")));
-            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("x", "ab"), null, RegexUtil.ModelForRegex("a|y")));
-            Assert.AreEqual(FlatPredicate.Top, operations.RegexIsMatch(Build("@", ".abcdefgh_"), null, RegexUtil.ModelForRegex("^[a-z0-9_]+(?:.[a-z0-9_]+)*@[a-z0-9_]+(?:.[a-z0-9_]+)+\\z")));
-            */
+        [TestMethod]
+        public void TestTokensForRexRegex()
+        {
+            // Sample regexes taken from 
+            // Rex: Symbolic Regular Expression Explorer
+            // M. Veanes, P. de Halleux, N. Tillmann
+            // ICST 2010
+            AssertTokensForRegex(@"^(([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;.](([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*\z", "{ *-*.*0*1*2*3*4*5*6*7*8*9*;*@*A*B*C*D*E*F*G*H*I*J*K*L*M*N*O*P*Q*R*S*T*U*V*W*X*Y*Z*a*b*c*d*e*f*g*h*i*j*k*l*m*n*o*p*q*r*s*t*u*v*w*x*y*z*}!");
+            AssertTokensForRegex(@"^[A-Za-z0-9](([ \.\-]?[a-zA-Z0-9]+)*)@([A-Za-z0-9]+)(([\.\-]?[a-zA-Z0-9]+)*)\. ([A-Za-z][A-Za-z]+)*\z", "{ *-*.*0*1*2*3*4*5*6*7*8*9*@{}.A*B*C*D*E*F*G*H*I*J*K*L*M*N*O*P*Q*R*S*T*U*V*W*X*Y*Z*a*b*c*d*e*f*g*h*i*j*k*l*m*n*o*p*q*r*s*t*u*v*w*x*y*z*}!");
+            AssertTokensForRegex(@"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?\z", "{+*-*.*0*1*2*3*4*5*6*7*8*9*E*e*}!");
+            AssertTokensForRegex(@"^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}\z", "{/*0*1*2*3*4*5*6*7*8*9*}!");
+            AssertTokensForRegex(@"^[0-9]{2}-[0-9]{2}-[0-9]{4}\z", "{-*0*1*2*3*4*5*6*7*8*9*}!");
+            AssertTokensForRegex(@"^\z?([0-9]{1,3},?([0-9]{3},?)*[0-9]{3}(\.[0-9]{0,2})?|[0-9]{1,3}(\.[0-9]{0,2})?|\.[0-9]{1,2}?)\z", "{,*.*0*1*2*3*4*5*6*7*8*9*}!");
+            AssertTokensForRegex(@"^([A-Z]{2}|[a-z]{2} [0-9]{2} [A-Z]{1,2}|[a-z]{1,2} [0-9]{1,4})?([A-Z]{3}|[a-z]{3} [0-9]{1,4})?\z", "{ *0*1*2*3*4*5*6*7*8*9*A*B*C*D*E*F*G*H*I*J*K*L*M*N*O*P*Q*R*S*T*U*V*W*X*Y*Z*a*b*c*d*e*f*g*h*i*j*k*l*m*n*o*p*q*r*s*t*u*v*w*x*y*z*}!");
         }
     }
 }

@@ -38,11 +38,6 @@ namespace StringDomainUnitTests
             return new Bricks(value, policy);
         }
 
-        //TODO: VD: use or remove
-    /*    protected Bricks MakeBricks(int min, int max, string value)
-        {
-            return new Bricks(new[] { new Brick(value, IndexInt.For(min), IndexInt.For(max)) }, policy);
-        }*/
 
         protected Bricks MakeBricks(params string[] values)
         {

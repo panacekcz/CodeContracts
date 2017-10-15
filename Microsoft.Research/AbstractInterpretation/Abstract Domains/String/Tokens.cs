@@ -770,7 +770,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 if (self.LessThanEqual(regexUnder) || self.Meet(negRegexOver).IsBottom)
                     return FlatPredicate.True;
 
-                if (self.Meet(regexOver).IsBottom || self.LessThanEqual(negRegexUnder))
+                if (self.Meet(regexOver).IsBottom/* || self.LessThanEqual(negRegexUnder)*/)
                     return FlatPredicate.False;
 
                 if (selfVariable != null)

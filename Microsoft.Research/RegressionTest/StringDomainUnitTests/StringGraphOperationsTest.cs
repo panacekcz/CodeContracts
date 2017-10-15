@@ -72,6 +72,21 @@ namespace StringDomainUnitTests
 
         }
 
+
+        [TestMethod]
+        public void TestConcatJoin()
+        {
+            StringGraph x = StringGraph.ForString("x");
+
+            for(int i=0;i<3;++i)
+                x = operations.Concat(Arg(""), Arg(x));
+
+            Assert.AreEqual("[x]", x.ToString());
+            
+
+        }
+
+
         [TestMethod]
         public void TestConcatWithWidening()
         {

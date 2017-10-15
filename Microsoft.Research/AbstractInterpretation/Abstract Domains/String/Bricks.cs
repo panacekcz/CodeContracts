@@ -1178,7 +1178,7 @@ namespace Microsoft.Research.AbstractDomains.Strings
                 }
                 else
                 {
-                    Bricks regexBricks = brickRegexConverter.BricksForRegex(regex).Normalize(BrickNormalizationLocation.Conversion);
+                    Bricks regexBricks = brickRegexConverter.BricksForRegex(regex);
                     return StringAbstractionPredicate.ForTrue(selfVariable, regexBricks);
                 }
             }

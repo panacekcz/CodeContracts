@@ -31,6 +31,8 @@ namespace Microsoft.Research.AbstractDomains.Strings
     /// <summary>
     /// Elements of the prefix abstract domain for strings.
     /// Represents a set of strings starting with a specified prefix.
+    /// 
+    /// The lower bound is a string that the value is a prefix of, the upper bound is a prefix of the value.
     /// </summary>
     public class PrefixInterval : IntervalBase<PrefixInterval, Prefix>, IStringInterval<PrefixInterval>
     {
@@ -278,7 +280,18 @@ namespace Microsoft.Research.AbstractDomains.Strings
                     string leftConstant = leftInterval.lowerBound.prefix;
                     // only if there is constant on the left, we can use 
                     // information about the right part
-                    return For(leftConstant + rightInterval.lowerBound.prefix, leftConstant + rightInterval.upperBound.prefix);
+
+                    string prefixOf;
+                    if (rightInterval.lowerBound.IsBottom)
+                    {
+                        prefixOf = null;
+                    }
+                    else {
+                        prefixOf = leftConstant + rightInterval.lowerBound.prefix;
+                    }
+                    string prefix = leftConstant + rightInterval.upperBound.prefix;
+
+                    return For(prefixOf, prefix);
                 }
                 else
                 {

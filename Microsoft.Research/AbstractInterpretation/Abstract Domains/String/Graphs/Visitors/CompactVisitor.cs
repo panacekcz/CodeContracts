@@ -56,10 +56,56 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
             }
         }
 
+        protected override Node Visit(OrNode orNode, VisitContext context, ref Void data)
+        {
+            if (orNode.children.Count == 1)
+            {
+                return VisitNode(orNode.children[0], VisitContext.Or, ref data);
+            }
+            else
+            {
+                return new OrNode();
+            }
+        }
+
+        protected override Node VisitChildren(OrNode orNode, Node result, ref Void data)
+        {
+            if(orNode.children.Count != 1 && result is OrNode)
+            {
+                OrNode resultOr = (OrNode)result;
+
+                foreach (Node child in orNode.children)
+                {
+                    Node next = VisitNode(child, VisitContext.Or, ref data);
+                    if (IsOwnedOrNode(next))
+                    {
+                        resultOr.children.AddRange(((OrNode)next).children);
+                    }
+                    else
+                    {
+                        resultOr.children.Add(next);
+                    }
+                }
+
+                if(orNode.indegree == 1 && resultOr.children.Count == 1)
+                {
+                    return resultOr.children[0];
+                }
+            }
+
+            return result;
+        }
+
         private static bool IsOwnedConcatNode(Node graphNode)
         {
             return graphNode is ConcatNode && ((ConcatNode)graphNode).indegree == 1;
         }
+
+        private static bool IsOwnedOrNode(Node graphNode)
+        {
+        return graphNode is OrNode && ((OrNode)graphNode).indegree == 1;
+    }
+
 
         protected override Node VisitChildren(ConcatNode concatNode, Node result, ref Void data)
         {
@@ -78,6 +124,11 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
                     {
                         resultConcat.children.Add(next);
                     }
+                }
+
+                if (concatNode.indegree == 1 && resultConcat.children.Count == 1)
+                {
+                    return resultConcat.children[0];
                 }
 
             }

@@ -108,6 +108,20 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
         TData EndLoop(TInput input, TData prev, TData next, IndexInt min, IndexInt max, bool under);
     }
 
+    public struct GeneratingLoopState<TData>
+    {
+        public TData loopOpen;
+        public TData loopClosed;
+        public bool resultClosed;
+
+        public TData Last {
+            get {
+                return resultClosed ? loopClosed : loopOpen;
+            }
+        }
+    }
+
+
     /// <summary>
     /// Provides abstract operations for generating a language from a regex.
     /// </summary>
@@ -143,7 +157,7 @@ namespace Microsoft.Research.AbstractDomains.Strings.Regex
         TData AddChar(TData prev, CharRanges next, bool closed);
         TData Join(TData left, TData right, bool widen);
 
-        TData Loop(TData prev, TData loop, TData last, IndexInt min, IndexInt max);
+        TData Loop(TData prev, GeneratingLoopState<TData> loop, IndexInt min, IndexInt max);
     }
 
 }

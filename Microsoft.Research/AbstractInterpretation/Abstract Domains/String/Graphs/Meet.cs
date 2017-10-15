@@ -8,22 +8,41 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 {
     internal class NFANode
     {
-        internal Dictionary<char, List<NFANode>> next;
-        internal List<NFANode> nextEmpty;
+        internal Dictionary<char, HashSet<NFANode>> next = new Dictionary<char, HashSet<NFANode>>();
+        internal HashSet<NFANode> nextEmpty = new HashSet<NFANode>();
         
-        internal Dictionary<char, List<NFANode>> prev;
-        internal List<NFANode> prevEmpty;
+        internal Dictionary<char, HashSet<NFANode>> prev = new Dictionary<char, HashSet<NFANode>>();
+        internal HashSet<NFANode> prevEmpty = new HashSet<NFANode>();
 
         internal bool isLoop;
 
-        public IEnumerable<NFANode> GetNext(char c)
+        public Dictionary<char, HashSet<NFANode>> Edges(bool backward)
         {
-            List<NFANode> list;
-            if (next.TryGetValue(c, out list))
-                return list;
-            else
-                return Enumerable.Empty<NFANode>();
+            return backward ? prev : next;
         }
+
+        public HashSet<NFANode> EmptyTransition(bool backward)
+        {
+            return backward ? prevEmpty : nextEmpty;
+        }
+
+        public IEnumerable<NFANode> Transition(bool back, char c)
+        {
+            var edges = Edges(back);
+
+            HashSet<NFANode> list;
+            edges.TryGetValue(c, out list);
+            return list;
+        }
+
+        /*public void Clear(bool back)
+        {
+            if (back)
+            {
+                prev.Clear();
+
+            }
+        }*/
     }
 
     internal struct NFAPair
@@ -41,67 +60,115 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
     {
         internal HashSet<NFAPair> pairs = new HashSet<NFAPair>();
         internal DataStructures.WorkList<NFAPair> pending = new DataStructures.WorkList<NFAPair>();
+        internal NFAMeetRelation otherDirection;
 
-        public void Solve()
+        public NFAMeetRelation(NFAMeetRelation otherDirection = null)
+        {
+            this.otherDirection = otherDirection;
+        }
+
+        private void EdgeUsed(NFANode from, char value, NFANode to)
+        {
+            //TODO: implement
+        }
+
+        public void Solve(bool backward, bool createOtherDirection)
         {
             while (!pending.IsEmpty)
             {
                 NFAPair pair = pending.Pull();
                 // for all children, add all pairs
 
-                foreach(var nextLeft in pair.left.nextEmpty)
+                foreach(var nextLeft in pair.left.EmptyTransition(backward))
                 {
                     Add(nextLeft, pair.right);
                 }
 
-                foreach(var nextRight in pair.right.nextEmpty)
+                foreach(var nextRight in pair.right.EmptyTransition(backward))
                 {
                     Add(pair.left, nextRight);
                 }
 
-                foreach(var kv in pair.left.next)
+                foreach(var kv in pair.left.Edges(backward))
                 {
+                    var label = kv.Key;
+
                     foreach(var nextLeft in kv.Value)
                     {
-                        foreach(var nextRight in pair.right.GetNext(kv.Key))
-                        {
-                            Add(nextLeft, nextRight);
+                        var transition = pair.right.Transition(backward, label);
+                        if (transition != null) {
+
+                            EdgeUsed(pair.left, label, nextLeft);
+
+                            foreach (var nextRight in transition)
+                            {
+                                EdgeUsed(pair.right, label, nextRight);
+
+                                Add(nextLeft, nextRight);
+                            }
                         }
                     }
                 }
 
                 if (pair.left.isLoop)
                 {
-                    foreach (var kv in pair.right.next)
+                    bool used = false;
+                    foreach (var kv in pair.right.Edges(backward))
                     {
                         foreach (var nextRight in kv.Value)
                         {
-                            Add(pair.left, nextRight);
+                            used |= Add(pair.left, nextRight);
                         }
                     }
+                    if (used)
+                    {
+                        //TODO:
+                    }
+
                 }
 
                 if (pair.right.isLoop)
                 {
-                    foreach (var kv in pair.left.next)
+                    bool used = false;
+
+                    foreach (var kv in pair.left.Edges(backward))
                     {
                         foreach (var nextLeft in kv.Value)
                         {
-                            Add(nextLeft, pair.right);
+                            used |= Add(nextLeft, pair.right);
                         }
                     }
+                    if (used)
+                    {
+                        //TODO:
+                    }
+
                 }
             }
         }
 
-        public void Add(NFANode left, NFANode right)
+        public bool Add(NFANode left, NFANode right)
         {
             var pair = new NFAPair(left, right);
+
+            if(otherDirection != null && !otherDirection.pairs.Contains(pair))
+            {
+                // The nodes are not related in the other direction, do not add it
+                return false;
+            }
 
             if (pairs.Add(pair))
             {
                 pending.Add(pair);
             }
+
+            return true;
+        }
+
+        public bool IsEdgeAllowed(NFANode from, char by, NFANode to)
+        {
+            //TODO:
+            return true;
         }
     }
 
@@ -114,10 +181,10 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 
         private void Connect(NFAPair nodes, char val)
         {
-            List<NFANode> nodeList;
+            HashSet<NFANode> nodeList;
             if(!nodes.left.next.TryGetValue(val, out nodeList))
             {
-                nodeList = new List<NFANode>();
+                nodeList = new HashSet<NFANode>();
                 nodes.left.next[val] = nodeList;
             }
             nodeList.Add(nodes.right);
@@ -214,8 +281,11 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
     class MarkVisitor : Visitor<bool, Void>
     {
         private readonly NFAMeetRelation relation;
+        private readonly NFAVisitor mapping;
+
         public MarkVisitor(NFAVisitor mapping, NFAMeetRelation relation)
         {
+            this.mapping = mapping;
             this.relation = relation;
         }
 
@@ -224,9 +294,6 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
             Void v;
             return VisitNode(n, VisitContext.Root, ref v);
         }
-
-  
-        
 
         public bool IsMarkedForPrune(Node node)
         {
@@ -240,12 +307,13 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
 
         protected override bool Visit(CharNode charNode, VisitContext context, ref Void data)
         {
-            throw new NotImplementedException();
+            NFAPair states = mapping.Mapping[charNode];
+            return relation.IsEdgeAllowed(states.left, charNode.Value, states.right);
         }
 
         protected override bool Visit(MaxNode maxNode, VisitContext context, ref Void data)
         {
-            throw new NotImplementedException();
+            return true;
         }
 
         protected override bool Visit(OrNode orNode, VisitContext context, ref Void data)
@@ -314,11 +382,16 @@ namespace Microsoft.Research.AbstractDomains.Strings.Graphs
             NFAPair leftNfa = nfv.NfaFor(left);
             NFAPair rightNfa = nfv.NfaFor(right);
             //Relation
-            NFAMeetRelation relation = new NFAMeetRelation();
-            relation.Add(leftNfa.left, rightNfa.left);
-            relation.Solve();
+            NFAMeetRelation forwardRelation = new NFAMeetRelation();
+            forwardRelation.Add(leftNfa.left, rightNfa.left);
+            forwardRelation.Solve(false, true);
+
+            NFAMeetRelation backwardRelation = new NFAMeetRelation(forwardRelation);
+            backwardRelation.Add(leftNfa.right, rightNfa.right);
+            backwardRelation.Solve(true, false);
+
             //Pruning
-            MarkVisitor mv = new MarkVisitor(nfv, relation);
+            MarkVisitor mv = new MarkVisitor(nfv, backwardRelation);
             bool isBottom = !mv.Mark(left);
 
             if (isBottom)

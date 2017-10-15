@@ -29,7 +29,7 @@ namespace StringDomainUnitTests
     {
         protected override IBricksPolicy CreateBricksPolicy()
         {
-            return new DefaultBricksPolicy { MergeConstantSets = false };
+            return new DefaultBricksPolicy { MergeConstantSets = false, ExpandConstantRepetitions = false };
         }
 
         private Bricks BricksForRegex(string regexString)
@@ -84,6 +84,23 @@ namespace StringDomainUnitTests
             AssertBricksIsMatch(ProofOutcome.False, @"^[AB]C\z", @"^[AC]D\z");
             AssertBricksIsMatch(ProofOutcome.True, @"^[AB]C\z", @"^[AB][CD]\z");
 
+        }
+
+
+        [TestMethod]
+        public void TestBricksForRexRegex()
+        {
+            // Sample regexes taken from 
+            // Rex: Symbolic Regular Expression Explorer
+            // M. Veanes, P. de Halleux, N. Tillmann
+            // ICST 2010
+            AssertBricksForRegex(@"^(([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;.](([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*\z", "*[0,Inf]");
+            AssertBricksForRegex(@"^[A-Za-z0-9](([ \.\-]?[a-zA-Z0-9]+)*)@([A-Za-z0-9]+)(([\.\-]?[a-zA-Z0-9]+)*)\. ([A-Za-z][A-Za-z]+)*\z", "{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}[1,1]*[0,Inf]{@}[1,1]{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}[1,1]{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}[0,Inf]*[0,Inf]{. }[1,1]*[0,Inf]");
+            AssertBricksForRegex(@"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?\z", "{+,-}[0,1]{0,1,2,3,4,5,6,7,8,9}[0,Inf]{.}[0,1]{0,1,2,3,4,5,6,7,8,9}[0,Inf]{+,-}[0,1]{E,e}[0,1]");
+            AssertBricksForRegex(@"^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}\z", "{0,1,2,3,4,5,6,7,8,9}[1,1]{0,1,2,3,4,5,6,7,8,9}[0,1]{/}[1,1]{0,1,2,3,4,5,6,7,8,9}[1,1]{0,1,2,3,4,5,6,7,8,9}[0,1]{/}[1,1]{0,1,2,3,4,5,6,7,8,9}[2,2]{0,1,2,3,4,5,6,7,8,9}[0,2]");
+            AssertBricksForRegex(@"^[0-9]{2}-[0-9]{2}-[0-9]{4}\z", "{0,1,2,3,4,5,6,7,8,9}[2,2]{-}[1,1]{0,1,2,3,4,5,6,7,8,9}[2,2]{-}[1,1]{0,1,2,3,4,5,6,7,8,9}[4,4]");
+            AssertBricksForRegex(@"^\z?([0-9]{1,3},?([0-9]{3},?)*[0-9]{3}(\.[0-9]{0,2})?|[0-9]{1,3}(\.[0-9]{0,2})?|\.[0-9]{1,2}?)\z", @"{0,1,2,3,4,5,6,7,8,9}[0,3]{,}[0,1]*[0,Inf]{0,1,2,3,4,5,6,7,8,9,.}[0,7]");
+            AssertBricksForRegex(@"^([A-Z]{2}|[a-z]{2} [0-9]{2} [A-Z]{1,2}|[a-z]{1,2} [0-9]{1,4})?([A-Z]{3}|[a-z]{3} [0-9]{1,4})?\z", @"{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,0,1,2,3,4,5,6,7,8,9}[0,4]{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z, }[0,1]{ ,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}[0,2]{0,1,2,3,4,5,6,7,8,9}[0,2]{ }[0,1]{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}[0,2]{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,0,1,2,3,4,5,6,7,8,9}[0,4]{ }[0,1]{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}[0,3]");
         }
     }
 }

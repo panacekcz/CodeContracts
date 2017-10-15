@@ -79,5 +79,31 @@ namespace StringDomainUnitTests
             Assert.AreEqual(Build("", "abcd"), cir.Assume(RegexUtil.ModelForRegex("^[a-d]*\\z"), true));
             Assert.AreEqual(Build("", "c"), cir.Assume(RegexUtil.ModelForRegex("[^c]"), false));
         }
+
+        private void AssertCIForRegex(string regex, CharacterInclusion<BitArrayCharacterSet> input, CharacterInclusion<BitArrayCharacterSet> expected)
+        {
+            CharacterInclusionRegex<BitArrayCharacterSet> pr = new CharacterInclusionRegex<BitArrayCharacterSet>(input);
+
+            CharacterInclusion<BitArrayCharacterSet> result = pr.Assume(RegexUtil.ModelForRegex(regex), true);
+
+            Assert.AreEqual(expected, result);
+        }
+
+
+        [TestMethod]
+        public void TestCIForRexRegex()
+        {
+            // Sample regexes taken from 
+            // Rex: Symbolic Regular Expression Explorer
+            // M. Veanes, P. de Halleux, N. Tillmann
+            // ICST 2010
+            AssertCIForRegex(@"^(([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;.](([a-zA-Z0-9 \-\.]+)@([a-zA-Z0-9 \-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*\z", top, Build(".@", " -0123456789;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+            AssertCIForRegex(@"^[A-Za-z0-9](([ \.\-]?[a-zA-Z0-9]+)*)@([A-Za-z0-9]+)(([\.\-]?[a-zA-Z0-9]+)*)\. ([A-Za-z][A-Za-z]+)*\z", top, Build(".@ ", "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+            AssertCIForRegex(@"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?\z", top, Build("", "-+.0123456789Ee"));
+            AssertCIForRegex(@"^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}\z", top, Build("/", "0123456789") );
+            AssertCIForRegex(@"^[0-9]{2}-[0-9]{2}-[0-9]{4}\z", top, Build("-", "0123456789"));
+            AssertCIForRegex(@"^\z?([0-9]{1,3},?([0-9]{3},?)*[0-9]{3}(\.[0-9]{0,2})?|[0-9]{1,3}(\.[0-9]{0,2})?|\.[0-9]{1,2}?)\z", top, Build("", ",.0123456789"));
+            AssertCIForRegex(@"^([A-Z]{2}|[a-z]{2} [0-9]{2} [A-Z]{1,2}|[a-z]{1,2} [0-9]{1,4})?([A-Z]{3}|[a-z]{3} [0-9]{1,4})?\z", top, Build("", " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+        }
     }
 }
