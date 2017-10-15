@@ -224,3 +224,6 @@ FakesAssemblies/
 /Foxtrot/Tests/QuickGraph/QuickGraphBinaries
 /Foxtrot/Tests/RewriteExistingBinaries
 /CodeContracts.VC.db
+*.pyc
+/Demo/Strings/out
+/Demo/Strings/old
