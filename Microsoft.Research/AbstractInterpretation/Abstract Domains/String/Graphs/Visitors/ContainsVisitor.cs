@@ -1,6 +1,6 @@
 ﻿// CodeContracts
 // 
-// Copyright (c) Microsoft Corporation
+// Copyright (c) Charles University
 // 
 // All rights reserved. 
 // 

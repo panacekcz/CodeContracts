@@ -1,4 +1,9 @@
-﻿using System;
+﻿// Copyright (c) Charles University
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+// Created by Vlastimil Dort
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
